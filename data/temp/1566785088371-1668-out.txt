@@ -1,2 +1,0 @@
-Date Coord-System Altitude Latitude Longitude D_deg D_min I_deg I_min H_nT X_nT Y_nT Z_nT F_nT dD_min dI_min dH_nT dX_nT dY_nT dZ_nT dF_nT
-2019.583 M K0 0 0    -4d 44m   -30d  8m   27636.9  27542.8  -2278.9 -16038.5  31953.6     9.6      -4.4         -7.3     -0.9     77.8    -42.7     15.1
