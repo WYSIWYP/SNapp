@@ -1,28 +1,28 @@
 import React, {useEffect, useState} from 'react';
 import {RouteComponentProps} from "@reach/router";
 import SNView from '../components/SNView';
-import {Midi} from '@tonejs/midi';
+import Connection from '../util/Connection';
+import MusicXML from 'musicxml-interfaces';
 
 type Props = {} & RouteComponentProps;
 
 const Menu: React.FC<Props> = () => {
-    let [midi,setMidi] = useState<undefined | Midi>(undefined);
+    let [xml,setXML] = useState<undefined | MusicXML.ScoreTimewise>(undefined);
     useEffect(()=>{
         let canceled = false;
         (async ()=>{
-            //let res = await Midi.fromUrl('black_sheep_1h.mid');
-            let res = await Midi.fromUrl('black_sheep.mid');
-            //let res = await Midi.fromUrl('bor_ps5.mid');
+            let res = await Connection.get('BeetAnGeSample.musicxml');
             if(!canceled){
-                console.log(res);
-                setMidi(res);
+                let parsed = MusicXML.parseScore(res)
+                console.log(parsed);
+                setXML(parsed);
             }
         })();
         return ()=>{canceled = true;}
     },[]);
     return (
         <>
-            {midi===undefined?null:<SNView midi={midi} />}
+            {xml===undefined?null:<SNView xml={xml} />}
         </>
     );
 };

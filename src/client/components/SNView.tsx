@@ -2,13 +2,14 @@ import React, {useEffect, useState, useRef} from 'react';
 import {Midi} from '@tonejs/midi';
 import {range} from '../util/Util';
 import {Note} from '@tonejs/midi/dist/Note';
+import MusicXML from 'musicxml-interfaces';
 
 type Props = {
-    midi: Midi,
+    xml: MusicXML.ScoreTimewise,
     options?: {},
 };
 
-const SNView: React.FC<Props> = ({midi,options,children}) => {
+const SNView: React.FC<Props> = ({xml,options,children}) => {
     const ref = useRef(null! as HTMLDivElement);
     let [width,setWidth] = useState<number | undefined>(undefined);
     useEffect(()=>{
@@ -26,7 +27,8 @@ const SNView: React.FC<Props> = ({midi,options,children}) => {
         return <div ref={ref} />;
     }
 
-    let devMode = true;
+    let devMode = false;
+    let maxStaffNumber = 2;
     //general spacing
     let noteSymbolSize = 20; //width/height of note symbols
     let strokeWidth = 2;
@@ -47,6 +49,7 @@ const SNView: React.FC<Props> = ({midi,options,children}) => {
     
     
     let octaveGroups = [1,1,0,0,0,1,1]; //octaveGroups (C D E / F G A B)
+    let staffLabels = ['𝒯','𝐵'];
     let octaveLines = [undefined,undefined,{
         color: 'red', number: true
     },undefined,undefined,{
@@ -58,11 +61,88 @@ const SNView: React.FC<Props> = ({midi,options,children}) => {
     let getNoteIsSharp = (note: number)=>sharpMap[note%12];
     let getNoteLine = (note: number)=>Math.floor(note/12)*7+noteMap[note%12];
 
+
+    // type staff = {
+    //     notes: Note[],
+    // };
+
+    //let staves: staff[] = midi.tracks.filter(x=>x.notes.length>0).map(x=>{});
+
+    type basicNote = {
+        time: number,
+        duration: number,
+        midi: number,
+    };
+
+    //extract note data
+
+    let pitchToMidi = (pitch: {octave: number, step: string, alter?: number})=>{
+        let step = ({c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11} as {[index: string]: number})[pitch.step.toLowerCase()];
+        return (pitch.octave-5)*12+step+(pitch.alter===undefined?0:Math.round(pitch.alter));
+    };
+    let parts: {[index: string]: basicNote[]} = {};
+    let progress: {[index: string]: number} = {};
+    xml.measures.forEach(measure=>{
+        Object.keys(measure.parts).forEach(part=>{
+            if(parts[part] === undefined){
+                parts[part] = [];
+            }
+            if(progress[part] === undefined){
+                progress[part] = 0;
+            }
+            let notes: basicNote[] = [];
+            measure.parts[part].forEach(entry=>{
+                switch(entry._class){
+                    case 'Note':
+                        let time = progress[part];
+                        if(entry.chord !== undefined){
+                            if(notes.length === 0){
+                                console.error('The first note within a measure was marked as being part of a chord');
+                            } else {
+                                time = notes[notes.length-1].time;
+                            }
+                        } else {
+                            progress[part] += entry.duration;
+                        }
+                        if(entry.rest === undefined && entry.pitch === undefined){
+                            console.error('A note was neither marked as a rest or given a pitch');
+                        }
+                        if(entry.rest !== undefined && entry.pitch !== undefined){
+                            console.error('A note was marked as a rest but was also given a pitch');
+                        }
+                        if(entry.pitch !== undefined){
+                            notes.push({time, duration: entry.duration, midi: pitchToMidi(entry.pitch)});
+                        }
+                        break;
+                    case 'Backup':
+                        progress[part] -= entry.duration;
+                    case 'Forward':
+                        progress[part] += entry.duration;
+                        break;
+                    
+                    case 'Print':
+                    case 'Attributes':
+                    case 'Direction':
+                        break;
+                    default:
+                        console.error(`Unrecognized MusicXML entry: '${entry._class}'`);
+                        break;
+                }
+                //console.log(entry);
+            });
+        });
+    });
+
+
+
+    let midi: any = undefined;
+
+
     //calculate lowest note per row
-    let minNote = midi.tracks.reduce((x,track)=>Math.min(x,track.notes.reduce((x,note)=>Math.min(x,note.midi),128)),128);
+    let minNote = midi.tracks.reduce((x: any,track: any)=>Math.min(x,track.notes.reduce((x: any,note: any)=>Math.min(x,note.midi),128)),128);
     
     //calculate highest note per row
-    let maxNote = midi.tracks.reduce((x,track)=>Math.max(x,track.notes.reduce((x,note)=>Math.max(x,note.midi),-1)),-1);
+    let maxNote = midi.tracks.reduce((x: any,track: any)=>Math.max(x,track.notes.reduce((x: any,note: any)=>Math.max(x,note.midi),-1)),-1);
 
     //if there was an issue, abort
     if(minNote === 128 || maxNote === -1){
@@ -213,8 +293,8 @@ const SNView: React.FC<Props> = ({midi,options,children}) => {
         data: Note
     };
     let notes: note[] = [];
-    midi.tracks.forEach((track,i)=>{
-        track.notes.forEach(note=>{
+    midi.tracks.forEach((track: any,i: any)=>{
+        track.notes.forEach((note: any)=>{
             notes.push({track: i, data: note});
         });
     });
