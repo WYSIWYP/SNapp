@@ -1,5 +1,4 @@
 import React, {useEffect, useState, useRef} from 'react';
-import {Midi} from '@tonejs/midi';
 import {range} from '../util/Util';
 import {Note} from '@tonejs/midi/dist/Note';
 import MusicXML from 'musicxml-interfaces';
@@ -27,8 +26,9 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
         return <div ref={ref} />;
     }
 
-    let devMode = false;
-    let maxStaffNumber = 2;
+    let devMode = true;
+    //let maxStaffNumber = 2;
+    
     //general spacing
     let noteSymbolSize = 20; //width/height of note symbols
     let strokeWidth = 2;
@@ -73,81 +73,140 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
         duration: number,
         midi: number,
     };
+    type timeSignature = {
+        time: number,
+        beats: number,
+        beatTypes: number,
+    };
 
     //extract note data
 
+    console.log('Render');
     let pitchToMidi = (pitch: {octave: number, step: string, alter?: number})=>{
+        
         let step = ({c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11} as {[index: string]: number})[pitch.step.toLowerCase()];
-        return (pitch.octave-5)*12+step+(pitch.alter===undefined?0:Math.round(pitch.alter));
+        console.log(`${JSON.stringify(pitch)} => ${pitch.octave*12+step+(pitch.alter===undefined?0:Math.round(pitch.alter))}`);
+        return pitch.octave*12+step+(pitch.alter===undefined?0:Math.round(pitch.alter));
     };
-    let parts: {[index: string]: basicNote[]} = {};
-    let progress: {[index: string]: number} = {};
-    xml.measures.forEach(measure=>{
-        Object.keys(measure.parts).forEach(part=>{
-            if(parts[part] === undefined){
-                parts[part] = [];
+    let duration = 0;
+    let parts: {[index: string]: {
+        divisions: number,
+        progress: number,
+        timeSignatures: timeSignature[];
+        notes: basicNote[],
+    }} = {};
+    xml.measures.forEach((measure,i)=>{
+        //console.log(`measure ${i}`);
+        Object.keys(measure.parts).forEach(partName=>{
+            
+            //console.log(`part '${part}'`);
+            if(parts[partName] === undefined){
+                parts[partName] = {
+                    divisions: undefined!,
+                    progress: 0,
+                    timeSignatures: [],
+                    notes: [],
+                };
             }
-            if(progress[part] === undefined){
-                progress[part] = 0;
-            }
+            let part = parts[partName];
             let notes: basicNote[] = [];
-            measure.parts[part].forEach(entry=>{
+            let divisionsToQuarterNotes = (divisions: number)=>{
+                if(part.divisions === undefined){
+                    console.error('A note was defined before timing information was established');
+                    return divisions/24;
+                }
+                return divisions/part.divisions;
+            }
+            measure.parts[partName].forEach(entry=>{
+                //console.log(`entry '${entry._class}'`,entry);
+                console.log(`(${partName} - ${part.progress})`);
                 switch(entry._class){
                     case 'Note':
-                        let time = progress[part];
-                        if(entry.chord !== undefined){
-                            if(notes.length === 0){
-                                console.error('The first note within a measure was marked as being part of a chord');
+                        if(entry.duration !== undefined){ //grace notes do not have a duration - are not displayed
+                            let time = part.progress;
+                            if(entry.chord !== undefined){
+                                if(notes.length === 0){
+                                    console.error('The first note within a measure was marked as being part of a chord');
+                                } else {
+                                    if(notes[notes.length-1].duration != divisionsToQuarterNotes(entry.duration)){
+                                        console.error('Two notes in a chord were of different durations');
+                                    }
+                                    time = notes[notes.length-1].time;
+                                }
                             } else {
-                                time = notes[notes.length-1].time;
+                                part.progress += divisionsToQuarterNotes(entry.duration);
                             }
-                        } else {
-                            progress[part] += entry.duration;
-                        }
-                        if(entry.rest === undefined && entry.pitch === undefined){
-                            console.error('A note was neither marked as a rest or given a pitch');
-                        }
-                        if(entry.rest !== undefined && entry.pitch !== undefined){
-                            console.error('A note was marked as a rest but was also given a pitch');
-                        }
-                        if(entry.pitch !== undefined){
-                            notes.push({time, duration: entry.duration, midi: pitchToMidi(entry.pitch)});
+                            if(entry.rest === undefined && entry.pitch === undefined){
+                                console.error('A note was neither marked as a rest or given a pitch');
+                            }
+                            if(entry.rest !== undefined && entry.pitch !== undefined){
+                                console.error('A note was marked as a rest but was also given a pitch');
+                            }
+                            if(entry.pitch !== undefined){
+                                notes.push({time, duration: divisionsToQuarterNotes(entry.duration), midi: pitchToMidi(entry.pitch)});
+                            }
                         }
                         break;
                     case 'Backup':
-                        progress[part] -= entry.duration;
-                    case 'Forward':
-                        progress[part] += entry.duration;
+                        console.log(`Backup ${divisionsToQuarterNotes(entry.duration)}`);
+                        part.progress -= divisionsToQuarterNotes(entry.duration);
                         break;
-                    
-                    case 'Print':
+                    case 'Forward':
+                        console.log(`Forward ${divisionsToQuarterNotes(entry.duration)}`);
+                        part.progress += divisionsToQuarterNotes(entry.duration);
+                        break;
                     case 'Attributes':
+                        if(entry.divisions !== undefined){
+                            part.divisions = entry.divisions;
+                        }
+                        if(entry.times !== undefined){
+                            if(entry.times.length != 0){
+                                try {
+                                    part.timeSignatures.push({time: part.progress, beats: parseInt(entry.times[0].beats[0]), beatTypes: entry.times[0].beatTypes})
+                                    //console.log(entry)
+                                    console.log(`Time signature (${partName} - ${part.progress}): ${entry.times[0].beats[0]}/${entry.times[0].beatTypes}`)
+                                } catch(e){
+                                    console.error('Failed to parse time signature',entry.times[0]);
+                                }
+                            }
+                        }
+                    case 'Print':
+                        break;
                     case 'Direction':
                         break;
                     default:
                         console.error(`Unrecognized MusicXML entry: '${entry._class}'`);
                         break;
                 }
+                if(part.progress > duration){
+                    duration = part.progress;
+                }
                 //console.log(entry);
             });
+            part.notes.push(...notes);
         });
     });
 
+    let tracks = Object.keys(parts).map(x=>({
+        notes: parts[x].notes,
+        timeSignatures: parts[x].timeSignatures,
+    }));
 
-
-    let midi: any = undefined;
+    console.log(tracks);
 
 
     //calculate lowest note per row
-    let minNote = midi.tracks.reduce((x: any,track: any)=>Math.min(x,track.notes.reduce((x: any,note: any)=>Math.min(x,note.midi),128)),128);
+    let minNote = tracks.reduce((x, track)=>Math.min(x,track.notes.reduce((x, note)=>Math.min(x,note.midi),128)),128);
     
     //calculate highest note per row
-    let maxNote = midi.tracks.reduce((x: any,track: any)=>Math.max(x,track.notes.reduce((x: any,note: any)=>Math.max(x,note.midi),-1)),-1);
+    let maxNote = tracks.reduce((x, track)=>Math.max(x,track.notes.reduce((x, note)=>Math.max(x,note.midi),-1)),-1);
 
     //if there was an issue, abort
-    if(minNote === 128 || maxNote === -1){
+    if(minNote >= 128 || minNote < 0 || maxNote >= 128 || maxNote < 0){
+        console.log(minNote,maxNote);
         throw new Error('An issue was detected while analyzing this work\'s note range');
     }
+
 
     //calculate the height of each row (based upon low/high notes and oct groups)
     let minLine = getNoteLine(minNote);
@@ -161,7 +220,7 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
     let rowHeight = (maxLine-minLine)*noteSymbolSize/2; //not including measure labels
 
     //calculate the number of beats per measure
-    let beatsPerMeasure = midi.header.timeSignatures.length>0?midi.header.timeSignatures[0].timeSignature[0]:4;
+    let beatsPerMeasure = tracks[0].timeSignatures.length>0?tracks[0].timeSignatures[0].beats:4;
     let measureWidth = beatWidth*beatsPerMeasure;
 
     //calculate tne number of measures per row
@@ -173,9 +232,9 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
     horizontalPadding += (availableMeasureSpace-measuresPerRow*measureWidth)/2; //update horizontal padding to center rows
     
     //calculate the number of rows
-    let ticksPerMeasure = midi.header.ppq*beatsPerMeasure; //needs to take into account size of a beat
-    let ticksPerRow = ticksPerMeasure*measuresPerRow;
-    let measureNumber = Math.ceil(midi.durationTicks/ticksPerMeasure);
+    //let ticksPerMeasure = midi.header.ppq*beatsPerMeasure; //needs to take into account size of a beat
+    let beatsPerRow = beatsPerMeasure*measuresPerRow;
+    let measureNumber = Math.ceil(duration/beatsPerMeasure);
     if(measureNumber <= 0){
         throw new Error('Failed to identify number of measures');
     }
@@ -232,9 +291,9 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
         );
     }
 
-    let tickToPos = (tick: number)=>{
-        let row = Math.floor(tick/ticksPerRow);
-        let measure = (tick-row*ticksPerRow)/ticksPerMeasure;
+    let beatsToPos = (beat: number)=>{
+        let row = Math.floor(beat/beatsPerRow);
+        let measure = (beat-row*beatsPerRow)/beatsPerMeasure;
         return {
             row, measure,
             ...rowMeasureToPos(row,measure)
@@ -245,14 +304,14 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
         y: verticalPadding+row*(rowHeight+measureLabelSpace+rowPadding)+rowHeight+measureLabelSpace
     });
 
-    let noteTail = (note: note, i: number)=>{
+    let noteTail = (note: basicNote, i: number)=>{
         let key = 0;
         let boxes: JSX.Element[] = [];
         
-        let line = getNoteLine(note.data.midi)-minLine;
+        let line = getNoteLine(note.midi)-minLine;
         
-        let {row: rowStart, measure: measureStart, x: xStart, y: yStart} = tickToPos(note.data.ticks);
-        let {row: rowEnd, x: xEnd} = tickToPos(note.data.ticks+note.data.durationTicks);
+        let {row: rowStart, measure: measureStart, x: xStart, y: yStart} = beatsToPos(note.time);
+        let {row: rowEnd, x: xEnd} = beatsToPos(note.time+note.duration);
         
         let pushBox = (x1: number, x2: number, y: number)=>{
             boxes.push(<rect key={key++} x={x1} y={y-(line+1)*noteSymbolSize/2} width={x2-x1} height={noteSymbolSize} fill="#777777" fillOpacity={.5}/>);
@@ -275,10 +334,10 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
         );
     }
 
-    let noteHead = (note: note, i: number)=>{
-        let sharp = getNoteIsSharp(note.data.midi);
-        let line = getNoteLine(note.data.midi)-minLine;
-        let {x, y} = tickToPos(note.data.ticks);
+    let noteHead = (note: basicNote, i: number)=>{
+        let sharp = getNoteIsSharp(note.midi);
+        let line = getNoteLine(note.midi)-minLine;
+        let {x, y} = beatsToPos(note.time);
         x += noteSymbolSize/2;
         y -= line*noteSymbolSize/2;
         let triHeight = noteSymbolSize*Math.sqrt(3)/2;
@@ -287,17 +346,6 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
                 :<circle key={i} cx={x} cy={y} r={noteSymbolSize/2} fill="#000000"/>
         );
     }
-
-    type note = {
-        track: number,
-        data: Note
-    };
-    let notes: note[] = [];
-    midi.tracks.forEach((track: any,i: any)=>{
-        track.notes.forEach((note: any)=>{
-            notes.push({track: i, data: note});
-        });
-    });
 
     return (
         <div ref={ref}>
@@ -310,8 +358,8 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
 
                 {devMode?<rect x={horizontalPadding} y={verticalPadding} width={width-horizontalPadding*2} height={height-verticalPadding*2} fill="#ddffdd"/>:null}
                 {range(0,rowNumber).map(i=>row(i))}
-                {notes.map((x,i)=>noteTail(x,i))}
-                {notes.map((x,i)=>noteHead(x,i))}
+                {tracks.map((track,i)=>track.notes.map((x,j)=>noteTail(x,i*10000000+j)))}
+                {tracks.map((track,i)=>track.notes.map((x,j)=>noteHead(x,i*10000000+j)))}
             </svg>
         </div>
     );
