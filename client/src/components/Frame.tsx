@@ -35,7 +35,7 @@ const styleMap = {
         left: '50%',
         height: '100px',
         transform: 'translate(-50%,0px)',
-        backgroundColor: '#ddd',
+        backgroundColor: '#31B7D6',
         lineHeight: '100px',
         minWidth: '600px',
         textAlign: 'center',
