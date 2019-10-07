@@ -1,6 +1,6 @@
 import React, {useEffect, useState, useRef} from 'react';
 import {range} from '../util/Util';
-import {Note} from '@tonejs/midi/dist/Note';
+// import {Note} from '@tonejs/midi/dist/Note';
 import MusicXML from 'musicxml-interfaces';
 
 type Props = {
@@ -49,7 +49,7 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
     
     
     let octaveGroups = [1,1,0,0,0,1,1]; //octaveGroups (C D E / F G A B)
-    let staffLabels = ['𝒯','𝐵'];
+    // let staffLabels = ['𝒯','𝐵'];
     let octaveLines = [undefined,undefined,{
         color: 'red', number: true
     },undefined,undefined,{
@@ -128,7 +128,7 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
                                 if(notes.length === 0){
                                     console.error('The first note within a measure was marked as being part of a chord');
                                 } else {
-                                    if(notes[notes.length-1].duration != divisionsToQuarterNotes(entry.duration)){
+                                    if(notes[notes.length-1].duration !== divisionsToQuarterNotes(entry.duration)){
                                         console.error('Two notes in a chord were of different durations');
                                     }
                                     time = notes[notes.length-1].time;
@@ -160,7 +160,7 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
                             part.divisions = entry.divisions;
                         }
                         if(entry.times !== undefined){
-                            if(entry.times.length != 0){
+                            if(entry.times.length !== 0){
                                 try {
                                     part.timeSignatures.push({time: part.progress, beats: parseInt(entry.times[0].beats[0]), beatTypes: entry.times[0].beatTypes})
                                     //console.log(entry)
@@ -170,6 +170,7 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
                                 }
                             }
                         }
+                        break;
                     case 'Print':
                         break;
                     case 'Direction':
@@ -246,19 +247,19 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
     let measure = (x: number, y: number, i: number)=>{
         let key = 0;
         let elements: JSX.Element[] = [];
-        elements.push(<rect key={key++} x={x+measureWidth-strokeWidth/2} y={y+measureLabelSpace-strokeWidth/2} width={strokeWidth} height={rowHeight+strokeWidth} fill="#000000"/>);
+        elements.push(<rect key={key++} x={measureWidth-strokeWidth/2} y={measureLabelSpace-strokeWidth/2} width={strokeWidth} height={rowHeight+strokeWidth} fill="#000000"/>);
         
         for(let j = minLine; j <= maxLine; j++){
             let octaveLine = octaveLines[j%7];
             if(octaveLine !== undefined){
-                let lineY = y+measureLabelSpace+rowHeight-(j-minLine)*noteSymbolSize/2;
-                elements.push(<rect key={key++} x={x+strokeWidth/2} y={lineY-strokeWidth/2} width={measureWidth-strokeWidth} height={strokeWidth} fill={octaveLine.color}/>);
+                let lineY = measureLabelSpace+rowHeight-(j-minLine)*noteSymbolSize/2;
+                elements.push(<rect key={key++} x={strokeWidth/2} y={lineY-strokeWidth/2} width={measureWidth-strokeWidth} height={strokeWidth} fill={octaveLine.color}/>);
                 if(i%measuresPerRow===0 && octaveLine.number === true){
-                    elements.push(<text x={x-strokeWidth} y={lineY} fontSize={measureLabelSpace} textAnchor="end" dominantBaseline="middle">{Math.floor(j/7)+2}</text>);
+                    elements.push(<text x={-strokeWidth} key={key++} y={lineY} fontSize={measureLabelSpace} textAnchor="end" dominantBaseline="middle">{Math.floor(j/7)+2}</text>);
                 }
                 if(j < maxLine){
                     for(let i = 1; i < beatsPerMeasure; i++){
-                        let tickX = x+measureWidth/beatsPerMeasure*i;
+                        let tickX = measureWidth/beatsPerMeasure*i;
                         elements.push(<rect key={key++} x={tickX-strokeWidth/2} y={lineY-tickSize} width={strokeWidth} height={tickSize-strokeWidth/2} fill="#000000"/>);
                     }
                 }
@@ -266,28 +267,28 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
         }
 
         return (
-            <React.Fragment key={i}>
-                {devMode?<rect x={x} y={y} width={measureWidth} height={measureLabelSpace-strokeWidth/2} fill="#ffdddd"/>:null}
-                <text x={x+strokeWidth} y={y+measureLabelSpace-strokeWidth} fontSize={measureLabelSpace}>{i+1}</text>
+            <g id={`measure${i+1}`} key={i} transform={`translate(${x}, ${y})`}>
+                {devMode?<rect width={measureWidth} height={measureLabelSpace-strokeWidth/2} fill="#ffdddd"/>:null}
+                <text x={strokeWidth} y={measureLabelSpace-strokeWidth} fontSize={measureLabelSpace}>{i+1}</text>
                 {elements}
-            </React.Fragment>
+            </g>
         );
     }
 
     let row = (i: number)=>{
+        let x = horizontalPadding;
         let y = verticalPadding+i*(rowHeight+measureLabelSpace+rowPadding)
         return (
-            <React.Fragment key={i}>
-                {devMode?<rect x={horizontalPadding} y={y+measureLabelSpace} width={staffLabelSpace} height={rowHeight} fill="#ffdddd"/>:null}
-                {devMode?<rect x={horizontalPadding+staffLabelSpace} y={y+measureLabelSpace} width={octaveLabelSpace} height={rowHeight} fill="#ffddff"/>:null}
-                
-                <text x={horizontalPadding+staffLabelSpace} y={y+measureLabelSpace+rowHeight/2} fontSize={staffLabelSpace*1.5} textAnchor="end" dominantBaseline="middle">𝒯</text>
+            <g id={`row${i}`} key={i} transform={`translate(${x}, ${y})`}>
+                {devMode?<rect y={measureLabelSpace} width={staffLabelSpace} height={rowHeight} fill="#ffdddd"/>:null}
+                {devMode?<rect x={staffLabelSpace} y={measureLabelSpace} width={octaveLabelSpace} height={rowHeight} fill="#ffddff"/>:null}
+                <text x={staffLabelSpace} y={measureLabelSpace+rowHeight/2} fontSize={staffLabelSpace*1.5} textAnchor="end" dominantBaseline="middle">𝒯</text>
+                <rect x={staffLabelSpace+octaveLabelSpace-strokeWidth/2} y={measureLabelSpace-strokeWidth/2} width={strokeWidth} height={rowHeight+strokeWidth} fill="#000000"/>
 
-                <rect x={horizontalPadding+staffLabelSpace+octaveLabelSpace-strokeWidth/2} y={y+measureLabelSpace-strokeWidth/2} width={strokeWidth} height={rowHeight+strokeWidth} fill="#000000"/>
                 {range(0,i<rowNumber-1?measuresPerRow:measureNumber-(rowNumber-1)*measuresPerRow).map(j=>
-                    measure(horizontalPadding+staffLabelSpace+octaveLabelSpace+j*measureWidth,y,i*measuresPerRow+j)
+                    measure(staffLabelSpace+octaveLabelSpace+j*measureWidth,0,i*measuresPerRow+j)
                 )}
-            </React.Fragment>
+            </g>
         );
     }
 
@@ -347,19 +348,28 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
         );
     }
 
+    let devSvg = devMode ? (
+        <g id="devMode">
+            {<rect x={0} y={0} width={width} height={height} fill="#ddddff"/>}
+            {<circle cx={0} cy={0} r="40" stroke="black" strokeWidth="3" fill="red"/>}
+            {<circle cx={width} cy={0} r="40" stroke="black" strokeWidth="3" fill="red"/>}
+            {<circle cx={width} cy={`${height}`} r="40" stroke="black" strokeWidth="3" fill="red"/>}
+            {<circle cx={0} cy={height} r="40" stroke="black" strokeWidth="3" fill="red"/>}
+            {<rect x={horizontalPadding} y={verticalPadding} width={width-horizontalPadding*2} height={height-verticalPadding*2} fill="#ddffdd"/>}
+        </g>
+    ) : null;
+
     return (
         <div ref={ref}>
             <svg viewBox={`0 0 ${width} ${height}`} width={`${width}`} height={`${height}`}>
-                {devMode?<rect x={0} y={0} width={width} height={height} fill="#ddddff"/>:null}
-                {devMode?<circle cx={0} cy={0} r="40" stroke="black" strokeWidth="3" fill="red" />:null}
-                {devMode?<circle cx={width} cy={0} r="40" stroke="black" strokeWidth="3" fill="red" />:null}
-                {devMode?<circle cx={width} cy={`${height}`} r="40" stroke="black" strokeWidth="3" fill="red" />:null}
-                {devMode?<circle cx={0} cy={height} r="40" stroke="black" strokeWidth="3" fill="red" />:null}
-
-                {devMode?<rect x={horizontalPadding} y={verticalPadding} width={width-horizontalPadding*2} height={height-verticalPadding*2} fill="#ddffdd"/>:null}
-                {range(0,rowNumber).map(i=>row(i))}
-                {tracks.map((track,i)=>track.notes.map((x,j)=>noteTail(x,i*10000000+j)))}
-                {tracks.map((track,i)=>track.notes.map((x,j)=>noteHead(x,i*10000000+j)))}
+                {devSvg}
+                <g id="measures">
+                    {range(0,rowNumber).map(i=>row(i))}
+                </g>
+                <g id="notes" opacity = "1.0">
+                    {tracks.map((track,i)=>track.notes.map((x,j)=>noteTail(x,i*10000000+j)))}
+                    {tracks.map((track,i)=>track.notes.map((x,j)=>noteHead(x,i*10000000+j)))}
+                </g>
             </svg>
         </div>
     );
