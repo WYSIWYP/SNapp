@@ -3,11 +3,33 @@ import React, {CSSProperties, useState, useRef, useContext, useEffect} from 'rea
 type Props = {
     header: string,
     fontSize?: number,
-    SideMenu?: React.ReactNode,
+    SideMenu?: React.ReactNode,    
     ShowSideMenu?: boolean,
 };
 
-const Frame: React.FC<Props> = ({header,fontSize,SideMenu,ShowSideMenu,children}) => {
+const Frame: React.FC<Props> = ({header,fontSize,SideMenu: SideBar,ShowSideMenu,children}) => {
+    
+    let [sideBarWidth,setSideBarWidth] = useState(0);
+
+    let easeInOutCubic = function (t: number) { return t<.5 ? 4*t*t*t : (t-1)*(2*t-2)*(2*t-2)+1 };
+    useEffect(()=>{
+        let width = sideBarWidth;
+        let interval = setInterval(()=>{
+            if(ShowSideMenu && width < 1){
+                width += .1;
+                setSideBarWidth(width);
+            } else if(!ShowSideMenu && width > 0){
+                width -= .1;
+                setSideBarWidth(width);
+            } else {
+                clearInterval(interval);
+            }
+        },20);
+        return ()=>{
+            clearInterval(interval);
+        }
+    },[ShowSideMenu]);
+
     
 
     return (
@@ -22,38 +44,11 @@ const Frame: React.FC<Props> = ({header,fontSize,SideMenu,ShowSideMenu,children}
                 </div> */}
             </div>
 
-            
-            <div style={styles.sideBar}>
-                    <div style={styles.sideBarTop}>
-                        Export 
-                        Import
-                        Close X
-                    </div>
-                    <div style={styles.sideBarContent}>
-                        <div style={styles.line}>
-                            <div style={styles.name}>Staff Scale</div>
-                            <div style={styles.option}>Medium </div>
-                        </div>
-
-                        <div style={styles.line}>
-                            <div style={styles.name}>Horizontal Spacing</div>
-                            <div style={styles.option}>10 px </div>
-                        </div>
-
-                        <div style={styles.line}>
-                            <div style={styles.name}>Vertical Spacing</div>
-                            <div style={styles.option}> 20 px </div>
-                        </div>
-
-
-                    </div>
+            <div style={{...styles.sideBar, ...({width: `${easeInOutCubic(sideBarWidth)*300}px`})}}>
+                {ShowSideMenu||sideBarWidth!=0?SideBar:null}
             </div>
-
-
-            <div style={styles.page}>
+            <div style={{...styles.page, ...({width: `calc(100% - ${easeInOutCubic(sideBarWidth)*300}px)`})}}>
                 {children}
-
-                
             </div>
         </div>
     );
@@ -105,7 +100,7 @@ const styleMap = {
         letterSpacing: '0.15em',
         left: '50%',
         top:'0px',
-        height: '80px',
+        height: '100px',
         transform: 'translate(-50%,0px)',
         backgroundColor: '#31B7D6',
         minWidth: '600px',
@@ -115,34 +110,16 @@ const styleMap = {
     page: {
         top: '100px',
         height: 'calc(100% - 100px)',
+        overflow: 'auto',
     },
     sideBar:{
-        top: '80px',
+        top: '100px',
         height: 'calc(100% - 100px)',
-
         borderLeft: '1px solid #6F6F6F',
-        boxSizing: 'border-box',
-        position:'relative',
-
-        width:'20%',
-        float:'right',
-
+        left: 'auto',
+        right: '0px',
     },
 
-    sideBarTop:{
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderBottom: '1px solid #6F6F6F',
-        boxSizing: 'border-box',
-        height: '80px',
-        display:'flex',
-        color:'#31B7D6',
-        fontSize: '25px',
-        fontWeight:'bold',
-        cursor: 'pointer',
-        position: 'relative',
-        width: 'auto',
-    }
 
 
 } as const;

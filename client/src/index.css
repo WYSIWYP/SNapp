@@ -1,6 +1,6 @@
 body {
     margin: 0;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: 'Open_Sans';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -52,4 +52,9 @@ option {
 /* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
     background: #929292;
+}
+
+@font-face {
+    font-family: 'Open_Sans';
+    src: local('Open_Sans'), url(./fonts/open-sans-v17-latin-regular.woff) format('woff');
 }
