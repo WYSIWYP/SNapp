@@ -4,7 +4,7 @@ import SNView from '../components/SNView';
 import Frame from '../components/Frame';
 import Connection from '../util/Connection';
 import MusicXML from 'musicxml-interfaces';
-import background from '../images/dropDown.svg'
+import dropDown from '../images/dropDown.svg'
 
 
 
@@ -14,6 +14,8 @@ const Convert: React.FC<Props> = () => {
     let [show,setShow] = useState(false);
     let [xml,setXML] = useState<undefined | MusicXML.ScoreTimewise>(undefined);
     let [item, setItem] = useState('Grapefruit');
+    let [item2, setItem2] = useState('comp411');
+
     useEffect(()=>{
         let canceled = false;
         (async ()=>{
@@ -46,6 +48,15 @@ const Convert: React.FC<Props> = () => {
                             <option value="mango">Mango</option>
                         </select>
                     </div>
+                    <div style={styles.line}>
+                        <div style={styles.name}>Interesting classes</div>
+                        <select style={styles.select} value={item2} onChange={(e) => {setItem2(e.target.value);}}> 
+                            <option value="comp411">comp411</option>
+                            <option value="comp110">comp110</option>
+                            <option value="math101">math101</option>
+                            <option value="physics101">physics101</option>
+                        </select>
+                    </div>
                 </div>
             </label>
         </form>
@@ -61,8 +72,9 @@ const Convert: React.FC<Props> = () => {
                 </div>
 
                 <div style={styles.right} onClick={()=>{setShow(true);}} >
-                    <svg style={styles.svg} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                    Preferences
+                    
+                    {show==true?<></>:<><svg style={styles.svg} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Preferences</>}
+
                 </div>
 
                 <div style={styles.right}>
@@ -70,9 +82,9 @@ const Convert: React.FC<Props> = () => {
                     Save as PDF
                 </div>
             </div>
-            <div style={styles.snv}>
+            {/* <div style={styles.snv}> */}
                 {/*xml===undefined?null:<SNView xml={xml} />*/null}
-            </div>
+            {/* </div> */}
         </Frame>
     
 
@@ -88,9 +100,9 @@ const styleMap = {
     svg:{
         marginRight:'7px',
     },
-    snv:{
-        top: '200px',
-    },
+    // snv:{
+    //     top: '200px',
+    // },
 
     left:{
         display:'flex',
@@ -142,7 +154,8 @@ const styleMap = {
         display:'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        borderBottom: '1px solid #6F6F6F',
+
+        borderBottom: '1px solid #BBBBBB',
         boxSizing: 'border-box',
         height: '80px',
         color:'#31B7D6',
@@ -157,27 +170,27 @@ const styleMap = {
         marginTop: '40px',
     },
     line:{
+        fontSize: '20px',
         margin: '30px 0px',
         justifyContent: 'center',
-        alignItems: 'center',
+        alignItems: 'baseline',
         display: 'flex',
         position:'relative',
-        height:'50px',
+        height: 'auto',
 
     },
     name:{
         position:'relative',
         width: '50%',
-        paddingTop: '6%',
     },
     select:{
+        fontSize: '20px',
+        height: '60px',
         backgroundPosition: '95% center',
         backgroundRepeat: 'no-repeat',
-        backgroundImage: `url(${background})`,
+        backgroundImage: `url(${dropDown})`,
         padding: '0.5em 1.5em',
-
         border: '1px solid #6F6F6F',
-        height:'40px',
         boxSizing: 'border-box',
         borderRadius: '10px',
         position:'relative',

@@ -10,8 +10,11 @@ type Props = {
 const Frame: React.FC<Props> = ({header,fontSize,SideMenu: SideBar,ShowSideMenu,children}) => {
     
     let [sideBarWidth,setSideBarWidth] = useState(0);
+    let [currOpacity,setOpacity] = useState(0);
 
-    let easeInOutCubic = function (t: number) { return t<.5 ? 4*t*t*t : (t-1)*(2*t-2)*(2*t-2)+1 };
+    let easeInQuad = function (t: number) { return t<0?0:t*t };
+    
+
     useEffect(()=>{
         let width = sideBarWidth;
         let interval = setInterval(()=>{
@@ -24,7 +27,7 @@ const Frame: React.FC<Props> = ({header,fontSize,SideMenu: SideBar,ShowSideMenu,
             } else {
                 clearInterval(interval);
             }
-        },20);
+        },25);
         return ()=>{
             clearInterval(interval);
         }
@@ -44,10 +47,10 @@ const Frame: React.FC<Props> = ({header,fontSize,SideMenu: SideBar,ShowSideMenu,
                 </div> */}
             </div>
 
-            <div style={{...styles.sideBar, ...({width: `${easeInOutCubic(sideBarWidth)*300}px`})}}>
-                {ShowSideMenu||sideBarWidth!=0?SideBar:null}
+            <div style={{...styles.sideBar, ...({width: `${easeInQuad(sideBarWidth)*350}px`})}}>
+                {sideBarWidth!=0?SideBar:null}
             </div>
-            <div style={{...styles.page, ...({width: `calc(100% - ${easeInOutCubic(sideBarWidth)*300}px)`})}}>
+            <div style={{...styles.page, ...({width: `calc(100% - ${easeInQuad(sideBarWidth)*350}px)`})}}>
                 {children}
             </div>
         </div>
@@ -55,43 +58,44 @@ const Frame: React.FC<Props> = ({header,fontSize,SideMenu: SideBar,ShowSideMenu,
 };
 
 const styleMap = {
-    name:{
-        position:'relative',
-        width: '50%',
-        paddingTop: '6%',
-    },
-    option:{
-        paddingTop: '5%',
-        background: '#F5F5F5',
-        border: '1px solid #6F6F6F',
-        boxSizing: 'border-box',
-        borderRadius: '10px',
-        position:'relative',
-        width: '50%',
-        textAlign:'center',
+    // name:{
+    //     position:'relative',
+    //     width: '50%',
+    //     paddingTop: '6%',
+    // },
+    // option:{
+    //     paddingTop: '5%',
+    //     background: '#F5F5F5',
+    //     border: '1px solid #6F6F6F',
+    //     boxSizing: 'border-box',
+    //     borderRadius: '10px',
+    //     position:'relative',
+    //     width: '50%',
+    //     textAlign:'center',
 
-    },
-    line:{
+    // },
+    // line:{
 
-        margin: '30px 0px',
-        justifyContent: 'center',
-        alignItems: 'center',
-        display: 'flex',
-        position:'relative',
-        height:'50px',
+    //     margin: '30px 0px',
+    //     justifyContent: 'center',
+    //     alignItems: 'center',
+    //     display: 'flex',
+    //     position:'relative',
+    //     height:'50px',
 
 
-    },
-    sideBarContent:{
-        padding: '0 20px',
-        position:'relative',
-        marginTop: '40px',
-    },
+    // },
+    // sideBarContent:{
+    //     padding: '0 20px',
+    //     position:'relative',
+    //     marginTop: '40px',
+    // },
     appContainer: {
         overflow: 'hidden',
     },
     header: {
-        // fontFamily: 'open sans',
+
+        paddingTop: '8px',
         fontStyle: 'normal',
         fontWeight: 'normal',
         fontSize: '42px',
@@ -113,9 +117,10 @@ const styleMap = {
         overflow: 'auto',
     },
     sideBar:{
+        boxShadow: '0px 1px 9px rgba(0, 0, 0, 0.15)',
         top: '100px',
         height: 'calc(100% - 100px)',
-        borderLeft: '1px solid #6F6F6F',
+        borderLeft: '1px solid #BBBBBB',
         left: 'auto',
         right: '0px',
     },
