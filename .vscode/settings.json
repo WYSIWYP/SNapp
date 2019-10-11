@@ -10,4 +10,5 @@
     "git.enableSmartCommit": true,
     "typescript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces": false,
     "typescript.preferences.importModuleSpecifier": "relative",
+    "git.ignoreLimitWarning": true,
 }
