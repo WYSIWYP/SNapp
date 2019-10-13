@@ -16,13 +16,20 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
     let [score,setScore] = useState<Score | undefined>(undefined);
 
     useEffect(()=>{
+        let width: number = undefined!;
         let callback = ()=>{
-            setWidth(ref.current!.getBoundingClientRect().width);
+            let newWidth = ref.current!.getBoundingClientRect().width;
+            if(width != newWidth){
+                width = newWidth;
+                setWidth(newWidth);
+            }
         }
         window.addEventListener("resize", callback);
+        let interval = setInterval(callback,20);
         callback();
         return ()=>{
             window.removeEventListener("resize", callback);
+            clearInterval(interval);
         }
     },[]);
 
@@ -33,10 +40,10 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
     }, [xml]);
 
     if(score === undefined || width === undefined){ //skip first render when width is unknown or parsing is incomplete
-        return <div ref={ref}>Loading...</div>;
+        return <div ref={ref}></div>; //<div ref={ref}>Loading...</div>; //need to add styling for the loading message.. the empty div is just to set the ref value
     }
 
-    let devMode = true;
+    let devMode = false;
     //let maxStaffNumber = 2;
     
     //general spacing
@@ -239,7 +246,7 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
     ) : null;
 
     return (
-        <div ref={ref}>
+        <div ref={ref} style={{width: '100%', height: 'auto'}}>
             <svg viewBox={`0 0 ${width} ${height}`} width={`${width}`} height={`${height}`}>
                 {devSvg}
                 <g id="measures">

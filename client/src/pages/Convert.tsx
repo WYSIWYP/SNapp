@@ -82,9 +82,10 @@ const Convert: React.FC<Props> = () => {
                     Save as PDF
                 </div>
             </div>
-            {/* <div style={styles.snv}> */}
-                {/*xml===undefined?null:<SNView xml={xml} />*/null}
-            {/* </div> */}
+            <div style={styles.SNView}>
+                {xml===undefined?null:<SNView xml={xml} />}
+            </div>
+            
         </Frame>
     
 
@@ -133,10 +134,13 @@ const styleMap = {
         cursor: 'pointer',
     },
 
-    subHeader:{
+    subHeader: {
         // background:'blue',
         height: '80px',
         // top:'80px',
+    },
+    SNView: {
+        top: '80px',
     },
     sideBar:{
         minWidth: '300px',
