@@ -1,61 +1,97 @@
 import React, {CSSProperties, useState, useEffect, Fragment} from 'react';
-import {RouteComponentProps, Link, navigate} from "@reach/router";
+import {RouteComponentProps, navigate} from "@reach/router";
 import Frame from '../components/Frame';
 import svg from '../images/upload.svg';
 import MusicXML from 'musicxml-interfaces';
+import {useCurrentFileState} from '../contexts/CurrentFile';
 
 type Props = {} & RouteComponentProps;
 
 const Menu: React.FC<Props> = () => {
     type recentFile = {
-        name: string,
+        file_name: string,
         date: number,
-        data: MusicXML.ScoreTimewise,
+        id: string,
     };
 
-    let [state,setState] = useState<recentFile[]>(undefined!);
+    let [recentFiles,setRecentFiles] = useState<recentFile[]>(undefined!);
+
+    let [,setCurrentFile] = useCurrentFileState();
 
     useEffect(()=>{
-
-        let recent = null;
+        let recent: recentFile[] = null!;
         try {
             recent = JSON.parse(localStorage.getItem('recent_files')!);
         } catch(e){}
-
         if(recent === null){
-            let now = new Date().getTime();
-            let recentFiles: recentFile[] = [];
-            let recentFilesLength = Math.floor(Math.random()*6)+1;
-            for(let i = 0; i < recentFilesLength; i++){
-                recentFiles.push({
-                    name: [
-                        'A Hard Days Night',
-                        'Be Mine Tonight',
-                        'Baa, Baa, Black Sheep',
-                        'Twinkle Twinkle Little Star',
-                        'Tchaikovsky – Swan Lake Theme',
-                        'Fur Elise',
-                    ][i],
-                    date: now-(i*2+1)*24*60*60*1000, data: undefined!
-                });
-            }
-            localStorage.setItem('recent_files',JSON.stringify(recentFiles));
-            setState([]);
-        } else {
-            localStorage.removeItem('recent_files');
-            setState(recent);
+            recent = [];
         }
+        setRecentFiles(recent);
     },[]);
+    
+    const loadFile = (x: recentFile)=>{
+        try {
+            let parsed = JSON.parse(localStorage.getItem(x.id)!);
+
+            // Set this song as the current work in the global context
+            setCurrentFile({type: 'set', val: {id: x.id, file_name: x.file_name, data: parsed}});
+
+            // Set this song as the current work in localStorage
+            localStorage.setItem('current_file',x.id);
+
+            navigate('convert');
+        } catch(e) {
+            console.error(e);
+        }
+    };
+
+    const uploadFile = (e: React.ChangeEvent<HTMLInputElement>)=>{
+        let fileName = (e.target as any).files[0].name.replace(/\.musicxml$/ig,'');
+        try {
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let parsed = MusicXML.parseScore((e.target as any).result);
+
+                    try {
+                        let id = `file_${Array.from({length: 16},()=>Math.floor(Math.random()*16).toString(16)).join('')}`;
+                        
+                        // Set this song as the current work in the global context
+                        setCurrentFile({type: 'set', val: {id, file_name: fileName, data: parsed}});
+
+                        // Set this song as the current work in localStorage
+                        localStorage.setItem(id,JSON.stringify(parsed));
+                        localStorage.setItem('current_file',id);
+
+                        // Add this song to the recent songs list
+                        let newRecentFiles = recentFiles.map(x=>x);
+                        newRecentFiles.push({file_name: fileName, date: new Date().getTime(), id});
+                        localStorage.setItem('recent_files',JSON.stringify(newRecentFiles));
+                        
+                    } catch(e){
+                        console.error(e);
+                    }
+
+                    navigate('convert');
+                } catch(e) {
+                    console.error(e);
+                }
+            };
+            reader.readAsText((e.target as any).files[0]);
+        } catch(e){
+            console.error(e);
+        }
+    };
 
     return (
-        <Frame header="SNapp" fontSize={55}>
-            {state === undefined?null:<div style={styles.container}>
+        <Frame header="SNapp">
+            {recentFiles === undefined?null:<div style={styles.container}>
                 <div style={{...styles.item, flex: '1 0 auto'}} />
                 <div style={{...styles.item, maxWidth: '720px'}}>
                     SNapp implements a simpler and more intuitive music notation so that
                     musicians can spend less time learning music and more time playing it!
                 </div>
-                {state.length===0?<>
+                {recentFiles.length===0?<>
                     <div style={{...styles.item, flex: '.2 0 auto'}} />
                     <div style={styles.item}>
                         Try uploading a MusicXML file below
@@ -67,10 +103,10 @@ const Menu: React.FC<Props> = () => {
                     <div style={{...styles.item, flex: '.08 0 auto'}} />
                     <div style={{...styles.item, ...styles.recentFiles}}>
                         <div style={{...styles.recentFilesInner}}>
-                            {state.map((x,i)=><Fragment key={i}>
-                                <div style={styles.recentFilesItem} onClick={()=>{navigate('convert');}}>
+                            {recentFiles.map(x=><Fragment key={x.id}>
+                                <div style={styles.recentFilesItem} onClick={()=>{loadFile(x);}}>
                                     <div style={{...styles.recentFilesItemInner, flex: '0 1 auto', fontWeight: 'bold'}}>
-                                        {x.name}
+                                        {x.file_name}
                                     </div>
                                     <div style={{...styles.recentFilesItemInner, width: '10px', flex: '1 1 auto'}} />
                                     <div style={{...styles.recentFilesItemInner, flex: '0 100000 auto', fontSize: '22px'}}>
@@ -84,9 +120,10 @@ const Menu: React.FC<Props> = () => {
                     <div style={{...styles.item, flex: '.24 0 auto'}} />
                 </>}
                 <div style={styles.item}>
-                    <span style={styles.link} onClick={()=>{navigate('convert');}}>
-                        <img src={svg} style={styles.icon}/>
+                    <span style={styles.link} onClick={()=>{}}>
+                        <img src={svg} style={styles.icon} alt=""/>
                         Upload MusicXML File
+                        <input style={styles.fileInput} type="file" title="Click to upload" accept=".musicxml" onChange={(e)=>{uploadFile(e);}}></input>
                     </span>
                 </div>
                 <div style={{...styles.item, flex: '1 0 auto'}} />
@@ -112,6 +149,15 @@ const styleMap = {
         textAlign: 'center',
         fontSize: '21px',
         flex: '0 0 auto',
+    },
+    fileInput: {
+        position: 'absolute',
+        top: '0px',
+        left: 'calc(50% - 170px)',
+        width: '340px',
+        height: '100%',
+        cursor: 'pointer',
+        opacity: 0,
     },
     recentFiles: {
         color: '#31B7D6',

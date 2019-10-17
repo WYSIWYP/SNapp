@@ -4,6 +4,7 @@ import {range} from '../util/Util';
 import MusicXML from 'musicxml-interfaces';
 import {parse} from '../parser/MusicXML'
 import {basicNote, Score} from '../parser/Types'
+import {colorPreferenceStyles, usePreferencesState} from '../contexts/Preferences';
 
 type Props = {
     xml: MusicXML.ScoreTimewise,
@@ -14,15 +15,23 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
     const ref = useRef(null! as HTMLDivElement);
     let [width,setWidth] = useState<number | undefined>(undefined);
     let [score,setScore] = useState<Score | undefined>(undefined);
+    let [preferences,] = usePreferencesState();
 
     useEffect(()=>{
+        let width: number = undefined!;
         let callback = ()=>{
-            setWidth(ref.current!.getBoundingClientRect().width);
+            let newWidth = ref.current!.getBoundingClientRect().width;
+            if(width !== newWidth){
+                width = newWidth;
+                setWidth(newWidth);
+            }
         }
         window.addEventListener("resize", callback);
+        let interval = setInterval(callback,20);
         callback();
         return ()=>{
             window.removeEventListener("resize", callback);
+            clearInterval(interval);
         }
     },[]);
 
@@ -33,10 +42,10 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
     }, [xml]);
 
     if(score === undefined || width === undefined){ //skip first render when width is unknown or parsing is incomplete
-        return <div ref={ref}>Loading...</div>;
+        return <div ref={ref}></div>; //<div ref={ref}>Loading...</div>; //need to add styling for the loading message.. the empty div is just to set the ref value
     }
 
-    let devMode = true;
+    let devMode = false;
     //let maxStaffNumber = 2;
     
     //general spacing
@@ -194,7 +203,7 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
         let {row: rowEnd, x: xEnd} = beatsToPos(note.time+note.duration);
         
         let pushBox = (x1: number, x2: number, y: number)=>{
-            boxes.push(<rect key={key++} x={x1} y={y-(line+1)*noteSymbolSize/2} width={x2-x1} height={noteSymbolSize} fill="#777777" fillOpacity={.5}/>);
+            boxes.push(<rect key={key++} x={x1} y={y-(line+1)*noteSymbolSize/2} width={x2-x1} height={noteSymbolSize} fill={colorPreferenceStyles[preferences.noteDurationColor]} fillOpacity={.5}/>);
         }
         while(rowStart < rowEnd){
             //only executes rarely so it is faster to compute this value in the loop
@@ -206,7 +215,7 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
             yStart = y;
         }
         pushBox(xStart,xEnd,yStart);
-        
+    
         return (
             <React.Fragment key={i}>
                 {boxes}
@@ -222,8 +231,8 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
         y -= line*noteSymbolSize/2;
         let triHeight = noteSymbolSize*Math.sqrt(3)/2;
         return (
-            sharp?<polygon key={i} points={`${x},${y-triHeight/2} ${x+noteSymbolSize/2},${y+triHeight/2} ${x-noteSymbolSize/2},${y+triHeight/2}`} fill="#000000"/>
-                :<circle key={i} cx={x} cy={y} r={noteSymbolSize/2} fill="#000000"/>
+            sharp?<polygon key={i} points={`${x},${y-triHeight/2} ${x+noteSymbolSize/2},${y+triHeight/2} ${x-noteSymbolSize/2},${y+triHeight/2}`} fill={colorPreferenceStyles[preferences.noteSymbolColor]}/>
+                :<circle key={i} cx={x} cy={y} r={noteSymbolSize/2} fill={colorPreferenceStyles[preferences.noteSymbolColor]}/>
         );
     }
 
@@ -239,7 +248,7 @@ const SNView: React.FC<Props> = ({xml,options,children}) => {
     ) : null;
 
     return (
-        <div ref={ref}>
+        <div id="snview" ref={ref} style={{width: '100%', height: 'auto', overflow: 'hidden', minWidth: '350px'}}>
             <svg viewBox={`0 0 ${width} ${height}`} width={`${width}`} height={`${height}`}>
                 {devSvg}
                 <g id="measures">

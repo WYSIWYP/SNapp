@@ -36,6 +36,9 @@ option {
     padding: none;
 }
 
+input[type=file]::-webkit-file-upload-button {
+    display: none;
+}
 
 ::-webkit-scrollbar {
     width: 10px;
