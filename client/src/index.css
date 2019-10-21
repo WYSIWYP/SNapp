@@ -61,3 +61,34 @@ input[type=file]::-webkit-file-upload-button {
     font-family: 'Open_Sans';
     src: local('Open_Sans'), url(./fonts/open-sans-v17-latin-regular.woff) format('woff');
 }
+
+.animated {
+    transition: width 1s;
+}
+.open{
+    width: 350px;
+}
+.close{
+    width: 0px;
+}
+
+/* @keyframes slideRight {
+  from {
+    width: 350px; 
+  }
+
+  to {
+    width: 0px;
+  }
+}
+
+
+@keyframes slideLeft {
+  from {
+    width: 0px; 
+  }
+
+  to {
+    width: 350px;
+  }
+} */

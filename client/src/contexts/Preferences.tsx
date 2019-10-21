@@ -1,4 +1,4 @@
-import React, {createContext, useContext, useReducer, useRef} from 'react';
+import React, {createContext, useContext, useReducer, useRef} from "react";
 
 export const colorPreferenceStyles = {
     black: "#000000",
@@ -8,32 +8,67 @@ export const colorPreferenceStyles = {
     yellow: "#FFFF00",
     green: "#00FF00",
     blue: "#0000FF",
-    purple: "purple",
-}
-export const colorPreferenceOptions = Object.keys(colorPreferenceStyles) as (keyof typeof colorPreferenceStyles)[];
-type colorPreferenceOption = keyof typeof colorPreferenceStyles;
+    purple: "purple"
+};
+export const colorPreferenceOptions = Object.keys(
+    colorPreferenceStyles
+) as (keyof typeof colorPreferenceStyles)[];
+export type colorPreferenceOption = (typeof colorPreferenceOptions)[number];
+
+export const scalePreferenceOptions = ['small', 'medium', 'large'] as const;
+export type scalePreferenceOption = (typeof scalePreferenceOptions)[number];
+
+export const spacingPreferenceOptions = [1, 2, 3, 4] as const;
+export type spacingPreferenceOption = (typeof spacingPreferenceOptions)[number];
+
+export const noteHeadPreferenceOptions = ["▲", "▼", "●", "○", "⨂","◼","□"] as const;
+export type noteHeadPreferenceOption = (typeof noteHeadPreferenceOptions)[number];
+
+
+
+
 export type state = {
-    noteDurationColor: colorPreferenceOption,
-    noteSymbolColor: colorPreferenceOption
+    noteDurationColor: colorPreferenceOption;
+    noteSymbolColor: colorPreferenceOption;
+    staffScale: scalePreferenceOption;
+    horizontalSpacing: spacingPreferenceOption;
+    verticalSpacing: spacingPreferenceOption;
+    noteScale: scalePreferenceOption;
+    naturalNoteShape: noteHeadPreferenceOption,
+    sharpNoteShape: noteHeadPreferenceOption;
+    flatNoteShape: noteHeadPreferenceOption;
 };
 export type action = {
-    type: 'set', val: Partial<state>,
+    type: "set";
+    val: Partial<state>;
 };
 
 let initialState: state = {
-    noteDurationColor: 'grey',
-    noteSymbolColor: 'black',
+    noteDurationColor: "grey",
+    noteSymbolColor: "black",
+    staffScale: 'medium',
+    horizontalSpacing: 2,
+    verticalSpacing: 2,
+    noteScale: 'medium',
+    naturalNoteShape: '●',
+    sharpNoteShape: '▲',
+    flatNoteShape: '▼',
 };
 
-export const PreferencesContext = createContext(undefined! as [state, React.Dispatch<action>]);
+export const PreferencesContext = createContext(undefined! as [
+    state,
+    React.Dispatch<action>
+]);
 export const PreferencesStateProvider: React.FC<{}> = ({children}) => {
     //we need to use a ref here to ensure that the same reducer is always used
-    let reducer = useRef((state: state, action: action): state => {
-        switch (action.type) {
-            case 'set':
-                return {...state, ...action.val};
+    let reducer = useRef(
+        (state: state, action: action): state => {
+            switch (action.type) {
+                case "set":
+                    return {...state, ...action.val};
+            }
         }
-    });
+    );
     let [state, dispatch] = useReducer(reducer.current, initialState);
     return (
         <PreferencesContext.Provider value={[state, dispatch]}>
