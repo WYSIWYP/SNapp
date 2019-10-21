@@ -1,0 +1,76 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`renders correctly ... 1`] = `
+<div
+  style={
+    Object {
+      "overflow": "hidden",
+    }
+  }
+>
+  <div
+    id="header"
+    style={
+      Object {
+        "alignItems": "center",
+        "backgroundColor": "#31B7D6",
+        "fontSize": 45,
+        "fontStyle": "normal",
+        "fontWeight": "normal",
+        "height": "80px",
+        "left": "50%",
+        "letterSpacing": "0.15em",
+        "minWidth": "600px",
+        "paddingTop": "8px",
+        "position": "absolute",
+        "textAlign": "center",
+        "top": "0px",
+        "transform": "translate(-50%,0px)",
+      }
+    }
+  >
+    Header Text
+  </div>
+  <div
+    style={
+      Object {
+        "borderLeft": "1px solid #BBBBBB",
+        "boxShadow": "0px 1px 9px rgba(0, 0, 0, 0.15)",
+        "height": "calc(100% - 80px)",
+        "left": "auto",
+        "opacity": 0,
+        "right": "0px",
+        "top": "80px",
+        "width": "0px",
+      }
+    }
+  />
+  <div
+    style={
+      Object {
+        "height": "calc(100% - 80px)",
+        "overflow": "auto",
+        "top": "80px",
+        "width": "calc(100% - 0px)",
+      }
+    }
+  />
+</div>
+`;
+
+exports[`renders correctly ... 2`] = `
+<GlobalStateProvider>
+  <Global />
+  <Router>
+    <Menu
+      path="/"
+    />
+    <Convert
+      path="/convert"
+    />
+    <NotFound
+      path="/*"
+    />
+  </Router>
+</GlobalStateProvider>
+`;

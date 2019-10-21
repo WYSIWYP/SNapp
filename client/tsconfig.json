@@ -18,9 +18,10 @@
         "isolatedModules": true,
         "noEmit": true,
         "jsx": "preserve",
-        "typeRoots" : ["./types"]
+        "typeRoots" : ["./types","node_modules/@types"],
+        "types": ["jest"]
     },
     "include": [
-        "src"
+        "src","test"
     ]
 }
