@@ -11,14 +11,13 @@ type Props = {
     options?: {},
 };
 
-const SNView: React.FC<Props> = ({xml, options, children}) => {
+const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
     const ref = useRef(null! as HTMLDivElement);
     let [width, setWidth] = useState<number | undefined>(undefined);
     let [score, setScore] = useState<Score | undefined>(undefined);
     let [preferences,] = usePreferencesState();
 
     console.log(score);
-    console.log(preferences);
     useEffect(() => {
         let width: number = undefined!;
         let callback = () => {
@@ -43,7 +42,7 @@ const SNView: React.FC<Props> = ({xml, options, children}) => {
     }, [xml]);
 
     if (score === undefined || width === undefined) { //skip first render when width is unknown or parsing is incomplete
-        return <div ref={ref}></div>; //<div ref={ref}>Loading...</div>; 
+        return <div ref={ref}></div>; 
     }
 
     let devMode = false;
@@ -68,7 +67,7 @@ const SNView: React.FC<Props> = ({xml, options, children}) => {
     let scoreWidth = width - 2 * horizontalPadding - staffLabelSpace - octaveLabelSpace; // width of just the WYSIWYP score
     let beatWidth = scoreWidth / score.tracks[0].timeSignatures[0].beats / preferences.measuresPerRow;  // width of quarter notes
 
-    let octaveGroups = [1, 1, 0, 0, 0, 1, 1]; //octaveGroups (C D E / F G A B)
+    // let octaveGroups = [1, 1, 0, 0, 0, 1, 1]; //octaveGroups (C D E / F G A B)
     // let staffLabels = ['𝒯','𝐵'];
     let octaveLines = [
         {color: 'red', number: true}, undefined, undefined, /* C, D, E */
@@ -79,9 +78,7 @@ const SNView: React.FC<Props> = ({xml, options, children}) => {
 
     let getNoteIsSharp = (note: number) => sharpMap[note % 12];
 
-    /**
-     *  We assume that the lowest note possible is C0 (midi 19). We map this note to line 0. 
-     */
+    // We map C0 (midi note 12) to line 0.
     let getNoteLine = (note: number) => {
         const line = Math.floor(note / 12 - 1) * 7 + noteMap[note % 12];
         return line;

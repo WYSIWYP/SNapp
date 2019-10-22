@@ -1,4 +1,4 @@
-import React, { CSSProperties, useState, useEffect, useRef } from "react";
+import React, { CSSProperties } from "react";
 
 type Props = {
   header: string;

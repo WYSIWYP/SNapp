@@ -14,9 +14,15 @@ export type timeSignature = {
     beatTypes: number,
 };
 
+export type keySignature = {
+    time: number,
+    fifths: number
+}
+
 export type Tracks = {
     notes: basicNote[],
     timeSignatures: timeSignature[],
+    keySignatures: keySignature[]
 }[]
 
 export type Score = {

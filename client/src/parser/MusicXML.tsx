@@ -1,5 +1,5 @@
 import MusicXML from 'musicxml-interfaces';
-import {basicNote, timeSignature, Tracks, Score} from './Types'
+import {basicNote, timeSignature, keySignature, Tracks, Score} from './Types'
 
 const pitchToMidi = (pitch: {octave: number, step: string, alter?: number}) => {
     // we assume C4 = 60 as middle C. Note that typical 88-key piano contains notes from A0 (21) - C8 (108).
@@ -14,18 +14,18 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
             divisions: number,
             progress: number,
             timeSignatures: timeSignature[];
+            keySignatures: keySignature[];
             notes: basicNote[],
         }
     } = {};
-
     xml.measures.forEach((measure, i) => {
         Object.keys(measure.parts).forEach(partName => {
-
             if (parts[partName] === undefined) {
                 parts[partName] = {
                     divisions: undefined!,
                     progress: 0,
                     timeSignatures: [],
+                    keySignatures: [],
                     notes: [],
                 };
             }
@@ -79,14 +79,30 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                         if (entry.times !== undefined) {
                             if (entry.times.length !== 0) {
                                 try {
-                                    part.timeSignatures.push({time: part.progress, beats: parseInt(entry.times[0].beats[0]), beatTypes: entry.times[0].beatTypes})
+                                    part.timeSignatures.push({
+                                        time: part.progress,
+                                        beats: parseInt(entry.times[0].beats[0]),
+                                        beatTypes: entry.times[0].beatTypes,
+                                    });
                                 } catch (e) {
                                     console.error('Failed to parse time signature', entry.times[0]);
                                 }
                             }
                         }
+                        if (entry.keySignatures && entry.keySignatures.length !== 0) {
+                            try {
+                                part.keySignatures.push({
+                                    time: part.progress,
+                                    fifths: entry.keySignatures[0].fifths
+                                });
+                            } catch (e) {
+                                console.error('Failed to parse key signature', entry.keySignatures[0]);
+                            }
+                        }
                         break;
                     case 'Print':
+                        break;
+                    case 'Barline':
                         break;
                     case 'Direction':
                         break;
@@ -101,10 +117,10 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
             part.notes.push(...notes);
         });
     });
-
     let tracks: Tracks = Object.keys(parts).map(x => ({
         notes: parts[x].notes,
         timeSignatures: parts[x].timeSignatures,
+        keySignatures: parts[x].keySignatures
     }));
     return {tracks, duration}
 };
