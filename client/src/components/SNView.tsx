@@ -71,14 +71,21 @@ const SNView: React.FC<Props> = ({xml, options, children}) => {
     let octaveGroups = [1, 1, 0, 0, 0, 1, 1]; //octaveGroups (C D E / F G A B)
     // let staffLabels = ['𝒯','𝐵'];
     let octaveLines = [
-        undefined, undefined, {color: 'red', number: true},
-        undefined, undefined, {color: 'blue'}, undefined
+        {color: 'red', number: true}, undefined, undefined, /* C, D, E */
+        {color: 'blue'}, undefined, undefined, undefined, /* F, G, A, B */
     ];
     let sharpMap = [0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0].map(x => x === 1);
     let noteMap = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6];
 
     let getNoteIsSharp = (note: number) => sharpMap[note % 12];
-    let getNoteLine = (note: number) => Math.floor(note / 12) * 7 + noteMap[note % 12];
+
+    /**
+     *  We assume that the lowest note possible is C0 (midi 19). We map this note to line 0. 
+     */
+    let getNoteLine = (note: number) => {
+        const line = Math.floor(note / 12 - 1) * 7 + noteMap[note % 12];
+        return line;
+    };
 
     //calculate lowest note per row
     let minNote = score.tracks.reduce((x, track) => Math.min(x, track.notes.reduce((x, note) => Math.min(x, note.midi), 128)), 128);
@@ -94,15 +101,15 @@ const SNView: React.FC<Props> = ({xml, options, children}) => {
 
     //calculate the height of each row (based upon low/high notes and oct groups)
     let minLine = getNoteLine(minNote);
-    while (octaveGroups[minLine % 7] === octaveGroups[(minLine - 1 + 7) % 7]) {
-        minLine--;
-    }
     let maxLine = getNoteLine(maxNote);
-    while (octaveGroups[maxLine % 7] === octaveGroups[(maxLine - 1 + 7) % 7]) {
-        maxLine++;
-    }
+    
+    // find the closest colored line for minNote and minLine
+    while (minLine % 7 !== 0 && minLine % 7 !== 3) minLine--; 
+    while (maxLine % 7 !== 0 && maxLine % 7 !== 3) maxLine++;
+    
     let rowHeight = (maxLine - minLine) * noteSymbolSize / 2; //not including measure labels
 
+    // TODO: Refactor logic below
     //calculate the number of beats per measure
     let beatsPerMeasure = score.tracks[0].timeSignatures.length > 0 ? score.tracks[0].timeSignatures[0].beats : 4;
     let measureWidth = beatWidth * beatsPerMeasure;
@@ -131,14 +138,13 @@ const SNView: React.FC<Props> = ({xml, options, children}) => {
         let key = 0;
         let elements: JSX.Element[] = [];
         elements.push(<rect key={key++} x={measureWidth - strokeWidth / 2} y={measureLabelSpace - strokeWidth / 2} width={strokeWidth} height={rowHeight + strokeWidth} fill="#000000" />);
-
         for (let j = minLine; j <= maxLine; j++) {
             let octaveLine = octaveLines[j % 7];
             if (octaveLine !== undefined) {
                 let lineY = measureLabelSpace + rowHeight - (j - minLine) * noteSymbolSize / 2;
                 elements.push(<rect key={key++} x={strokeWidth / 2} y={lineY - strokeWidth / 2} width={measureWidth - strokeWidth} height={strokeWidth} fill={octaveLine.color} />);
                 if (i % measuresPerRow === 0 && octaveLine.number === true) {
-                    elements.push(<text x={-strokeWidth} key={key++} y={lineY} fontSize={measureLabelSpace} textAnchor="end" dominantBaseline="middle">{Math.floor(j / 7) + 2}</text>);
+                    elements.push(<text x={-strokeWidth} key={key++} y={lineY} fontSize={measureLabelSpace} textAnchor="end" dominantBaseline="middle">{Math.floor(j / 7)}</text>);
                 }
                 if (j < maxLine) {
                     for (let i = 1; i < beatsPerMeasure; i++) {
@@ -238,12 +244,10 @@ const SNView: React.FC<Props> = ({xml, options, children}) => {
             <circle cx={x} cy={y} r={(noteSymbolSize - 2) / 2} strokeWidth={2} stroke={colorPreferenceStyles[preferences.noteSymbolColor]} fill='none' />;
             <line x1={x - crossCircleWidth} y1={y - crossCircleWidth} x2={x + crossCircleWidth} y2={y + crossCircleWidth} stroke={colorPreferenceStyles[preferences.noteSymbolColor]} strokeWidth={2} />
             <line x1={x - crossCircleWidth} y1={y + crossCircleWidth} x2={x + crossCircleWidth} y2={y - crossCircleWidth} stroke={colorPreferenceStyles[preferences.noteSymbolColor]} strokeWidth={2} />
-
         </g>
 
         let square = <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} fill={colorPreferenceStyles[preferences.noteSymbolColor]} />
         let hollowSquare = <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} stroke={colorPreferenceStyles[preferences.noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />
-
 
         return (
             ({

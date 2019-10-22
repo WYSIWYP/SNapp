@@ -2,8 +2,9 @@ import MusicXML from 'musicxml-interfaces';
 import {basicNote, timeSignature, Tracks, Score} from './Types'
 
 const pitchToMidi = (pitch: {octave: number, step: string, alter?: number}) => {
+    // we assume C4 = 60 as middle C. Note that typical 88-key piano contains notes from A0 (21) - C8 (108).
     let step = ({c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11} as {[index: string]: number})[pitch.step.toLowerCase()];
-    return pitch.octave * 12 + step + (pitch.alter === undefined ? 0 : Math.round(pitch.alter));
+    return (pitch.octave + 1) * 12 + step + (pitch.alter === undefined ? 0 : Math.round(pitch.alter));
 };
 
 export const parse = (xml: MusicXML.ScoreTimewise): Score => {
