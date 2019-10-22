@@ -103,9 +103,16 @@ const SNView: React.FC<Props> = ({xml, options, children}) => {
     let minLine = getNoteLine(minNote);
     let maxLine = getNoteLine(maxNote);
     
+    // TODO: Consider using only C as minLine and maxLine
     // find the closest colored line for minNote and minLine
     while (minLine % 7 !== 0 && minLine % 7 !== 3) minLine--; 
     while (maxLine % 7 !== 0 && maxLine % 7 !== 3) maxLine++;
+
+    // widen staff range if it is too small
+    if (Math.abs(maxLine - minLine) <= 1) {
+        maxLine += (maxLine % 7 === 0) ? 3 : 4;
+        minLine -= (minLine % 7 === 0) ? 4 : 3;
+    }
     
     let rowHeight = (maxLine - minLine) * noteSymbolSize / 2; //not including measure labels
 
