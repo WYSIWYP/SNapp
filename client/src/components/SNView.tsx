@@ -11,6 +11,12 @@ type Props = {
     options?: {},
 };
 
+enum Accidental {
+    flat = -1,
+    natural = 0,
+    sharp = 1
+}
+
 const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
     const ref = useRef(null! as HTMLDivElement);
     let [width, setWidth] = useState<number | undefined>(undefined);
@@ -42,7 +48,7 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
     }, [xml]);
 
     if (score === undefined || width === undefined) { //skip first render when width is unknown or parsing is incomplete
-        return <div ref={ref}></div>; 
+        return <div ref={ref}></div>;
     }
 
     let devMode = false;
@@ -63,9 +69,13 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
     let staffLabelSpace = 25; //space for staff labels
     let octaveLabelSpace = measureLabelSpace; //space for octave labels
 
+    // TODO: account for time / key signature change
     // composite horizontal spacing
     let scoreWidth = width - 2 * horizontalPadding - staffLabelSpace - octaveLabelSpace; // width of just the WYSIWYP score
     let beatWidth = scoreWidth / score.tracks[0].timeSignatures[0].beats / preferences.measuresPerRow;  // width of quarter notes
+
+    // get key signature
+    let keySignature = score.tracks[0].keySignatures[0];
 
     // let octaveGroups = [1, 1, 0, 0, 0, 1, 1]; //octaveGroups (C D E / F G A B)
     // let staffLabels = ['𝒯','𝐵'];
@@ -73,14 +83,17 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
         {color: 'red', number: true}, undefined, undefined, /* C, D, E */
         {color: 'blue'}, undefined, undefined, undefined, /* F, G, A, B */
     ];
-    let sharpMap = [0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0].map(x => x === 1);
+    let accidentalMap = [0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0].map(x => x === 1); // C, C#, D, D#, E, ...
     let noteMap = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6];
 
-    let getNoteIsSharp = (note: number) => sharpMap[note % 12];
+    let getNoteAccidental = (note: number): Accidental => {
+        return accidentalMap[note % 12] ? (keySignature.fifths > 0 ? Accidental.sharp : Accidental.flat) : Accidental.natural;
+    };
 
     // We map C0 (midi note 12) to line 0.
     let getNoteLine = (note: number) => {
-        const line = Math.floor(note / 12 - 1) * 7 + noteMap[note % 12];
+        let line = Math.floor(note / 12 - 1) * 7 + noteMap[note % 12];
+        line += getNoteAccidental(note) < 0 ? 1 : 0; // if note is flat, we need to bring it a line higher.
         return line;
     };
 
@@ -99,10 +112,10 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
     //calculate the height of each row (based upon low/high notes and oct groups)
     let minLine = getNoteLine(minNote);
     let maxLine = getNoteLine(maxNote);
-    
+
     // TODO: Consider using only C as minLine and maxLine
     // find the closest colored line for minNote and minLine
-    while (minLine % 7 !== 0 && minLine % 7 !== 3) minLine--; 
+    while (minLine % 7 !== 0 && minLine % 7 !== 3) minLine--;
     while (maxLine % 7 !== 0 && maxLine % 7 !== 3) maxLine++;
 
     // widen staff range if it is too small
@@ -110,7 +123,7 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
         maxLine += (maxLine % 7 === 0) ? 3 : 4;
         minLine -= (minLine % 7 === 0) ? 4 : 3;
     }
-    
+
     let rowHeight = (maxLine - minLine) * noteSymbolSize / 2; //not including measure labels
 
     // TODO: Refactor logic below
@@ -229,7 +242,7 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
     }
 
     let noteHead = (note: basicNote, i: number) => {
-        let sharp = getNoteIsSharp(note.midi);
+        let accidental: Accidental = getNoteAccidental(note.midi);
         let line = getNoteLine(note.midi) - minLine;
         let {x, y} = beatsToPos(note.time);
         x += noteSymbolSize / 2;
@@ -253,17 +266,16 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
         let square = <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} fill={colorPreferenceStyles[preferences.noteSymbolColor]} />
         let hollowSquare = <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} stroke={colorPreferenceStyles[preferences.noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />
 
-        return (
-            ({
-                '▲': triangleUp,
-                '▼': triangleDown,
-                '○': hollowCircle,
-                '●': circle,
-                '◼': square,
-                '□': hollowSquare,
-                '⨂': crossCircle,
-            } as any)[sharp ? preferences.sharpNoteShape : preferences.naturalNoteShape]
-        );
+        let noteShapes = {
+            '▲': triangleUp,
+            '▼': triangleDown,
+            '○': hollowCircle,
+            '●': circle,
+            '◼': square,
+            '□': hollowSquare,
+            '⨂': crossCircle,
+        } as any;
+        return accidental === 0 ? noteShapes[preferences.naturalNoteShape] : (accidental > 0 ? noteShapes[preferences.sharpNoteShape] : noteShapes[preferences.flatNoteShape]);
     }
 
     let devSvg = devMode ? (
