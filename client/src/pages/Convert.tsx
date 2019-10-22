@@ -5,7 +5,10 @@ import Frame from '../components/Frame';
 import {saveAs} from 'file-saver';
 import dropDown from '../images/dropDown.svg'
 import {useCurrentFileState} from '../contexts/CurrentFile';
-import {usePreferencesState, colorPreferenceOptions, scalePreferenceOptions, spacingPreferenceOptions, noteHeadPreferenceOptions} from '../contexts/Preferences';
+import {
+    usePreferencesState, colorPreferenceOptions, scalePreferenceOptions, 
+    spacingPreferenceOptions, noteHeadPreferenceOptions, measuresPerRowOptions
+} from '../contexts/Preferences';
 import jsPDF from 'jspdf';
 import canvg from 'canvg';
 
@@ -18,20 +21,20 @@ const Convert: React.FC<Props> = () => {
     let [preferences, setPreferences] = usePreferencesState();
     let [currentFile, setCurrentFile] = useCurrentFileState();
 
-    let [showPreferencesButton,setShowPreferencesButton] = useState(true);
-    useEffect(()=>{
-        if(show){
+    let [showPreferencesButton, setShowPreferencesButton] = useState(true);
+    useEffect(() => {
+        if (show) {
             setShowPreferencesButton(false);
-            return ()=>{};
+            return () => {};
         } else {
-            let timeout = setTimeout(()=>{
+            let timeout = setTimeout(() => {
                 setShowPreferencesButton(true);
-            },1000);
-            return ()=>{
+            }, 1000);
+            return () => {
                 clearTimeout(timeout);
             }
         }
-    },[show])
+    }, [show])
 
     useEffect(() => {
         (async () => {
@@ -168,6 +171,12 @@ const Convert: React.FC<Props> = () => {
                         }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
                     </div>
 
+                    <div style={styles.line}>
+                        <div style={styles.name}>Measures per Row</div>
+                        <select style={styles.select} value={preferences.measuresPerRow} onChange={
+                            (e) => {setPreferences({type: 'set', val: {measuresPerRow: e.target.value as any}});}
+                        }>{measuresPerRowOptions.map(x => <option key={x}>{x}</option>)}</select>
+                    </div>
                 </div>
             </label>
         </form>
@@ -178,17 +187,17 @@ const Convert: React.FC<Props> = () => {
             <div style={styles.subHeader}>
 
                 <div style={styles.left} onClick={() => {navigate('/');}}>
-                    <svg style={styles.svg} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    <svg style={styles.svg} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
                     Home
                 </div>
                 <div style={styles.left} onClick={() => {openPDF();}}>
-                    <svg style={styles.svg} xmlns="http://www.w3.org/2000/svg" padding-right="5px" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                    <svg style={styles.svg} xmlns="http://www.w3.org/2000/svg" padding-right="5px" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
                     Save as PDF
                 </div>
 
                 <div style={styles.right} onClick={() => {setShow(true);}} >
 
-                    {!showPreferencesButton ? <></> : <><svg style={styles.svg} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Preferences</>}
+                    {!showPreferencesButton ? <></> : <><svg style={styles.svg} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Preferences</>}
 
                 </div>
 
@@ -319,8 +328,7 @@ const styleMap = {
         position: 'relative',
         width: '40%',
         textAlign: 'center',
-        webkitAppearance: 'none',
-
+        WebkitAppearance: 'none',
     },
 
 } as const;

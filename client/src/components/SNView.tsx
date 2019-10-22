@@ -4,7 +4,7 @@ import {range} from '../util/Util';
 import MusicXML from 'musicxml-interfaces';
 import {parse} from '../parser/MusicXML'
 import {basicNote, Score} from '../parser/Types'
-import {colorPreferenceStyles, usePreferencesState, noteHeadPreferenceOption} from '../contexts/Preferences';
+import {colorPreferenceStyles, usePreferencesState} from '../contexts/Preferences';
 
 type Props = {
     xml: MusicXML.ScoreTimewise,
@@ -17,6 +17,8 @@ const SNView: React.FC<Props> = ({xml, options, children}) => {
     let [score, setScore] = useState<Score | undefined>(undefined);
     let [preferences,] = usePreferencesState();
 
+    console.log(score);
+    console.log(preferences);
     useEffect(() => {
         let width: number = undefined!;
         let callback = () => {
@@ -35,14 +37,13 @@ const SNView: React.FC<Props> = ({xml, options, children}) => {
         }
     }, []);
 
-
     useEffect(() => {
         // parse only when page loads or xml changes
         setScore(parse(xml));
     }, [xml]);
 
     if (score === undefined || width === undefined) { //skip first render when width is unknown or parsing is incomplete
-        return <div ref={ref}></div>; //<div ref={ref}>Loading...</div>; //need to add styling for the loading message.. the empty div is just to set the ref value
+        return <div ref={ref}></div>; //<div ref={ref}>Loading...</div>; 
     }
 
     let devMode = false;
@@ -59,30 +60,25 @@ const SNView: React.FC<Props> = ({xml, options, children}) => {
     let measureLabelSpace = 15; //space for measure labels
 
     //horizontal spacing
-    let beatWidth = 40;
     let horizontalPadding = 20; //left/right padding
     let staffLabelSpace = 25; //space for staff labels
     let octaveLabelSpace = measureLabelSpace; //space for octave labels
 
+    // composite horizontal spacing
+    let scoreWidth = width - 2 * horizontalPadding - staffLabelSpace - octaveLabelSpace; // width of just the WYSIWYP score
+    let beatWidth = scoreWidth / score.tracks[0].timeSignatures[0].beats / preferences.measuresPerRow;  // width of quarter notes
+
     let octaveGroups = [1, 1, 0, 0, 0, 1, 1]; //octaveGroups (C D E / F G A B)
     // let staffLabels = ['𝒯','𝐵'];
-    let octaveLines = [undefined, undefined, {
-        color: 'red', number: true
-    }, undefined, undefined, {
-            color: 'blue'
-        }, undefined];
+    let octaveLines = [
+        undefined, undefined, {color: 'red', number: true},
+        undefined, undefined, {color: 'blue'}, undefined
+    ];
     let sharpMap = [0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0].map(x => x === 1);
     let noteMap = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6];
 
     let getNoteIsSharp = (note: number) => sharpMap[note % 12];
     let getNoteLine = (note: number) => Math.floor(note / 12) * 7 + noteMap[note % 12];
-
-
-    // type staff = {
-    //     notes: Note[],
-    // };
-
-    //let staves: staff[] = midi.tracks.filter(x=>x.notes.length>0).map(x=>{});
 
     //calculate lowest note per row
     let minNote = score.tracks.reduce((x, track) => Math.min(x, track.notes.reduce((x, note) => Math.min(x, note.midi), 128)), 128);
@@ -95,7 +91,6 @@ const SNView: React.FC<Props> = ({xml, options, children}) => {
         console.log(minNote, maxNote);
         throw new Error('An issue was detected while analyzing this work\'s note range');
     }
-
 
     //calculate the height of each row (based upon low/high notes and oct groups)
     let minLine = getNoteLine(minNote);
@@ -232,31 +227,31 @@ const SNView: React.FC<Props> = ({xml, options, children}) => {
         let triHeight = noteSymbolSize * Math.sqrt(3) / 2;
 
         let strokeWidth = 3;
-        let crossCircleWidth = noteSymbolSize/2/Math.sqrt(2);
+        let crossCircleWidth = noteSymbolSize / 2 / Math.sqrt(2);
 
         let triangleUp = <polygon key={i} points={`${x},${y - triHeight / 2} ${x + noteSymbolSize / 2},${y + triHeight / 2} ${x - noteSymbolSize / 2},${y + triHeight / 2}`} fill={colorPreferenceStyles[preferences.noteSymbolColor]} />;
         let triangleDown = <polygon key={i} points={`${x},${y + triHeight / 2} ${x + noteSymbolSize / 2},${y - triHeight / 2} ${x - noteSymbolSize / 2},${y - triHeight / 2}`} fill={colorPreferenceStyles[preferences.noteSymbolColor]} />;
         let hollowCircle = <circle key={i} cx={x} cy={y} r={(noteSymbolSize - strokeWidth) / 2} strokeWidth={strokeWidth} stroke={colorPreferenceStyles[preferences.noteSymbolColor]} fill='none' />;
         let circle = <circle key={i} cx={x} cy={y} r={noteSymbolSize / 2} fill={colorPreferenceStyles[preferences.noteSymbolColor]} />;
-        
+
         let crossCircle = <g key={i}>
             <circle cx={x} cy={y} r={(noteSymbolSize - 2) / 2} strokeWidth={2} stroke={colorPreferenceStyles[preferences.noteSymbolColor]} fill='none' />;
-            <line x1={x  -  crossCircleWidth } y1={ y - crossCircleWidth } x2={ x + crossCircleWidth} y2={ y + crossCircleWidth} stroke={colorPreferenceStyles[preferences.noteSymbolColor]} strokeWidth={2}/>
-            <line x1={x  -  crossCircleWidth } y1={ y + crossCircleWidth } x2={ x + crossCircleWidth} y2={ y - crossCircleWidth} stroke={colorPreferenceStyles[preferences.noteSymbolColor]} strokeWidth={2}/>
-        
+            <line x1={x - crossCircleWidth} y1={y - crossCircleWidth} x2={x + crossCircleWidth} y2={y + crossCircleWidth} stroke={colorPreferenceStyles[preferences.noteSymbolColor]} strokeWidth={2} />
+            <line x1={x - crossCircleWidth} y1={y + crossCircleWidth} x2={x + crossCircleWidth} y2={y - crossCircleWidth} stroke={colorPreferenceStyles[preferences.noteSymbolColor]} strokeWidth={2} />
+
         </g>
 
-        let square = <rect x={x - noteSymbolSize/2 + strokeWidth/2 } y={y - noteSymbolSize/2 + strokeWidth/2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} fill={colorPreferenceStyles[preferences.noteSymbolColor]} />
-        let hollowSquare = <rect x={x - noteSymbolSize/2 + strokeWidth/2 } y={y - noteSymbolSize/2 + strokeWidth/2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} stroke={colorPreferenceStyles[preferences.noteSymbolColor]} strokeWidth={strokeWidth} fill='none'  />
-        
-        
+        let square = <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} fill={colorPreferenceStyles[preferences.noteSymbolColor]} />
+        let hollowSquare = <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} stroke={colorPreferenceStyles[preferences.noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />
+
+
         return (
             ({
                 '▲': triangleUp,
                 '▼': triangleDown,
                 '○': hollowCircle,
                 '●': circle,
-                '◼': square, 
+                '◼': square,
                 '□': hollowSquare,
                 '⨂': crossCircle,
             } as any)[sharp ? preferences.sharpNoteShape : preferences.naturalNoteShape]

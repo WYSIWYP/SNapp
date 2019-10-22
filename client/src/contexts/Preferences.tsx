@@ -24,8 +24,8 @@ export type spacingPreferenceOption = (typeof spacingPreferenceOptions)[number];
 export const noteHeadPreferenceOptions = ["▲", "▼", "●", "○", "⨂","◼","□"] as const;
 export type noteHeadPreferenceOption = (typeof noteHeadPreferenceOptions)[number];
 
-
-
+export const measuresPerRowOptions = [1, 2, 3, 4, 5, 6, 7] as const; // TODO: Consider using a slider
+export type measuresPerRowOption = (typeof measuresPerRowOptions)[number];
 
 export type state = {
     noteDurationColor: colorPreferenceOption;
@@ -37,6 +37,7 @@ export type state = {
     naturalNoteShape: noteHeadPreferenceOption,
     sharpNoteShape: noteHeadPreferenceOption;
     flatNoteShape: noteHeadPreferenceOption;
+    measuresPerRow: measuresPerRowOption;
 };
 export type action = {
     type: "set";
@@ -53,6 +54,7 @@ let initialState: state = {
     naturalNoteShape: '●',
     sharpNoteShape: '▲',
     flatNoteShape: '▼',
+    measuresPerRow: 4,
 };
 
 export const PreferencesContext = createContext(undefined! as [
