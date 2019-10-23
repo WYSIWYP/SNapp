@@ -41,7 +41,6 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
             measure.parts[partName].forEach(entry => {
                 switch (entry._class) {
                     case 'Note':
-                        console.log(entry);
                         if (entry.duration !== undefined) { //grace notes do not have a duration - are not displayed
                             let time = part.progress;
                             if (entry.chord !== undefined) {
@@ -68,7 +67,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                     time, duration: divisionsToQuarterNotes(entry.duration),
                                     midi: pitchToMidi(entry.pitch),
                                     attributes: {
-                                        ties: entryTies.map(tie => tie.type === 0 ? Tie.Start : Tie.Stop)
+                                        ties: entryTies ? entryTies.map(tie => tie.type === 0 ? Tie.Start : Tie.Stop) : []
                                     }
                                 });
                             }
