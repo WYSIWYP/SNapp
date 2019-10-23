@@ -12,10 +12,12 @@ export type basicNote = {
     duration: number,
     midi: number,
     attributes: {
-        ties: Tie[],
+        ties: Tie[], // TODO: consider making this optional
         // other attributes like slurs and dynamics can go here
     }
 };
+
+export type measure = basicNote[];
 
 export type timeSignature = {
     time: number,
@@ -29,7 +31,7 @@ export type keySignature = {
 }
 
 export type Tracks = {
-    notes: basicNote[],
+    measures: measure[],
     timeSignatures: timeSignature[],
     keySignatures: keySignature[]
 }[]

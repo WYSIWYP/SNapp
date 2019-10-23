@@ -19,6 +19,7 @@ enum Accidental {
 
 const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
     const ref = useRef(null! as HTMLDivElement);
+    // console.log(xml);
     let [width, setWidth] = useState<number | undefined>(undefined);
     let [score, setScore] = useState<Score | undefined>(undefined);
     let [preferences,] = usePreferencesState();
@@ -68,7 +69,7 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
     let horizontalPadding = 20; //left/right padding
     let staffLabelSpace = 25; //space for staff labels
     let octaveLabelSpace = measureLabelSpace; //space for octave labels
-    let tieExtensionSpace = measureLabelSpace; 
+    let tieExtensionSpace = measureLabelSpace;
 
     // TODO: account for time / key signature change
     // composite horizontal spacing
@@ -97,12 +98,16 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
         line += getNoteAccidental(note) < 0 ? 1 : 0; // if note is flat, we need to bring it a line higher.
         return line;
     };
-
-    //calculate lowest note per row
-    let minNote = score.tracks.reduce((x, track) => Math.min(x, track.notes.reduce((x, note) => Math.min(x, note.midi), 128)), 128);
-
-    //calculate highest note per row
-    let maxNote = score.tracks.reduce((x, track) => Math.max(x, track.notes.reduce((x, note) => Math.max(x, note.midi), -1)), -1);
+    //calculate lowest and highest note
+    let minNote = 128, maxNote = -1;
+    score.tracks.forEach(track => {
+        track.measures.forEach(measure => {
+            measure.forEach(note => {
+                minNote = Math.min(minNote, note.midi);
+                maxNote = Math.max(maxNote, note.midi);
+            });
+        });
+    });
 
     //if there was an issue, abort
     if (minNote >= 128 || minNote < 0 || maxNote >= 128 || maxNote < 0) {
@@ -300,8 +305,20 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
                     {range(0, rowNumber).map(i => row(i))}
                 </g>
                 <g id="notes" opacity="1.0">
-                    {score.tracks.map((track, i) => track.notes.map((x, j) => noteTail(x, i * 10000000 + j)))}
-                    {score.tracks.map((track, i) => track.notes.map((x, j) => noteHead(x, i * 10000000 + j)))}
+                    {score.tracks.map((track, i) =>
+                        track.measures.map((measure, k) =>
+                            measure.map((x, j) =>
+                                noteTail(x, i * 10000000 + j)
+                            )
+                        ))
+                    }
+                    {score.tracks.map((track, i) =>
+                        track.measures.map((measure, k) =>
+                            measure.map((x, j) =>
+                                noteHead(x, i * 10000000 + j)
+                            )
+                        ))
+                    }
                 </g>
             </svg>
         </div>

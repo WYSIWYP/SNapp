@@ -1,5 +1,5 @@
 import MusicXML from 'musicxml-interfaces';
-import {basicNote, timeSignature, keySignature, Tracks, Score, Tie} from './Types'
+import {basicNote, timeSignature, keySignature, Tracks, Score, Tie, measure} from './Types'
 
 const pitchToMidi = (pitch: {octave: number, step: string, alter?: number}) => {
     // we assume C4 = 60 as middle C. Note that typical 88-key piano contains notes from A0 (21) - C8 (108).
@@ -15,7 +15,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
             progress: number,
             timeSignatures: timeSignature[];
             keySignatures: keySignature[];
-            notes: basicNote[],
+            measures: measure[],
         }
     } = {};
     xml.measures.forEach((measure, i) => {
@@ -26,9 +26,9 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                     progress: 0,
                     timeSignatures: [],
                     keySignatures: [],
-                    notes: [],
+                    measures: Array(xml.measures.length)
                 };
-            }
+            }            
             let part = parts[partName];
             let notes: basicNote[] = [];
             let divisionsToQuarterNotes = (divisions: number) => {
@@ -41,7 +41,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
             measure.parts[partName].forEach(entry => {
                 switch (entry._class) {
                     case 'Note':
-                        console.log(entry);
+                        // console.log(entry);
                         if (entry.duration !== undefined) { //grace notes do not have a duration - are not displayed
                             let time = part.progress;
                             if (entry.chord !== undefined) {
@@ -63,15 +63,16 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                 console.error('A note was marked as a rest but was also given a pitch');
                             }
                             if (entry.pitch !== undefined) {
-                                const entryTies: {type: number}[] = entry.ties;  
+                                const entryTies = entry.ties as {type: number}[];  
                                 notes.push({
                                     time, duration: divisionsToQuarterNotes(entry.duration),
                                     midi: pitchToMidi(entry.pitch),
                                     attributes: {
-                                        ties: entryTies.map(tie => tie.type === 0 ? Tie.Start : Tie.Stop)
+                                        ties: entryTies ? entryTies.map(tie => tie.type === 0 ? Tie.Start : Tie.Stop) : []
                                     }
                                 });
                             }
+                            part.measures[i] = notes;
                         }
                         break;
                     case 'Backup':
@@ -122,11 +123,10 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                     duration = part.progress;
                 }
             });
-            part.notes.push(...notes);
         });
     });
     let tracks: Tracks = Object.keys(parts).map(x => ({
-        notes: parts[x].notes,
+        measures: parts[x].measures,
         timeSignatures: parts[x].timeSignatures,
         keySignatures: parts[x].keySignatures
     }));
