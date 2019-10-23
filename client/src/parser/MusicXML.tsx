@@ -1,5 +1,5 @@
 import MusicXML from 'musicxml-interfaces';
-import {basicNote, timeSignature, keySignature, Tracks, Score} from './Types'
+import {basicNote, timeSignature, keySignature, Tracks, Score, Tie} from './Types'
 
 const pitchToMidi = (pitch: {octave: number, step: string, alter?: number}) => {
     // we assume C4 = 60 as middle C. Note that typical 88-key piano contains notes from A0 (21) - C8 (108).
@@ -41,6 +41,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
             measure.parts[partName].forEach(entry => {
                 switch (entry._class) {
                     case 'Note':
+                        console.log(entry);
                         if (entry.duration !== undefined) { //grace notes do not have a duration - are not displayed
                             let time = part.progress;
                             if (entry.chord !== undefined) {
@@ -62,7 +63,14 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                 console.error('A note was marked as a rest but was also given a pitch');
                             }
                             if (entry.pitch !== undefined) {
-                                notes.push({time, duration: divisionsToQuarterNotes(entry.duration), midi: pitchToMidi(entry.pitch)});
+                                const entryTies: {type: number}[] = entry.ties;  
+                                notes.push({
+                                    time, duration: divisionsToQuarterNotes(entry.duration),
+                                    midi: pitchToMidi(entry.pitch),
+                                    attributes: {
+                                        ties: entryTies.map(tie => tie.type === 0 ? Tie.Start : Tie.Stop)
+                                    }
+                                });
                             }
                         }
                         break;

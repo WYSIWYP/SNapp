@@ -3,7 +3,7 @@ import {range} from '../util/Util';
 // import {Note} from '@tonejs/midi/dist/Note';
 import MusicXML from 'musicxml-interfaces';
 import {parse} from '../parser/MusicXML'
-import {basicNote, Score} from '../parser/Types'
+import {basicNote, Score, Tie} from '../parser/Types'
 import {colorPreferenceStyles, usePreferencesState} from '../contexts/Preferences';
 
 type Props = {
@@ -12,9 +12,9 @@ type Props = {
 };
 
 enum Accidental {
-    flat = -1,
-    natural = 0,
-    sharp = 1
+    Flat = -1,
+    Natural = 0,
+    Sharp = 1
 }
 
 const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
@@ -68,6 +68,7 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
     let horizontalPadding = 20; //left/right padding
     let staffLabelSpace = 25; //space for staff labels
     let octaveLabelSpace = measureLabelSpace; //space for octave labels
+    let tieExtensionSpace = measureLabelSpace; 
 
     // TODO: account for time / key signature change
     // composite horizontal spacing
@@ -87,7 +88,7 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
     let noteMap = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6];
 
     let getNoteAccidental = (note: number): Accidental => {
-        return accidentalMap[note % 12] ? (keySignature.fifths > 0 ? Accidental.sharp : Accidental.flat) : Accidental.natural;
+        return accidentalMap[note % 12] ? (keySignature.fifths > 0 ? Accidental.Sharp : Accidental.Flat) : Accidental.Natural;
     };
 
     // We map C0 (midi note 12) to line 0.
@@ -242,6 +243,8 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
     }
 
     let noteHead = (note: basicNote, i: number) => {
+        if (note.attributes.ties.includes(Tie.Stop))
+            return;
         let accidental: Accidental = getNoteAccidental(note.midi);
         let line = getNoteLine(note.midi) - minLine;
         let {x, y} = beatsToPos(note.time);
