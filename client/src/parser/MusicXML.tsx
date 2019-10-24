@@ -9,6 +9,7 @@ const pitchToMidi = (pitch: {octave: number, step: string, alter?: number}) => {
 
 export const parse = (xml: MusicXML.ScoreTimewise): Score => {
     let duration = 0;
+    let currentBeatType = 4;
     let parts: {
         [index: string]: {
             divisions: number,
@@ -31,12 +32,13 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
             }            
             let part = parts[partName];
             let notes: basicNote[] = [];
-            let divisionsToQuarterNotes = (divisions: number) => {
+            // computes note lengh with respect to the beat type
+            let divisionsToNoteLength = (divisions: number) => {
                 if (part.divisions === undefined) {
                     console.error('A note was defined before timing information was established');
                     return divisions / 24;
                 }
-                return divisions / part.divisions;
+                return divisions / part.divisions * (currentBeatType / 4);
             }
             measure.parts[partName].forEach(entry => {
                 switch (entry._class) {
@@ -48,13 +50,13 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                 if (notes.length === 0) {
                                     console.error('The first note within a measure was marked as being part of a chord');
                                 } else {
-                                    if (notes[notes.length - 1].duration !== divisionsToQuarterNotes(entry.duration)) {
+                                    if (notes[notes.length - 1].duration !== divisionsToNoteLength(entry.duration)) {
                                         console.error('Two notes in a chord were of different durations');
                                     }
                                     time = notes[notes.length - 1].time;
                                 }
                             } else {
-                                part.progress += divisionsToQuarterNotes(entry.duration);
+                                part.progress += divisionsToNoteLength(entry.duration);
                             }
                             if (entry.rest === undefined && entry.pitch === undefined) {
                                 console.error('A note was neither marked as a rest or given a pitch');
@@ -65,7 +67,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                             if (entry.pitch !== undefined) {
                                 const entryTies = entry.ties as {type: number}[];  
                                 notes.push({
-                                    time, duration: divisionsToQuarterNotes(entry.duration),
+                                    time, duration: divisionsToNoteLength(entry.duration),
                                     midi: pitchToMidi(entry.pitch),
                                     attributes: {
                                         ties: entryTies ? entryTies.map(tie => tie.type === 0 ? Tie.Start : Tie.Stop) : []
@@ -76,10 +78,10 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                         }
                         break;
                     case 'Backup':
-                        part.progress -= divisionsToQuarterNotes(entry.duration);
+                        part.progress -= divisionsToNoteLength(entry.duration);
                         break;
                     case 'Forward':
-                        part.progress += divisionsToQuarterNotes(entry.duration);
+                        part.progress += divisionsToNoteLength(entry.duration);
                         break;
                     case 'Attributes':
                         if (entry.divisions !== undefined) {
@@ -93,6 +95,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                         beats: parseInt(entry.times[0].beats[0]),
                                         beatTypes: entry.times[0].beatTypes,
                                     });
+                                    currentBeatType = entry.times[0].beatTypes[0];
                                 } catch (e) {
                                     console.error('Failed to parse time signature', entry.times[0]);
                                 }
