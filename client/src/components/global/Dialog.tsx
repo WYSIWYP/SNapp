@@ -1,6 +1,6 @@
 import React, {useEffect, useState, CSSProperties} from 'react';
 import {useDialogState} from '../../contexts/Dialog';
-import Button from '../Button';
+//import Button from '../Button';
 
 type Props = {};
 
@@ -43,7 +43,7 @@ const Dialog: React.FC<Props> = () => {
                     }}>
                         {data.contents}
                     </div>
-                    <div style={styles.buttons}><Button text={data.buttons[0].text} action={data.buttons[0].action || (()=>{dispatchDialog({type: 'close'})})} /></div>
+                    {/*<div style={styles.buttons}><Button text={data.buttons[0].text} action={data.buttons[0].action || (()=>{dispatchDialog({type: 'close'})})} /></div>*/}
                 </div>
             </div>
         </div>
