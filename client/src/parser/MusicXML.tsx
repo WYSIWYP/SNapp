@@ -93,7 +93,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                     part.timeSignatures.push({
                                         measure: measureNumber,
                                         beats: parseInt(entry.times[0].beats[0]),
-                                        beatTypes: entry.times[0].beatTypes,
+                                        beatTypes: entry.times[0].beatTypes[0],
                                     });
                                     currentBeatType = entry.times[0].beatTypes[0];
                                 } catch (e) {
