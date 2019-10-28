@@ -19,21 +19,21 @@ export type basicNote = {
 
 export type measure = basicNote[];
 
-export type timeSignature = {
-    time: number,
+export type TimeSignature = {
+    measure: number,
     beats: number,
     beatTypes: number,
 };
 
-export type keySignature = {
-    time: number,
+export type KeySignature = {
+    measure: number,
     fifths: number
 }
 
 export type Tracks = {
     measures: measure[],
-    timeSignatures: timeSignature[],
-    keySignatures: keySignature[]
+    timeSignatures: TimeSignature[],
+    keySignatures: KeySignature[]
 }[]
 
 export type Score = {

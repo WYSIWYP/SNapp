@@ -3,7 +3,7 @@ import {range} from '../util/Util';
 // import {Note} from '@tonejs/midi/dist/Note';
 import MusicXML from 'musicxml-interfaces';
 import {parse} from '../parser/MusicXML'
-import {basicNote, Score, Tie} from '../parser/Types'
+import {basicNote, Score, Tie, TimeSignature} from '../parser/Types'
 import {colorPreferenceStyles, usePreferencesState} from '../contexts/Preferences';
 
 type Props = {
@@ -19,7 +19,6 @@ enum Accidental {
 
 const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
     const ref = useRef(null! as HTMLDivElement);
-    // console.log(xml);
     let [width, setWidth] = useState<number | undefined>(undefined);
     let [score, setScore] = useState<Score | undefined>(undefined);
     let [preferences,] = usePreferencesState();
@@ -69,12 +68,12 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
     let horizontalPadding = 20; //left/right padding
     let staffLabelSpace = 25; //space for staff labels
     let octaveLabelSpace = measureLabelSpace; //space for octave labels
-    let tieExtensionSpace = measureLabelSpace;
+    // let tieExtensionSpace = measureLabelSpace;
 
     // TODO: account for time / key signature change
     // composite horizontal spacing
     let scoreWidth = width - 2 * horizontalPadding - staffLabelSpace - octaveLabelSpace; // width of just the WYSIWYP score
-    let beatWidth = scoreWidth / score.tracks[0].timeSignatures[0].beats / preferences.measuresPerRow;  // width of quarter notes
+    let beatWidth = scoreWidth / score.tracks[0].timeSignatures[0].beats / preferences.measuresPerRow;
 
     // get key signature
     let keySignature = score.tracks[0].keySignatures[0];
@@ -119,7 +118,7 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
     let minLine = getNoteLine(minNote);
     let maxLine = getNoteLine(maxNote);
 
-    // TODO: Consider using only C as minLine and maxLine
+    // TODO: draw minimal number of lines
     // find the closest colored line for minNote and minLine
     while (minLine % 7 !== 0 && minLine % 7 !== 3) minLine--;
     while (maxLine % 7 !== 0 && maxLine % 7 !== 3) maxLine++;
@@ -134,7 +133,7 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
 
     // TODO: Refactor logic below
     //calculate the number of beats per measure
-    let beatsPerMeasure = score.tracks[0].timeSignatures.length > 0 ? score.tracks[0].timeSignatures[0].beats : 4;
+    let beatsPerMeasure = score.tracks[0].timeSignatures.length > 0 ? score.tracks[0].timeSignatures[0].beats : 4; // TODO: empty check shouldn't be necessary
     let measureWidth = beatWidth * beatsPerMeasure;
 
     //calculate tne number of measures per row
@@ -148,7 +147,7 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
     //calculate the number of rows
     //let ticksPerMeasure = midi.header.ppq*beatsPerMeasure; //needs to take into account size of a beat
     let beatsPerRow = beatsPerMeasure * measuresPerRow;
-    let measureNumber = Math.ceil(score.duration / beatsPerMeasure);
+    let measureNumber = score.tracks.reduce((accum, track) => Math.max(accum, track.measures.length), 0);
     if (measureNumber <= 0) {
         throw new Error('Failed to identify number of measures');
     }
@@ -157,32 +156,60 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
     //calculate required height (vert padding + row height + row padding)
     let height = verticalPadding * 2 + rowNumber * (rowHeight + measureLabelSpace) + (rowNumber - 1) * rowPadding;
 
-    let measure = (x: number, y: number, i: number) => {
+    let getTimeSignature = (measureNumber: number): TimeSignature => {
+        let timeSignatures = [...score!.tracks[0].timeSignatures].reverse(); // we reverse the array because we want to find the latest key signature.
+        const timeSignature = timeSignatures.find((timeSignature) => timeSignature.measure <= measureNumber)!;
+        return timeSignature;
+    }
+
+    let measure = (x: number, y: number, measureNumber: number) => {
+        // Get time signature of current measure // TODO: reduce number of calls
+        let timeSignature = getTimeSignature(measureNumber);
+        beatWidth = scoreWidth / timeSignature.beats / preferences.measuresPerRow;
+        beatsPerMeasure = timeSignature.beats;
+
+        // Draw measure
         let key = 0;
-        let elements: JSX.Element[] = [];
-        elements.push(<rect key={key++} x={measureWidth - strokeWidth / 2} y={measureLabelSpace - strokeWidth / 2} width={strokeWidth} height={rowHeight + strokeWidth} fill="#000000" />);
+        let measureSVG: JSX.Element[] = [];
+        measureSVG.push(<rect key={key++} x={measureWidth - strokeWidth / 2} y={measureLabelSpace - strokeWidth / 2} width={strokeWidth} height={rowHeight + strokeWidth} fill="#000000" />);
         for (let j = minLine; j <= maxLine; j++) {
             let octaveLine = octaveLines[j % 7];
             if (octaveLine !== undefined) {
                 let lineY = measureLabelSpace + rowHeight - (j - minLine) * noteSymbolSize / 2;
-                elements.push(<rect key={key++} x={strokeWidth / 2} y={lineY - strokeWidth / 2} width={measureWidth - strokeWidth} height={strokeWidth} fill={octaveLine.color} />);
-                if (i % measuresPerRow === 0 && octaveLine.number === true) {
-                    elements.push(<text x={-strokeWidth} key={key++} y={lineY} fontSize={measureLabelSpace} textAnchor="end" dominantBaseline="middle">{Math.floor(j / 7)}</text>);
+                measureSVG.push(<rect key={key++} x={strokeWidth / 2} y={lineY - strokeWidth / 2} width={measureWidth - strokeWidth} height={strokeWidth} fill={octaveLine.color} />);
+                if (measureNumber % measuresPerRow === 0 && octaveLine.number === true) {
+                    measureSVG.push(<text x={-strokeWidth} key={key++} y={lineY} fontSize={measureLabelSpace} textAnchor="end" dominantBaseline="middle">{Math.floor(j / 7)}</text>);
                 }
                 if (j < maxLine) {
-                    for (let i = 1; i < beatsPerMeasure; i++) {
-                        let tickX = measureWidth / beatsPerMeasure * i;
-                        elements.push(<rect key={key++} x={tickX - strokeWidth / 2} y={lineY - tickSize} width={strokeWidth} height={tickSize - strokeWidth / 2} fill="#000000" />);
+                    for (let measureNumber = 1; measureNumber < beatsPerMeasure; measureNumber++) {
+                        let tickX = measureWidth / beatsPerMeasure * measureNumber;
+                        measureSVG.push(<rect key={key++} x={tickX - strokeWidth / 2} y={lineY - tickSize} width={strokeWidth} height={tickSize - strokeWidth / 2} fill="#000000" />);
                     }
                 }
             }
         }
 
+        // Add notes to the measure
+        const noteHeadSVG: JSX.Element[] = [];
+        const noteTailSVG: JSX.Element[] = [];
+        score!.tracks.forEach(track => {
+            track.measures[measureNumber].forEach(note => {
+                noteHeadSVG.push(noteHead(note, key++));
+                noteTailSVG.push(noteTail(note, key++));
+            });
+        });
+
         return (
-            <g id={`measure${i + 1}`} key={i} transform={`translate(${x}, ${y})`}>
-                {devMode ? <rect width={measureWidth} height={measureLabelSpace - strokeWidth / 2} fill="#ffdddd" /> : null}
-                <text x={strokeWidth} y={measureLabelSpace - strokeWidth} fontSize={measureLabelSpace}>{i + 1}</text>
-                {elements}
+            <g id={`measure${measureNumber + 1}`} key={measureNumber} transform={`translate(${x}, ${y})`}>
+                <g id='frame'>
+                    {devMode ? <rect width={measureWidth} height={measureLabelSpace - strokeWidth / 2} fill="#ffdddd" /> : null}
+                    <text x={strokeWidth} y={measureLabelSpace - strokeWidth} fontSize={measureLabelSpace}>{measureNumber + 1}</text>
+                    {measureSVG}
+                </g>
+                <g id='notes'>
+                    {noteTailSVG}
+                    {noteHeadSVG}
+                </g>
             </g>
         );
     }
@@ -223,8 +250,13 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
 
         let line = getNoteLine(note.midi) - minLine;
 
-        let {row: rowStart, measure: measureStart, x: xStart, y: yStart} = beatsToPos(note.time);
-        let {row: rowEnd, x: xEnd} = beatsToPos(note.time + note.duration);
+        // TODO: clean up logic below
+        let {row: rowStart, measure: measureStart} = beatsToPos(note.time);
+        let {row: rowEnd} = beatsToPos(note.time + note.duration);
+
+        let xStart = beatWidth * note.time;
+        let xEnd = beatWidth * (note.time + note.duration);
+        let yStart = rowHeight + measureLabelSpace;
 
         let pushBox = (x1: number, x2: number, y: number) => {
             boxes.push(<rect key={key++} x={x1} y={y - (line + 1) * noteSymbolSize / 2} width={x2 - x1} height={noteSymbolSize} fill={colorPreferenceStyles[preferences.noteDurationColor]} fillOpacity={.5} />);
@@ -252,7 +284,10 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
             return;
         let accidental: Accidental = getNoteAccidental(note.midi);
         let line = getNoteLine(note.midi) - minLine;
-        let {x, y} = beatsToPos(note.time);
+
+        let x = beatWidth * note.time;
+        let y = rowHeight + measureLabelSpace;
+
         x += noteSymbolSize / 2;
         y -= line * noteSymbolSize / 2;
         let triHeight = noteSymbolSize * Math.sqrt(3) / 2;
@@ -297,28 +332,13 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
         </g>
     ) : null;
 
+    let svgRows:  React.SVGProps<SVGSVGElement>[] = [];
     return (
         <div id="snview" ref={ref} style={{width: '100%', height: 'auto', overflow: 'hidden', minWidth: '350px'}}>
             <svg viewBox={`0 0 ${width} ${height}`} width={`${width}`} height={`${height}`}>
                 {devSvg}
                 <g id="measures">
                     {range(0, rowNumber).map(i => row(i))}
-                </g>
-                <g id="notes" opacity="1.0">
-                    {score.tracks.map((track, i) =>
-                        track.measures.map((measure, k) =>
-                            measure.map((x, j) =>
-                                noteTail(x, i * 10000000 + j)
-                            )
-                        ))
-                    }
-                    {score.tracks.map((track, i) =>
-                        track.measures.map((measure, k) =>
-                            measure.map((x, j) =>
-                                noteHead(x, i * 10000000 + j)
-                            )
-                        ))
-                    }
                 </g>
             </svg>
         </div>

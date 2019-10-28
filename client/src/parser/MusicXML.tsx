@@ -1,5 +1,5 @@
 import MusicXML from 'musicxml-interfaces';
-import {basicNote, timeSignature, keySignature, Tracks, Score, Tie, measure} from './Types'
+import {basicNote, TimeSignature, KeySignature, Tracks, Score, Tie, measure} from './Types'
 
 const pitchToMidi = (pitch: {octave: number, step: string, alter?: number}) => {
     // we assume C4 = 60 as middle C. Note that typical 88-key piano contains notes from A0 (21) - C8 (108).
@@ -14,12 +14,12 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
         [index: string]: {
             divisions: number,
             progress: number,
-            timeSignatures: timeSignature[];
-            keySignatures: keySignature[];
+            timeSignatures: TimeSignature[];
+            keySignatures: KeySignature[];
             measures: measure[],
         }
     } = {};
-    xml.measures.forEach((measure, i) => {
+    xml.measures.forEach((measure, measureNumber) => {
         Object.keys(measure.parts).forEach(partName => {
             if (parts[partName] === undefined) {
                 parts[partName] = {
@@ -29,7 +29,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                     keySignatures: [],
                     measures: Array(xml.measures.length)
                 };
-            }            
+            }
             let part = parts[partName];
             let notes: basicNote[] = [];
             // computes note lengh with respect to the beat type
@@ -40,10 +40,10 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                 }
                 return divisions / part.divisions * (currentBeatType / 4);
             }
+            part.progress = 0;
             measure.parts[partName].forEach(entry => {
                 switch (entry._class) {
                     case 'Note':
-                        // console.log(entry);
                         if (entry.duration !== undefined) { //grace notes do not have a duration - are not displayed
                             let time = part.progress;
                             if (entry.chord !== undefined) {
@@ -65,7 +65,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                 console.error('A note was marked as a rest but was also given a pitch');
                             }
                             if (entry.pitch !== undefined) {
-                                const entryTies = entry.ties as {type: number}[];  
+                                const entryTies = entry.ties as {type: number}[];
                                 notes.push({
                                     time, duration: divisionsToNoteLength(entry.duration),
                                     midi: pitchToMidi(entry.pitch),
@@ -74,7 +74,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                     }
                                 });
                             }
-                            part.measures[i] = notes;
+                            part.measures[measureNumber] = notes;
                         }
                         break;
                     case 'Backup':
@@ -91,7 +91,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                             if (entry.times.length !== 0) {
                                 try {
                                     part.timeSignatures.push({
-                                        time: part.progress,
+                                        measure: measureNumber,
                                         beats: parseInt(entry.times[0].beats[0]),
                                         beatTypes: entry.times[0].beatTypes,
                                     });
@@ -104,7 +104,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                         if (entry.keySignatures && entry.keySignatures.length !== 0) {
                             try {
                                 part.keySignatures.push({
-                                    time: part.progress,
+                                    measure: measureNumber,
                                     fifths: entry.keySignatures[0].fifths
                                 });
                             } catch (e) {
