@@ -1,10 +1,10 @@
-import React, {useEffect, useState, useRef} from 'react';
-import {range} from '../util/Util';
+import React, { useEffect, useState, useRef } from 'react';
+import { range } from '../util/Util';
 // import {Note} from '@tonejs/midi/dist/Note';
 import MusicXML from 'musicxml-interfaces';
-import {parse} from '../parser/MusicXML'
-import {basicNote, Score, Tie, TimeSignature} from '../parser/Types'
-import {colorPreferenceStyles, usePreferencesState} from '../contexts/Preferences';
+import { parse } from '../parser/MusicXML'
+import { basicNote, Score, Tie } from '../parser/Types'
+import { colorPreferenceStyles, usePreferencesState } from '../contexts/Preferences';
 
 type Props = {
     xml: MusicXML.ScoreTimewise,
@@ -17,7 +17,7 @@ enum Accidental {
     Sharp = 1
 }
 
-const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
+const SNView: React.FC<Props> = ({ xml, /* options, children */ }) => {
     const ref = useRef(null! as HTMLDivElement);
     let [width, setWidth] = useState<number | undefined>(undefined);
     let [score, setScore] = useState<Score | undefined>(undefined);
@@ -70,25 +70,24 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
     let octaveLabelSpace = measureLabelSpace; //space for octave labels
     // let tieExtensionSpace = measureLabelSpace;
 
-    // TODO: account for time / key signature change
     // composite horizontal spacing
     let scoreWidth = width - 2 * horizontalPadding - staffLabelSpace - octaveLabelSpace; // width of just the WYSIWYP score
     let beatWidth = scoreWidth / score.tracks[0].timeSignatures[0].beats / preferences.measuresPerRow;
 
     // get key signature
-    let keySignature = score.tracks[0].keySignatures[0];
+    let keyFifths = score.tracks[0].keySignatures[0].fifths;
 
     // let octaveGroups = [1, 1, 0, 0, 0, 1, 1]; //octaveGroups (C D E / F G A B)
     // let staffLabels = ['𝒯','𝐵'];
     let octaveLines = [
-        {color: 'red', number: true}, undefined, undefined, /* C, D, E */
-        {color: 'blue'}, undefined, undefined, undefined, /* F, G, A, B */
+        { color: 'red', number: true }, undefined, undefined, /* C, D, E */
+        { color: 'blue' }, undefined, undefined, undefined, /* F, G, A, B */
     ];
     let accidentalMap = [0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0].map(x => x === 1); // C, C#, D, D#, E, ...
     let noteMap = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6];
 
     let getNoteAccidental = (note: number): Accidental => {
-        return accidentalMap[note % 12] ? (keySignature.fifths > 0 ? Accidental.Sharp : Accidental.Flat) : Accidental.Natural;
+        return accidentalMap[note % 12] ? (keyFifths > 0 ? Accidental.Sharp : Accidental.Flat) : Accidental.Natural;
     };
 
     // We map C0 (midi note 12) to line 0.
@@ -156,17 +155,22 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
     //calculate required height (vert padding + row height + row padding)
     let height = verticalPadding * 2 + rowNumber * (rowHeight + measureLabelSpace) + (rowNumber - 1) * rowPadding;
 
-    let getTimeSignature = (measureNumber: number): TimeSignature => {
+    let getTimeSignature = (measureNumber: number) => {
         let timeSignatures = [...score!.tracks[0].timeSignatures].reverse(); // we reverse the array because we want to find the latest key signature.
-        const timeSignature = timeSignatures.find((timeSignature) => timeSignature.measure <= measureNumber)!;
-        return timeSignature;
+        let keySignatures = [...score!.tracks[0].keySignatures.reverse()];
+
+        const currentTime = timeSignatures.find(timeSignature => timeSignature.measure <= measureNumber)!;
+        const currentKey = keySignatures.find((keySignature) => keySignature.measure <= measureNumber);
+
+        return { currentTime, currentKey };
     }
 
     let measure = (x: number, y: number, measureNumber: number) => {
         // Get time signature of current measure // TODO: reduce number of calls
-        let timeSignature = getTimeSignature(measureNumber);
-        beatWidth = scoreWidth / timeSignature.beats / preferences.measuresPerRow;
-        beatsPerMeasure = timeSignature.beats;
+        let { currentTime, currentKey } = getTimeSignature(measureNumber);
+        beatWidth = scoreWidth / currentTime.beats / preferences.measuresPerRow;
+        beatsPerMeasure = currentTime.beats;
+        keyFifths = currentKey!.fifths;
 
         // Draw measure
         let key = 0;
@@ -251,8 +255,8 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
         let line = getNoteLine(note.midi) - minLine;
 
         // TODO: clean up logic below
-        let {row: rowStart, measure: measureStart} = beatsToPos(note.time);
-        let {row: rowEnd} = beatsToPos(note.time + note.duration);
+        let { row: rowStart, measure: measureStart } = beatsToPos(note.time);
+        let { row: rowEnd } = beatsToPos(note.time + note.duration);
 
         let xStart = beatWidth * note.time;
         let xEnd = beatWidth * (note.time + note.duration);
@@ -266,7 +270,7 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
             pushBox(xStart, horizontalPadding + staffLabelSpace + octaveLabelSpace + measuresPerRow * measureWidth, yStart);
             rowStart++;
             measureStart = 0;
-            let {x, y} = rowMeasureToPos(rowStart, measureStart);
+            let { x, y } = rowMeasureToPos(rowStart, measureStart);
             xStart = x;
             yStart = y;
         }
@@ -332,14 +336,12 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
         </g>
     ) : null;
 
-    // let svgRows:  React.SVGProps<SVGSVGElement>[] = [];
+    let svgRows: JSX.Element[] = range(0, rowNumber).map(i => row(i));
     return (
-        <div id="snview" ref={ref} style={{width: '100%', height: 'auto', overflow: 'hidden', minWidth: '350px', userSelect: 'text'}}>
+        <div id="snview" ref={ref} style={{ width: '100%', height: 'auto', overflow: 'hidden', minWidth: '350px', userSelect: 'text' }}>
             <svg viewBox={`0 0 ${width} ${height}`} width={`${width}`} height={`${height}`}>
                 {devSvg}
-                <g id="measures">
-                    {range(0, rowNumber).map(i => row(i))}
-                </g>
+                {svgRows}
             </svg>
         </div>
     );
