@@ -153,7 +153,7 @@ const SNView: React.FC<Props> = ({ xml, /* options, children */ }) => {
     let rowNumber = Math.ceil(measureNumber / measuresPerRow);
 
     //calculate required height (vert padding + row height + row padding)
-    let height = verticalPadding * 2 + rowNumber * (rowHeight + measureLabelSpace) + (rowNumber - 1) * rowPadding;
+    // let height = verticalPadding * 2 + rowNumber * (rowHeight + measureLabelSpace) + (rowNumber - 1) * rowPadding;
 
     let getTimeSignature = (measureNumber: number) => {
         let timeSignatures = [...score!.tracks[0].timeSignatures].reverse(); // we reverse the array because we want to find the latest key signature.
@@ -218,20 +218,22 @@ const SNView: React.FC<Props> = ({ xml, /* options, children */ }) => {
         );
     }
 
-    let row = (i: number) => {
-        let x = horizontalPadding;
-        let y = verticalPadding + i * (rowHeight + measureLabelSpace + rowPadding)
-        return (
-            <g id={`row${i}`} key={i} transform={`translate(${x}, ${y})`}>
-                {devMode ? <rect y={measureLabelSpace} width={staffLabelSpace} height={rowHeight} fill="#ffdddd" /> : null}
-                {devMode ? <rect x={staffLabelSpace} y={measureLabelSpace} width={octaveLabelSpace} height={rowHeight} fill="#ffddff" /> : null}
-                <text x={staffLabelSpace} y={measureLabelSpace + rowHeight / 2} fontSize={staffLabelSpace * 1.5} textAnchor="end" dominantBaseline="middle">𝒯</text>
-                <rect x={staffLabelSpace + octaveLabelSpace - strokeWidth / 2} y={measureLabelSpace - strokeWidth / 2} width={strokeWidth} height={rowHeight + strokeWidth} fill="#000000" />
+    let row = (i: number): JSX.Element => {
+        let height = (rowHeight + measureLabelSpace) + noteSymbolSize / 2; // TODO: need to add paddings between rows
 
-                {range(0, i < rowNumber - 1 ? measuresPerRow : measureNumber - (rowNumber - 1) * measuresPerRow).map(j =>
-                    measure(staffLabelSpace + octaveLabelSpace + j * measureWidth, 0, i * measuresPerRow + j)
-                )}
-            </g>
+        return (
+            <svg id={`row${i}`} key={i} viewBox={`0 0 ${width} ${height}`}>
+                <g id={`row${i}`} key={i} transform={`translate(${horizontalPadding}, 0)`}>
+                    {devMode ? <rect y={measureLabelSpace} width={staffLabelSpace} height={rowHeight} fill="#ffdddd" /> : null}
+                    {devMode ? <rect x={staffLabelSpace} y={measureLabelSpace} width={octaveLabelSpace} height={rowHeight} fill="#ffddff" /> : null}
+                    <text x={staffLabelSpace} y={measureLabelSpace + rowHeight / 2} fontSize={staffLabelSpace * 1.5} textAnchor="end" dominantBaseline="middle">𝒯</text>
+                    <rect x={staffLabelSpace + octaveLabelSpace - strokeWidth / 2} y={measureLabelSpace - strokeWidth / 2} width={strokeWidth} height={rowHeight + strokeWidth} fill="#000000" />
+
+                    {range(0, i < rowNumber - 1 ? measuresPerRow : measureNumber - (rowNumber - 1) * measuresPerRow).map(j =>
+                        measure(staffLabelSpace + octaveLabelSpace + j * measureWidth, 0, i * measuresPerRow + j)
+                    )}
+                </g>
+            </svg>
         );
     }
 
@@ -325,24 +327,22 @@ const SNView: React.FC<Props> = ({ xml, /* options, children */ }) => {
         return accidental === 0 ? noteShapes[preferences.naturalNoteShape] : (accidental > 0 ? noteShapes[preferences.sharpNoteShape] : noteShapes[preferences.flatNoteShape]);
     }
 
-    let devSvg = devMode ? (
-        <g id="devMode">
-            {<rect x={0} y={0} width={width} height={height} fill="#ddddff" />}
-            {<circle cx={0} cy={0} r="40" stroke="black" strokeWidth="3" fill="red" />}
-            {<circle cx={width} cy={0} r="40" stroke="black" strokeWidth="3" fill="red" />}
-            {<circle cx={width} cy={`${height}`} r="40" stroke="black" strokeWidth="3" fill="red" />}
-            {<circle cx={0} cy={height} r="40" stroke="black" strokeWidth="3" fill="red" />}
-            {<rect x={horizontalPadding} y={verticalPadding} width={width - horizontalPadding * 2} height={height - verticalPadding * 2} fill="#ddffdd" />}
-        </g>
-    ) : null;
+    // let devSvg = devMode ? (
+    //     <g id="devMode">
+    //         {<rect x={0} y={0} width={width} height={height} fill="#ddddff" />}
+    //         {<circle cx={0} cy={0} r="40" stroke="black" strokeWidth="3" fill="red" />}
+    //         {<circle cx={width} cy={0} r="40" stroke="black" strokeWidth="3" fill="red" />}
+    //         {<circle cx={width} cy={`${height}`} r="40" stroke="black" strokeWidth="3" fill="red" />}
+    //         {<circle cx={0} cy={height} r="40" stroke="black" strokeWidth="3" fill="red" />}
+    //         {<rect x={horizontalPadding} y={verticalPadding} width={width - horizontalPadding * 2} height={height - verticalPadding * 2} fill="#ddffdd" />}
+    //     </g>
+    // ) : null;
 
     let svgRows: JSX.Element[] = range(0, rowNumber).map(i => row(i));
     return (
         <div id="snview" ref={ref} style={{ width: '100%', height: 'auto', overflow: 'hidden', minWidth: '350px', userSelect: 'text' }}>
-            <svg viewBox={`0 0 ${width} ${height}`} width={`${width}`} height={`${height}`}>
-                {devSvg}
-                {svgRows}
-            </svg>
+            {/*devSvg*/}
+            {svgRows}
         </div>
     );
 };
