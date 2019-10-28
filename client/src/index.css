@@ -16,6 +16,7 @@ div {
     height: 100%;
     position: absolute;
     box-sizing: border-box;
+    user-select: none;
 }
 input {
     border: 2px solid #ccc;

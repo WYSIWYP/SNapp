@@ -332,9 +332,9 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
         </g>
     ) : null;
 
-    let svgRows:  React.SVGProps<SVGSVGElement>[] = [];
+    // let svgRows:  React.SVGProps<SVGSVGElement>[] = [];
     return (
-        <div id="snview" ref={ref} style={{width: '100%', height: 'auto', overflow: 'hidden', minWidth: '350px'}}>
+        <div id="snview" ref={ref} style={{width: '100%', height: 'auto', overflow: 'hidden', minWidth: '350px', userSelect: 'text'}}>
             <svg viewBox={`0 0 ${width} ${height}`} width={`${width}`} height={`${height}`}>
                 {devSvg}
                 <g id="measures">
