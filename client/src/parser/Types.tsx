@@ -38,5 +38,4 @@ export type Tracks = {
 
 export type Score = {
     tracks: Tracks,
-    duration: number
 }

@@ -8,7 +8,6 @@ const pitchToMidi = (pitch: {octave: number, step: string, alter?: number}) => {
 };
 
 export const parse = (xml: MusicXML.ScoreTimewise): Score => {
-    let duration = 0;
     let currentBeatType = 4;
     let parts: {
         [index: string]: {
@@ -122,9 +121,6 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                         console.error(`Unrecognized MusicXML entry: '${entry._class}'`);
                         break;
                 }
-                if (part.progress > duration) {
-                    duration = part.progress;
-                }
             });
         });
     });
@@ -133,5 +129,5 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
         timeSignatures: parts[x].timeSignatures,
         keySignatures: parts[x].keySignatures
     }));
-    return {tracks, duration}
+    return {tracks}
 };
