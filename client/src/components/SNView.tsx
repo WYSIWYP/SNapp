@@ -32,13 +32,13 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
                 width = newWidth;
                 setWidth(newWidth);
             }
-        }
+        };
         window.addEventListener("resize", callback);
-        let interval = setInterval(callback, 20);
+        // let interval = setInterval(callback, 20);
         callback();
         return () => {
             window.removeEventListener("resize", callback);
-            clearInterval(interval);
+            // clearInterval(interval);
         }
     }, []);
 
@@ -98,14 +98,12 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
     };
     //calculate lowest and highest note
     let minNote = 128, maxNote = -1;
-    score.tracks.forEach(track => {
-        track.measures.forEach(measure => {
-            measure.forEach(note => {
-                minNote = Math.min(minNote, note.midi);
-                maxNote = Math.max(maxNote, note.midi);
-            });
-        });
-    });
+    score.tracks.forEach(track => track.measures.forEach(measure =>
+        measure.forEach(note => {
+            minNote = Math.min(minNote, note.midi);
+            maxNote = Math.max(maxNote, note.midi);
+        })
+    ));
 
     //if there was an issue, abort
     if (minNote >= 128 || minNote < 0 || maxNote >= 128 || maxNote < 0) {
@@ -117,7 +115,6 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
     let minLine = getNoteLine(minNote);
     let maxLine = getNoteLine(maxNote);
 
-    // TODO: draw minimal number of lines
     // find the closest colored line for minNote and minLine
     while (minLine % 7 !== 0 && minLine % 7 !== 3) minLine--;
     while (maxLine % 7 !== 0 && maxLine % 7 !== 3) maxLine++;
@@ -130,9 +127,8 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
 
     let rowHeight = (maxLine - minLine) * noteSymbolSize / 2; //not including measure labels
 
-    // TODO: Refactor logic below
     //calculate the number of beats per measure
-    let beatsPerMeasure = score.tracks[0].timeSignatures.length > 0 ? score.tracks[0].timeSignatures[0].beats : 4; // TODO: empty check shouldn't be necessary
+    let beatsPerMeasure = score.tracks[0].timeSignatures[0].beats;
     let measureWidth = beatWidth * beatsPerMeasure;
 
     //calculate tne number of measures per row
@@ -145,7 +141,7 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
 
     //calculate the number of rows
     //let ticksPerMeasure = midi.header.ppq*beatsPerMeasure; //needs to take into account size of a beat
-    let beatsPerRow = beatsPerMeasure * measuresPerRow;
+    // let beatsPerRow = beatsPerMeasure * measuresPerRow;
     let measureNumber = score.tracks.reduce((accum, track) => Math.max(accum, track.measures.length), 0);
     if (measureNumber <= 0) {
         throw new Error('Failed to identify number of measures');
@@ -155,20 +151,19 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
     //calculate required height (vert padding + row height + row padding)
     // let height = verticalPadding * 2 + rowNumber * (rowHeight + measureLabelSpace) + (rowNumber - 1) * rowPadding;
 
-    let getTimeSignature = (measureNumber: number) => {
+    let getCurrentSignatures = (measureNumber: number) => {
         let timeSignatures = [...score!.tracks[0].timeSignatures].reverse(); // we reverse the array because we want to find the latest key signature.
         let keySignatures = [...score!.tracks[0].keySignatures].reverse();
 
         const currentTime = timeSignatures.find(timeSignature => timeSignature.measure <= measureNumber)!;
-        const currentKey = keySignatures.find((keySignature) => keySignature.measure <= measureNumber);
+        const currentKey = keySignatures.find(keySignature => keySignature.measure <= measureNumber);
 
-        console.log({currentTime, currentKey});
         return {currentTime, currentKey};
     }
 
     let measure = (x: number, y: number, measureNumber: number) => {
-        // Get time signature of current measure // TODO: reduce number of calls
-        let {currentTime, currentKey} = getTimeSignature(measureNumber);
+        // Get time signature of current measure
+        let {currentTime, currentKey} = getCurrentSignatures(measureNumber);
         beatWidth = scoreWidth / currentTime.beats / preferences.measuresPerRow;
         beatsPerMeasure = currentTime.beats;
         keyFifths = currentKey!.fifths;
@@ -220,10 +215,9 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
     }
 
     let row = (i: number): JSX.Element => {
-        let height = (rowHeight + measureLabelSpace) + noteSymbolSize / 2; // TODO: need to add paddings between rows
-
+        let height = (rowHeight + measureLabelSpace) + noteSymbolSize / 2;
         return (
-            <svg id={`row${i}`} key={i} viewBox={`0 0 ${width} ${height}`}>
+            <svg id={`row${i}`} key={i} viewBox={`0 0 ${width} ${height}`} style={{paddingBottom: `${rowPadding}`}}>
                 <g id={`row${i}`} key={i} transform={`translate(${horizontalPadding}, 0)`}>
                     {devMode ? <rect y={measureLabelSpace} width={staffLabelSpace} height={rowHeight} fill="#ffdddd" /> : null}
                     {devMode ? <rect x={staffLabelSpace} y={measureLabelSpace} width={octaveLabelSpace} height={rowHeight} fill="#ffddff" /> : null}
@@ -238,45 +232,44 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
         );
     }
 
-    let beatsToPos = (beat: number) => {
-        let row = Math.floor(beat / beatsPerRow);
-        let measure = (beat - row * beatsPerRow) / beatsPerMeasure;
-        return {
-            row, measure,
-            ...rowMeasureToPos(row, measure)
-        };
-    }
-    let rowMeasureToPos = (row: number, measure: number) => ({
-        x: horizontalPadding + staffLabelSpace + octaveLabelSpace + measure * measureWidth,
-        y: verticalPadding + row * (rowHeight + measureLabelSpace + rowPadding) + rowHeight + measureLabelSpace
-    });
+    let noteTimeToPos = (noteTime: number) => ({
+        x: beatWidth * noteTime,
+        y: rowHeight + measureLabelSpace
+    })
+
+    // let beatsToPos = (beat: number) => {
+    //     let row = Math.floor(beat / beatsPerRow);
+    //     let measure = (beat - row * beatsPerRow) / beatsPerMeasure;
+    //     return {
+    //         row, measure,
+    //         ...rowMeasureToPos(row, measure)
+    //     };
+    // }
+    // let rowMeasureToPos = (row: number, measure: number) => ({
+    //     x: horizontalPadding + staffLabelSpace + octaveLabelSpace + measure * measureWidth,
+    //     y: verticalPadding + row * (rowHeight + measureLabelSpace + rowPadding) + rowHeight + measureLabelSpace
+    // });
 
     let noteTail = (note: basicNote, i: number) => {
         let key = 0;
         let boxes: JSX.Element[] = [];
 
         let line = getNoteLine(note.midi) - minLine;
-
-        // TODO: clean up logic below
-        let {row: rowStart, measure: measureStart} = beatsToPos(note.time);
-        let {row: rowEnd} = beatsToPos(note.time + note.duration);
-
-        let xStart = beatWidth * note.time;
-        let xEnd = beatWidth * (note.time + note.duration);
-        let yStart = rowHeight + measureLabelSpace;
+        let {x: xStart, y: yStart} = noteTimeToPos(note.time);
+        let {x: xEnd} = noteTimeToPos(note.time + note.duration);
 
         let pushBox = (x1: number, x2: number, y: number) => {
             boxes.push(<rect key={key++} x={x1} y={y - (line + 1) * noteSymbolSize / 2} width={x2 - x1} height={noteSymbolSize} fill={colorPreferenceStyles[preferences.noteDurationColor]} fillOpacity={.5} />);
         }
-        while (rowStart < rowEnd) {
-            //only executes rarely so it is faster to compute this value in the loop
-            pushBox(xStart, horizontalPadding + staffLabelSpace + octaveLabelSpace + measuresPerRow * measureWidth, yStart);
-            rowStart++;
-            measureStart = 0;
-            let {x, y} = rowMeasureToPos(rowStart, measureStart);
-            xStart = x;
-            yStart = y;
-        }
+        // while (rowStart < rowEnd) {
+        //     //only executes rarely so it is faster to compute this value in the loop
+        //     pushBox(xStart, horizontalPadding + staffLabelSpace + octaveLabelSpace + measuresPerRow * measureWidth, yStart);
+        //     rowStart++;
+        //     measureStart = 0;
+        //     let {x, y} = rowMeasureToPos(rowStart, measureStart);
+        //     xStart = x;
+        //     yStart = y;
+        // }
         pushBox(xStart, xEnd, yStart);
 
         return (
@@ -292,8 +285,7 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
         let accidental: Accidental = getNoteAccidental(note.midi);
         let line = getNoteLine(note.midi) - minLine;
 
-        let x = beatWidth * note.time;
-        let y = rowHeight + measureLabelSpace;
+        let {x, y} = noteTimeToPos(note.time);
 
         x += noteSymbolSize / 2;
         y -= line * noteSymbolSize / 2;
@@ -341,7 +333,7 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
 
     let svgRows: JSX.Element[] = range(0, rowNumber).map(i => row(i));
     return (
-        <div id="snview" ref={ref} style={{width: '100%', height: 'auto', overflow: 'hidden', minWidth: '350px', userSelect: 'text'}}>
+        <div id="snview" ref={ref} style={{width: '100%', height: 'auto', overflow: 'hidden', minWidth: '350px', userSelect: 'text', paddingTop: verticalPadding, paddingBottom: verticalPadding}}>
             {/*devSvg*/}
             {svgRows}
         </div>
