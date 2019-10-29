@@ -252,11 +252,11 @@
         <type>quarter</type>
         <stem>down</stem>
         </note>
-      <note default-x="83.87" default-y="-20.00">
+      <note default-x="83.87" default-y="-15.00">
         <pitch>
-          <step>B</step>
+          <step>C</step>
           <alter>-1</alter>
-          <octave>4</octave>
+          <octave>5</octave>
           </pitch>
         <duration>1</duration>
         <voice>1</voice>
