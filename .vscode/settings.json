@@ -1,5 +1,6 @@
 {
     "editor.minimap.renderCharacters": false,
+    "editor.autoClosingBrackets": "never",
     "editor.tabSize": 4,
     "editor.detectIndentation": false,
     "editor.insertSpaces": true,
