@@ -143,14 +143,14 @@ const Convert: React.FC<Props> = () => {
     };
     let sidebar = (<div style={styles.sideBar}>
         <div style={styles.sideBarTop}>
-            <div title="Click to export" style={styles.sideBarTopOptions} onClick={() => {exportFile();}}>
+            <div id="export" title="Click to export" style={styles.sideBarTopOptions} onClick={() => {exportFile();}}>
                 Export
             </div>
-            <div style={styles.sideBarTopOptions}>
+            <div id="import" style={styles.sideBarTopOptions}>
                 Import
                 <input style={styles.fileInput} type="file" title="Click to import" accept=".snapp" onChange={(e) => {importFile(e);}}></input>
             </div>
-            <div style={styles.sideBarTopOptions} onClick={() => {setShow(false);}}>
+            <div id="close" style={styles.sideBarTopOptions} onClick={() => {setShow(false);}}>
                 Close X
             </div>
         </div>
@@ -242,7 +242,7 @@ const Convert: React.FC<Props> = () => {
         <Frame header="SNapp" showSideMenu={show} sideMenu={sidebar}>
             <div style={styles.subHeader}>
 
-                <div style={styles.left} onClick={() => {navigate('/');}}>
+                <div id="home" style={styles.left} onClick={() => {navigate('/');}}>
                     <svg style={styles.svg} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
                     Home
                 </div>
@@ -251,7 +251,7 @@ const Convert: React.FC<Props> = () => {
                     Save as PDF
                 </div>
 
-                <div style={styles.right} onClick={() => {setShow(true);}} >
+                <div id="preference" style={styles.right} onClick={() => {setShow(true);}} >
 
                     {!showPreferencesButton ? <></> : <><svg style={styles.svg} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Preferences</>}
 
@@ -326,6 +326,7 @@ const styleMap = {
         minWidth: '350px',
     },
     sideBarTop: {
+        position: 'sticky',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -335,8 +336,10 @@ const styleMap = {
         color: '#31B7D6',
         fontSize: '23px',
         fontWeight: 'bold',
-        position: 'relative',
         width: 'auto',
+        backgroundColor: '#4c4c4c',
+        opacity: 1,
+        zIndex: 1,
     },
     sideBarTopOptions: {
         position: 'relative',
@@ -357,6 +360,7 @@ const styleMap = {
         opacity: 0,
     },
     sideBarContent: {
+        zIndex: 0,
         padding: '0 20px',
         position: 'relative',
         marginTop: '40px',
@@ -383,7 +387,7 @@ const styleMap = {
         backgroundImage: `url(${dropDown})`,
         backgroundColor: 'rgba(255,255,255,0.6)',
         paddingLeft: '20px',
-        border: '1px solid #6F6F6F',
+        border: 'none',
         borderRadius: '10px',
         position: 'relative',
         width: '40%',

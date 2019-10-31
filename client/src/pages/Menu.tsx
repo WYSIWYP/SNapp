@@ -249,7 +249,7 @@ const Menu: React.FC<Props> = () => {
                         <div style={{...styles.item, ...styles.recentFiles}}>
                             <div style={{...styles.recentFilesInner}}>
                                 {recentFiles.map(x => <Fragment key={x.id}>
-                                    <div style={styles.recentFilesItem} onClick={() => {loadFile(x);}}>
+                                    <div className="button-recent-file" style={styles.recentFilesItem} onClick={() => {loadFile(x);}}>
                                         <div style={{...styles.recentFilesItemInner, flex: '0 1 auto', fontWeight: 'bold'}}>
                                             {x.file_name}
                                         </div>
@@ -265,7 +265,7 @@ const Menu: React.FC<Props> = () => {
                         <div style={{...styles.item, flex: '.24 0 auto'}} />
                     </>}
                 <div style={styles.item}>
-                    <span style={styles.link} onClick={() => {}}>
+                    <span id="button-upload" style={styles.link} onClick={() => {}}>
                         <img src={svg} style={styles.icon} alt="" />
                         Upload MusicXML File
                         <input style={styles.fileInput} type="file" title="Click to upload" accept=".musicxml,.mxl" onChange={(e) => {uploadFile(e);}}></input>
