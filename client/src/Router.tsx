@@ -9,12 +9,12 @@ import Menu from './pages/Menu';
 const Router: React.FC = () => {
     return (
         <GlobalStateProvider>
-            <Global />
             <ReachRouter>
                 <Menu path="/" />
                 <Convert path="/convert" />
                 <NotFound path="/*" />
             </ReachRouter>
+            <Global />
         </GlobalStateProvider>
     );
 }

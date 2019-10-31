@@ -11,6 +11,8 @@ import {
 } from '../contexts/Preferences';
 import jsPDF from 'jspdf';
 import canvg from 'canvg';
+// import {useDialogState} from '../contexts/Dialog';
+// import * as Dialog from '../util/Dialog';
 
 type Props = {} & RouteComponentProps;
 
@@ -20,8 +22,16 @@ const Convert: React.FC<Props> = () => {
 
     let [preferences, setPreferences] = usePreferencesState();
     let [currentFile, setCurrentFile] = useCurrentFileState();
+    // let [, setDialogState] = useDialogState();
 
     let [showPreferencesButton, setShowPreferencesButton] = useState(true);
+
+    // let showError = (error: string)=>{
+    //     setDialogState(Dialog.showMessage('An Error Occurred',error,'Close',()=>{
+    //         setDialogState(Dialog.close());
+    //     }));
+    // }
+
     useEffect(() => {
         if (show) {
             setShowPreferencesButton(false);
@@ -56,9 +66,54 @@ const Convert: React.FC<Props> = () => {
 
     let openPDF = () => {
         try {
+
+            let margin = 5;
+            let padding = 5;
+
+            let canvas = document.getElementById('canvas') as HTMLCanvasElement;
+            
+
+
             (window as any).canvg = canvg;
-            let pdf = new jsPDF('p', 'px', 'letter');
-            (pdf as any).addSvgAsImage(document.getElementById('snview')!.innerHTML, 0, 0, 1000, 1000);
+            let pdf = new jsPDF(); //210 x 297 mm
+            let width = 210;
+            let height = 297;
+
+            margin = width*margin/100;
+            padding = width*margin/100;
+
+            pdf.setFillColor('#000000');
+            let svgs = [10,20,30];
+            
+            let nextRowY = margin;
+            svgs.forEach(svg=>{
+                let svgHeight = svg;
+                if(nextRowY+svgHeight > height-margin){
+                    pdf.addPage();
+                    nextRowY = margin;
+                }
+
+                canvas.height = 300;
+                canvg(canvas,document.getElementById('snview')!.innerHTML);
+                pdf.addImage(canvas,'PNG',margin, nextRowY, width-margin*2, svgHeight);
+
+                //(pdf as any).addSvgAsImage(document.getElementById('snview')!.innerHTML, margin, nextRowY, width-margin*2, svgHeight);
+
+                //pdf.rect(margin,nextRowY,width-margin*2,svgHeight,'F');
+                nextRowY += svgHeight+padding;
+            });
+            
+            
+            
+
+
+
+            
+            // pdf.rect(0,0,200,287,'F');
+            // pdf.addPage();
+            // pdf.rect(0,10,200,287,'F');
+
+            //(pdf as any).addSvgAsImage(document.getElementById('snview')!.innerHTML, 0, 0, 1000, 1000);
             pdf.save(`${currentFile.file_name || 'WYSIWYP'}.pdf`);
         } catch (e) {
             console.error(e);
@@ -205,6 +260,9 @@ const Convert: React.FC<Props> = () => {
             <div style={styles.SNView}>
                 {currentFile.data === undefined ? null : <SNView xml={currentFile.data} />}
             </div>
+            <div style={styles.hidden}>
+                <canvas id="canvas" width={1000} height={1000}/>
+            </div>
 
         </Frame>
 
@@ -330,6 +388,12 @@ const styleMap = {
         textAlign: 'center',
         WebkitAppearance: 'none',
     },
+    hidden: {
+        width: '0px',
+        height: '0px',
+        overflow: 'hidden',
+        opacity: .01,
+    }
 
 } as const;
 const styles: Record<keyof typeof styleMap, CSSProperties> = styleMap;
