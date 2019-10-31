@@ -70,44 +70,45 @@ const Convert: React.FC<Props> = () => {
             let margin = 5;
             let padding = 5;
 
-            let canvas = document.getElementById('canvas') as HTMLCanvasElement;
+            let hidden = document.getElementById('hidden-pdf-generation') as HTMLDivElement;
+            let canvas = hidden.getElementsByClassName('canvas')[0] as HTMLCanvasElement;
             
-
-
-            (window as any).canvg = canvg;
-            let pdf = new jsPDF(); //210 x 297 mm
+            let pdf = new jsPDF(); //210 x 297 mm (A4 paper dimensions)
             let width = 210;
             let height = 297;
 
+            // should change with preferences
             margin = width*margin/100;
-            padding = width*margin/100;
+            padding = width*padding/100;
 
-            pdf.setFillColor('#000000');
-            let svgs = [10,20,30];
+
+            let rows = hidden.getElementsByClassName('snview-row');
             
             let nextRowY = margin;
-            svgs.forEach(svg=>{
-                let svgHeight = svg;
-                if(nextRowY+svgHeight > height-margin){
+            for(let i = 0; i < rows.length; i++) {
+                let row = rows[i];
+
+                let [,,w,h] = row.getElementsByTagName('svg')[0].getAttribute('viewBox')!.split(' ').map(x=>parseInt(x));
+                let canvasRowHeight = Math.ceil(1000*h/w);
+                let pdfRowHeight = Math.ceil((width-margin*2)*h/w);
+
+                if(nextRowY+pdfRowHeight > height-margin){
                     pdf.addPage();
                     nextRowY = margin;
                 }
 
-                canvas.height = 300;
-                canvg(canvas,document.getElementById('snview')!.innerHTML);
-                pdf.addImage(canvas,'PNG',margin, nextRowY, width-margin*2, svgHeight);
+                canvas.height = canvasRowHeight;
+                let ctx = canvas.getContext("2d")!;
+                ctx.fillStyle = "white";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "black";
+                canvg(canvas,row.innerHTML,{ignoreClear: true});
+                pdf.addImage(canvas, 'JPEG', margin, nextRowY, width-margin*2, pdfRowHeight);
 
-                //(pdf as any).addSvgAsImage(document.getElementById('snview')!.innerHTML, margin, nextRowY, width-margin*2, svgHeight);
-
-                //pdf.rect(margin,nextRowY,width-margin*2,svgHeight,'F');
-                nextRowY += svgHeight+padding;
-            });
+                nextRowY += pdfRowHeight+padding;
+            }
             
             
-            
-
-
-
             
             // pdf.rect(0,0,200,287,'F');
             // pdf.addPage();
@@ -260,8 +261,9 @@ const Convert: React.FC<Props> = () => {
             <div style={styles.SNView}>
                 {currentFile.data === undefined ? null : <SNView xml={currentFile.data} />}
             </div>
-            <div style={styles.hidden}>
-                <canvas id="canvas" width={1000} height={1000}/>
+            <div id="hidden-pdf-generation" style={styles.hidden}>
+                <canvas className="canvas" width={1000} height={1000}/>
+                {currentFile.data === undefined ? null : <SNView xml={currentFile.data} forcedWidth={1000} />}
             </div>
 
         </Frame>

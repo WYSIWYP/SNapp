@@ -11,7 +11,7 @@ import {navigate} from '@reach/router';
 
 type Props = {
     xml: MusicXML.ScoreTimewise,
-    options?: {},
+    forcedWidth?: number,
 };
 
 enum Accidental {
@@ -20,7 +20,7 @@ enum Accidental {
     Sharp = 1
 }
 
-const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
+const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
     const ref = useRef(null! as HTMLDivElement);
     let [width, setWidth] = useState<number | undefined>(undefined);
     let [score, setScore] = useState<Score | undefined>(undefined);
@@ -38,22 +38,26 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
 
     console.log('Score:',score);
     useEffect(() => {
-        let width: number = undefined!;
-        let callback = () => {
-            let newWidth = ref.current!.getBoundingClientRect().width;
-            if (width !== newWidth) {
-                width = newWidth;
-                setWidth(newWidth);
+        if(forcedWidth === undefined){
+            let width: number = undefined!;
+            let callback = () => {
+                let newWidth = ref.current!.getBoundingClientRect().width;
+                if (width !== newWidth) {
+                    width = newWidth;
+                    setWidth(newWidth);
+                }
+            };
+            window.addEventListener("resize", callback);
+            // let interval = setInterval(callback, 20);
+            callback();
+            return () => {
+                window.removeEventListener("resize", callback);
+                // clearInterval(interval);
             }
-        };
-        window.addEventListener("resize", callback);
-        // let interval = setInterval(callback, 20);
-        callback();
-        return () => {
-            window.removeEventListener("resize", callback);
-            // clearInterval(interval);
+        } else {
+            setWidth(forcedWidth);
         }
-    }, []);
+    }, [setWidth,forcedWidth]);
 
     useEffect(() => {
         // parse only when page loads or xml changes
@@ -235,18 +239,20 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
         let row = (i: number): JSX.Element => {
             let height = (rowHeight + measureLabelSpace) + noteSymbolSize / 2;
             return (
-                <svg id={`row${i}`} key={i} viewBox={`0 0 ${width} ${height}`} style={{paddingBottom: `${rowPadding}`}}>
-                    <g id={`row${i}`} key={i} transform={`translate(${horizontalPadding}, 0)`}>
-                        {devMode ? <rect y={measureLabelSpace} width={staffLabelSpace} height={rowHeight} fill="#ffdddd" /> : null}
-                        {devMode ? <rect x={staffLabelSpace} y={measureLabelSpace} width={octaveLabelSpace} height={rowHeight} fill="#ffddff" /> : null}
-                        <text x={staffLabelSpace} y={measureLabelSpace + rowHeight / 2} fontSize={staffLabelSpace * 1.5} textAnchor="end" dominantBaseline="middle">𝒯</text>
-                        <rect x={staffLabelSpace + octaveLabelSpace - strokeWidth / 2} y={measureLabelSpace - strokeWidth / 2} width={strokeWidth} height={rowHeight + strokeWidth} fill="#000000" />
+                <div className={`snview-row snview-row-${i}`} key={i} style={{position: 'relative', height: 'auto', paddingBottom: `${rowPadding}px`}}>
+                    <svg viewBox={`0 0 ${width} ${height}`}>
+                        <g id={`row${i}`} key={i} transform={`translate(${horizontalPadding}, 0)`}>
+                            {devMode ? <rect y={measureLabelSpace} width={staffLabelSpace} height={rowHeight} fill="#ffdddd" /> : null}
+                            {devMode ? <rect x={staffLabelSpace} y={measureLabelSpace} width={octaveLabelSpace} height={rowHeight} fill="#ffddff" /> : null}
+                            <text x={staffLabelSpace} y={measureLabelSpace + rowHeight / 2} fontSize={staffLabelSpace * 1.5} textAnchor="end" dominantBaseline="middle">𝒯</text>
+                            <rect x={staffLabelSpace + octaveLabelSpace - strokeWidth / 2} y={measureLabelSpace - strokeWidth / 2} width={strokeWidth} height={rowHeight + strokeWidth} fill="#000000" />
 
-                        {range(0, i < rowNumber - 1 ? measuresPerRow : measureNumber - (rowNumber - 1) * measuresPerRow).map(j =>
-                            measure(staffLabelSpace + octaveLabelSpace + j * measureWidth, 0, i * measuresPerRow + j)
-                        )}
-                    </g>
-                </svg>
+                            {range(0, i < rowNumber - 1 ? measuresPerRow : measureNumber - (rowNumber - 1) * measuresPerRow).map(j =>
+                                measure(staffLabelSpace + octaveLabelSpace + j * measureWidth, 0, i * measuresPerRow + j)
+                            )}
+                        </g>
+                    </svg>
+                </div>
             );
         }
 
