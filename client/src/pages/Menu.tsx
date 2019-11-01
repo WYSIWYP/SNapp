@@ -2,8 +2,11 @@ import React, {CSSProperties, useState, useEffect, Fragment} from 'react';
 import {RouteComponentProps, navigate} from "@reach/router";
 import Frame from '../components/Frame';
 import svg from '../images/upload.svg';
-import MusicXML from 'musicxml-interfaces';
+import MusicXML, {ScoreTimewise} from 'musicxml-interfaces';
 import {useCurrentFileState} from '../contexts/CurrentFile';
+import {useDialogState} from '../contexts/Dialog';
+import * as Dialog from '../util/Dialog';
+import JSZip from 'jszip';
 
 type Props = {} & RouteComponentProps;
 
@@ -16,7 +19,14 @@ const Menu: React.FC<Props> = () => {
 
     let [recentFiles, setRecentFiles] = useState<recentFile[]>(undefined!);
 
+    let [, setDialogState] = useDialogState();
     let [, setCurrentFile] = useCurrentFileState();
+
+    let showError = (error: string)=>{
+        setDialogState(Dialog.showMessage('An Error Occurred',error,'Close',()=>{
+            setDialogState(Dialog.close());
+        }));
+    }
 
     useEffect(() => {
         let recent: recentFile[] = null!;
@@ -27,8 +37,6 @@ const Menu: React.FC<Props> = () => {
             recent = [];
         }
         setRecentFiles(recent);
-
-
     }, []);
 
     const loadFile = (x: recentFile) => {
@@ -38,59 +46,187 @@ const Menu: React.FC<Props> = () => {
             // Set this song as the current work in the global context
             setCurrentFile({type: 'set', val: {id: x.id, file_name: x.file_name, data: parsed}});
 
-            // Set this song as the current work in localStorage
-            localStorage.setItem('current_file', x.id);
+            try {
+                // Set this song as the current work in localStorage
+                localStorage.setItem('current_file', x.id);
+            } catch(e){
+                // Local storage may be disabled
+                console.error(e);
+            }
 
             navigate('convert');
         } catch (e) {
+            showError('An issue was encountered while loading the data for this file.');
             console.error(e);
         }
     };
-
+    
     const uploadFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-        let fileName = (e.target as any).files[0].name.replace(/\.musicxml$/ig, '');
+        let fileName = (e.target as any).files[0].name.replace(/\.(?:musicxml|mxl)$/i, '');
+        let failedReads = 0;
+        let fail = ()=>{
+            failedReads++;
+            if(failedReads === 2){ //both reads failed
+                showError('An issue was encountered while reading the selected file.');
+            }
+        }
         try {
-            let reader = new FileReader();
-            reader.onload = function (e) {
+            let reader1 = new FileReader();
+            reader1.onload = function () {
                 try {
-                    let parsed = MusicXML.parseScore((e.target as any).result);
-
-                    try {
-                        let id = `file_${Array.from({length: 16}, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
-
-                        // Set this song as the current work in the global context
-                        setCurrentFile({type: 'set', val: {id, file_name: fileName, data: parsed}});
-
-                        // Set this song as the current work in localStorage
-                        localStorage.setItem(id, JSON.stringify(parsed));
-                        localStorage.setItem('current_file', id);
-
-                        // Add this song to the recent songs list
-                        let newRecentFiles = recentFiles.map(x => x);
-
-                        for (let i = 0; i < newRecentFiles.length; i++) {
-                            if (newRecentFiles[i]['file_name'] == fileName) {
-                                newRecentFiles.splice(i, 1);
-                            }
-                        }
-
-                        newRecentFiles.unshift({file_name: fileName, date: new Date().getTime(), id});
-                        localStorage.setItem('recent_files', JSON.stringify(newRecentFiles));
-
-                    } catch (e) {
-                        console.error(e);
+                    let data = reader1.result;
+                    if(data === null){
+                        throw new Error('Failed to read file - null');
                     }
-
-                    navigate('convert');
+                    //try to interpret this file as compressed
+                    
+                    (async ()=>{
+                        try {
+                            let zip = await JSZip.loadAsync(data);
+                            let details = await zip.file('META-INF/container.xml').async("text");
+                            let parser = new DOMParser();
+                            let detailsDOM = parser.parseFromString(details, "application/xml");
+                            let nodes = detailsDOM.getElementsByTagName('rootfile');
+                            let musicXMLPath = nodes[0].getAttribute('full-path')!;
+                            for(let i = nodes.length-1; i >= 0; i--){
+                                if(nodes[i].getAttribute('media-type') === 'application/vnd.recordare.musicxml+xml'){
+                                    musicXMLPath = nodes[i].getAttribute('full-path')!;
+                                }
+                            }
+                            let musicXMLData = await zip.file(musicXMLPath).async("text");
+                            let parsed = MusicXML.parseScore(musicXMLData);
+                            if(parsed.measures === undefined){
+                                throw new Error('Invalid MusicXML format');
+                            }
+                            onUpload(fileName,parsed);
+                        } catch(e){
+                            fail();
+                            console.error(e);
+                        }
+                    })();
                 } catch (e) {
+                    fail();
                     console.error(e);
                 }
             };
-            reader.readAsText((e.target as any).files[0]);
+            reader1.readAsArrayBuffer((e.target as any).files[0]);
+            let reader2 = new FileReader();
+            reader2.onload = function () {
+                try {
+                    let data = reader2.result;
+                    if(data === null){
+                        throw new Error('Failed to read file - null');
+                    }
+                    //try to interpret this file as uncompressed
+                    let parsed = MusicXML.parseScore(data as string);
+                    
+                    if(parsed.measures === undefined){
+                        throw new Error('Invalid MusicXML format');
+                    }
+                    console.log(parsed);
+                    
+                    onUpload(fileName,parsed);
+                } catch (e) {
+                    fail();
+                    console.error(e);
+                }
+            };
+            reader2.readAsText((e.target as any).files[0]);
+
+
+
+
+
+            // let reader = new FileReader();
+            // reader.onload = function () {
+            //     try {
+            //         let data = reader.result;
+            //         let parsed: ScoreTimewise;
+            //         if(data === null){
+            //             throw new Error('Failed to read file - null');
+            //         }
+            //         try {
+            //             //try to interpret this file as uncompressed
+            //             parsed = MusicXML.parseScore(data.toString());
+            //             console.log(data.toString());
+            //             console.log(parsed);
+            //         } catch(e){
+
+            //             throw new Error('...');
+            //         }
+
+            //         let id = `file_${Array.from({length: 16}, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
+
+            //         // Set this song as the current work in the global context
+            //         setCurrentFile({type: 'set', val: {id, file_name: fileName, data: parsed}});
+
+            //         // Fail silently if localStorage is disabled
+            //         try {
+                        
+            //             // Set this song as the current work in localStorage
+            //             localStorage.setItem(id, JSON.stringify(parsed));
+            //             localStorage.setItem('current_file', id);
+
+            //             // Add this song to the recent songs list
+            //             let newRecentFiles = recentFiles.map(x => x);
+
+            //             for (let i = 0; i < newRecentFiles.length; i++) {
+            //                 if (newRecentFiles[i]['file_name'] === fileName) {
+            //                     newRecentFiles.splice(i, 1);
+            //                 }
+            //             }
+
+            //             newRecentFiles.unshift({file_name: fileName, date: new Date().getTime(), id});
+            //             localStorage.setItem('recent_files', JSON.stringify(newRecentFiles));
+
+            //         } catch (e) {
+            //             console.error(e);
+            //         }
+
+            //         navigate('convert');
+            //     } catch (e) {
+            //         showError('An issue was encountered while reading the selected file.');
+            //         console.error(e);
+            //     }
+            // };
+            // reader.readAsArrayBuffer((e.target as any).files[0]);
         } catch (e) {
+            showError('An issue was encountered while reading the selected file.');
             console.error(e);
         }
     };
+
+    const onUpload = (fileName: string, parsed: ScoreTimewise)=>{
+        let id = `file_${Array.from({length: 16}, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
+
+        // Set this song as the current work in the global context
+        setCurrentFile({type: 'set', val: {id, file_name: fileName, data: parsed}});
+
+        // Fail silently if localStorage is disabled
+        try {
+            
+            // Set this song as the current work in localStorage
+            localStorage.setItem(id, JSON.stringify(parsed));
+            localStorage.setItem('current_file', id);
+
+            // Add this song to the recent songs list
+            let newRecentFiles = recentFiles.map(x => x);
+
+            for (let i = 0; i < newRecentFiles.length; i++) {
+                if (newRecentFiles[i]['file_name'] === fileName) {
+                    newRecentFiles.splice(i, 1);
+                }
+            }
+
+            newRecentFiles.unshift({file_name: fileName, date: new Date().getTime(), id});
+            localStorage.setItem('recent_files', JSON.stringify(newRecentFiles));
+
+        } catch (e) {
+            console.error(e);
+        }
+
+        navigate('convert');
+    }
 
     return (
         <Frame header="SNapp">
@@ -113,7 +249,7 @@ const Menu: React.FC<Props> = () => {
                         <div style={{...styles.item, ...styles.recentFiles}}>
                             <div style={{...styles.recentFilesInner}}>
                                 {recentFiles.map(x => <Fragment key={x.id}>
-                                    <div style={styles.recentFilesItem} onClick={() => {loadFile(x);}}>
+                                    <div className="button-recent-file" style={styles.recentFilesItem} onClick={() => {loadFile(x);}}>
                                         <div style={{...styles.recentFilesItemInner, flex: '0 1 auto', fontWeight: 'bold'}}>
                                             {x.file_name}
                                         </div>
@@ -129,10 +265,10 @@ const Menu: React.FC<Props> = () => {
                         <div style={{...styles.item, flex: '.24 0 auto'}} />
                     </>}
                 <div style={styles.item}>
-                    <span style={styles.link} onClick={() => {}}>
+                    <span id="button-upload" style={styles.link} onClick={() => {}}>
                         <img src={svg} style={styles.icon} alt="" />
                         Upload MusicXML File
-                        <input style={styles.fileInput} type="file" title="Click to upload" accept=".musicxml" onChange={(e) => {uploadFile(e);}}></input>
+                        <input style={styles.fileInput} type="file" title="Click to upload" accept=".musicxml,.mxl" onChange={(e) => {uploadFile(e);}}></input>
                     </span>
                 </div>
                 <div style={{...styles.item, flex: '1 0 auto'}} />

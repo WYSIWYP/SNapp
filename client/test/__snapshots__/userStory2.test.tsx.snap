@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`renders correctly ... 1`] = `
+exports[`renders Frame and Router correctly ... 1`] = `
 <div
   style={
     Object {
@@ -55,21 +55,4 @@ exports[`renders correctly ... 1`] = `
     }
   />
 </div>
-`;
-
-exports[`renders correctly ... 2`] = `
-<GlobalStateProvider>
-  <Global />
-  <Router>
-    <Menu
-      path="/"
-    />
-    <Convert
-      path="/convert"
-    />
-    <NotFound
-      path="/*"
-    />
-  </Router>
-</GlobalStateProvider>
 `;
