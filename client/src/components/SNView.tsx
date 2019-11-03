@@ -155,8 +155,11 @@ const SNView: React.FC<Props> = ({xml, /* options, children */}) => {
         let timeSignatures = [...score!.tracks[0].timeSignatures].reverse(); // we reverse the array because we want to find the latest key signature.
         let keySignatures = [...score!.tracks[0].keySignatures].reverse();
 
-        const currentTime = timeSignatures.find(timeSignature => timeSignature.measure <= measureNumber)!;
-        const currentKey = keySignatures.find(keySignature => keySignature.measure <= measureNumber);
+        let currentTime = timeSignatures.find(timeSignature => timeSignature.measure <= measureNumber)!;
+        let currentKey = keySignatures.find(keySignature => keySignature.measure <= measureNumber);
+
+        if (!currentTime) currentTime = score!.tracks[0].timeSignatures[0]; // sometimes, signatures are defined on the second measure which results in find failure above. This line adds error handling for this.
+        if (!keySignatures) currentKey = score!.tracks[0].keySignatures[0];
 
         return {currentTime, currentKey};
     }

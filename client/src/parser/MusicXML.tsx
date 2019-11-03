@@ -129,5 +129,34 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
         timeSignatures: parts[x].timeSignatures,
         keySignatures: parts[x].keySignatures
     }));
+
+    // TODO: more error checking
+    // handle unprovided signatures
+    tracks.forEach(track => {
+        // add default values for key signatures if it is not provided.
+        if (track.keySignatures.length === 0) track.keySignatures.push({ measure: 0, fifths: 0 });
+        // handling unprovided time signatures requires extra care. We go through each measure and assign appropriate beatTypes for each measure.
+        if (track.timeSignatures.length === 0) {
+            if (track.measures.length === 1) {
+                // case 1: all notes grouped into a single measure
+                let measure = track.measures[0];
+                let newMeasures: basicNote[][] = Array(Math.ceil(measure.length / 4)).fill([]).map((_, index) => index * 4).map(start => measure.slice(start, start + 4)); // divide notes into chunks of four
+                newMeasures.forEach((measure, idx) => measure.forEach(note => note.time -= 4 * idx)); // shift note start time appropriately
+                track.timeSignatures.push({measure: newMeasures.length, beats: 4, beatTypes: 4})
+                track.measures = newMeasures;
+            } else {
+                // case 2: time signature is just not provided
+                let currentMeasureLength = 4; // start with assuming 4/4 time signature.
+                track.measures.forEach((measure, measureNumber) => {
+                    let lastNote = measure[measure.length - 1];
+                    let measureLength = Math.max(lastNote.time + lastNote.duration);
+                    if (currentMeasureLength !== measureLength) {
+                        track.timeSignatures.push({measure: measureNumber, beats: measureLength, beatTypes: 4});
+                        currentMeasureLength = measureLength;
+                    }
+                });
+            }
+        }
+    });
     return {tracks}
 };
