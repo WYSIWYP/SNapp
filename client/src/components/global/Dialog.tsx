@@ -6,7 +6,7 @@ type Props = {};
 
 const Dialog: React.FC<Props> = () => {
     
-    let [dialog, dispatchDialog] = useDialogState();
+    let [dialog,] = useDialogState();
     let data = dialog.data!;
 
     let [drag, setDrag] = useState({active: false, startX: 0, startY: 0, mouseX: 0, mouseY: 0, x: 0, y: 0});
@@ -28,8 +28,10 @@ const Dialog: React.FC<Props> = () => {
                 ...styles.frame,
                 top: `calc(50% + ${drag.y}px)`,
                 left: `calc(50% + ${drag.x}px)`,
+                width: `${data.width}px`,
+                height: `${data.height}px`,
             }}>
-                <div style={{...styles.header, fontSize: 35 || 45}}
+                <div style={{...styles.header, fontSize: 30 || 45}}
                     onMouseDown={()=>{setDrag({...drag, active: true, startX: drag.mouseX-drag.x, startY: drag.mouseY-drag.y});}}
                 >
                     {data.title}
@@ -38,11 +40,7 @@ const Dialog: React.FC<Props> = () => {
                     </div>
                 </div>
                 <div style={styles.body}>
-                    <div style={{
-                        ...styles.page,
-                    }}>
-                        {data.contents}
-                    </div>
+                    {data.contents}
                     {/*<div style={styles.buttons}><Button text={data.buttons[0].text} action={data.buttons[0].action || (()=>{dispatchDialog({type: 'close'})})} /></div>*/}
                 </div>
             </div>
@@ -56,8 +54,6 @@ const styleMap = {
         backgroundColor: '#00000099',
     },
     frame: {
-        width: '600px',
-        height: '400px',
         border: '2px solid #444',
         overflow: 'hidden',
         transform: 'translate(-50%,-50%)',

@@ -11,6 +11,8 @@ import {
 } from '../contexts/Preferences';
 import jsPDF from 'jspdf';
 import canvg from 'canvg';
+// import {useDialogState} from '../contexts/Dialog';
+// import * as Dialog from '../util/Dialog';
 
 type Props = {} & RouteComponentProps;
 
@@ -20,8 +22,16 @@ const Convert: React.FC<Props> = () => {
 
     let [preferences, setPreferences] = usePreferencesState();
     let [currentFile, setCurrentFile] = useCurrentFileState();
+    // let [, setDialogState] = useDialogState();
 
     let [showPreferencesButton, setShowPreferencesButton] = useState(true);
+
+    // let showError = (error: string)=>{
+    //     setDialogState(Dialog.showMessage('An Error Occurred',error,'Close',()=>{
+    //         setDialogState(Dialog.close());
+    //     }));
+    // }
+
     useEffect(() => {
         if (show) {
             setShowPreferencesButton(false);
@@ -56,9 +66,55 @@ const Convert: React.FC<Props> = () => {
 
     let openPDF = () => {
         try {
-            (window as any).canvg = canvg;
-            let pdf = new jsPDF('p', 'px', 'letter');
-            (pdf as any).addSvgAsImage(document.getElementById('snview')!.innerHTML, 0, 0, 1000, 1000);
+
+            let margin = 5;
+            let padding = 5;
+
+            let hidden = document.getElementById('hidden-pdf-generation') as HTMLDivElement;
+            let canvas = hidden.getElementsByClassName('canvas')[0] as HTMLCanvasElement;
+            
+            let pdf = new jsPDF(); //210 x 297 mm (A4 paper dimensions)
+            let width = 210;
+            let height = 297;
+
+            // should change with preferences
+            margin = width*margin/100;
+            padding = width*padding/100;
+
+
+            let rows = hidden.getElementsByClassName('snview-row');
+            
+            let nextRowY = margin;
+            for(let i = 0; i < rows.length; i++) {
+                let row = rows[i];
+
+                let [,,w,h] = row.getElementsByTagName('svg')[0].getAttribute('viewBox')!.split(' ').map(x=>parseInt(x));
+                let canvasRowHeight = Math.ceil(1000*h/w);
+                let pdfRowHeight = Math.ceil((width-margin*2)*h/w);
+
+                if(nextRowY+pdfRowHeight > height-margin){
+                    pdf.addPage();
+                    nextRowY = margin;
+                }
+
+                canvas.height = canvasRowHeight;
+                let ctx = canvas.getContext("2d")!;
+                ctx.fillStyle = "white";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "black";
+                canvg(canvas,row.innerHTML,{ignoreClear: true});
+                pdf.addImage(canvas, 'JPEG', margin, nextRowY, width-margin*2, pdfRowHeight);
+
+                nextRowY += pdfRowHeight+padding;
+            }
+            
+            
+            
+            // pdf.rect(0,0,200,287,'F');
+            // pdf.addPage();
+            // pdf.rect(0,10,200,287,'F');
+
+            //(pdf as any).addSvgAsImage(document.getElementById('snview')!.innerHTML, 0, 0, 1000, 1000);
             pdf.save(`${currentFile.file_name || 'WYSIWYP'}.pdf`);
         } catch (e) {
             console.error(e);
@@ -87,14 +143,14 @@ const Convert: React.FC<Props> = () => {
     };
     let sidebar = (<div style={styles.sideBar}>
         <div style={styles.sideBarTop}>
-            <div title="Click to export" style={styles.sideBarTopOptions} onClick={() => {exportFile();}}>
+            <div id="export" title="Click to export" style={styles.sideBarTopOptions} onClick={() => {exportFile();}}>
                 Export
             </div>
-            <div style={styles.sideBarTopOptions}>
+            <div id="import" style={styles.sideBarTopOptions}>
                 Import
                 <input style={styles.fileInput} type="file" title="Click to import" accept=".snapp" onChange={(e) => {importFile(e);}}></input>
             </div>
-            <div style={styles.sideBarTopOptions} onClick={() => {setShow(false);}}>
+            <div id="close" style={styles.sideBarTopOptions} onClick={() => {setShow(false);}}>
                 Close X
             </div>
         </div>
@@ -186,7 +242,7 @@ const Convert: React.FC<Props> = () => {
         <Frame header="SNapp" showSideMenu={show} sideMenu={sidebar}>
             <div style={styles.subHeader}>
 
-                <div style={styles.left} onClick={() => {navigate('/');}}>
+                <div id="home" style={styles.left} onClick={() => {navigate('/');}}>
                     <svg style={styles.svg} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
                     Home
                 </div>
@@ -195,7 +251,7 @@ const Convert: React.FC<Props> = () => {
                     Save as PDF
                 </div>
 
-                <div style={styles.right} onClick={() => {setShow(true);}} >
+                <div id="preference" style={styles.right} onClick={() => {setShow(true);}} >
 
                     {!showPreferencesButton ? <></> : <><svg style={styles.svg} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Preferences</>}
 
@@ -204,6 +260,10 @@ const Convert: React.FC<Props> = () => {
             </div>
             <div style={styles.SNView}>
                 {currentFile.data === undefined ? null : <SNView xml={currentFile.data} />}
+            </div>
+            <div id="hidden-pdf-generation" style={styles.hidden}>
+                <canvas className="canvas" width={1000} height={1000}/>
+                {currentFile.data === undefined ? null : <SNView xml={currentFile.data} forcedWidth={1000} />}
             </div>
 
         </Frame>
@@ -266,6 +326,7 @@ const styleMap = {
         minWidth: '350px',
     },
     sideBarTop: {
+        position: 'sticky',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -275,8 +336,10 @@ const styleMap = {
         color: '#31B7D6',
         fontSize: '23px',
         fontWeight: 'bold',
-        position: 'relative',
         width: 'auto',
+        backgroundColor: '#4c4c4c',
+        opacity: 1,
+        zIndex: 1,
     },
     sideBarTopOptions: {
         position: 'relative',
@@ -297,6 +360,7 @@ const styleMap = {
         opacity: 0,
     },
     sideBarContent: {
+        zIndex: 0,
         padding: '0 20px',
         position: 'relative',
         marginTop: '40px',
@@ -323,13 +387,19 @@ const styleMap = {
         backgroundImage: `url(${dropDown})`,
         backgroundColor: 'rgba(255,255,255,0.6)',
         paddingLeft: '20px',
-        border: '1px solid #6F6F6F',
+        border: 'none',
         borderRadius: '10px',
         position: 'relative',
         width: '40%',
         textAlign: 'center',
         WebkitAppearance: 'none',
     },
+    hidden: {
+        width: '0px',
+        height: '0px',
+        overflow: 'hidden',
+        opacity: .01,
+    }
 
 } as const;
 const styles: Record<keyof typeof styleMap, CSSProperties> = styleMap;

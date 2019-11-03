@@ -5,10 +5,8 @@ export type state = {
     data?: {
         title: string,
         contents: any,
-        buttons: {
-            text: string,
-            action?: ()=>void
-        }[]
+        width: number,
+        height: number,
     }
 };
 export type action = {
