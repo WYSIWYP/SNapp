@@ -28,17 +28,17 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
 
     let [dialogState, setDialogState] = useDialogState();
 
-    let showError = (error: string)=>{
-        setDialogState(Dialog.showMessage('An Error Occurred',error,'Close',()=>{
+    let showError = (error: string) => {
+        setDialogState(Dialog.showMessage('An Error Occurred', error, 'Close', () => {
             navigate('/');
-            setImmediate(()=>setDialogState(Dialog.close()));
+            setImmediate(() => setDialogState(Dialog.close()));
         }));
     }
     let showErrorRef = useRef(showError);
 
-    console.log('Score:',score);
+    console.log('Score:', score);
     useEffect(() => {
-        if(forcedWidth === undefined){
+        if (forcedWidth === undefined) {
             let width: number = undefined!;
             let callback = () => {
                 let newWidth = ref.current!.getBoundingClientRect().width;
@@ -57,13 +57,13 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         } else {
             setWidth(forcedWidth);
         }
-    }, [setWidth,forcedWidth]);
+    }, [setWidth, forcedWidth]);
 
     useEffect(() => {
         // parse only when page loads or xml changes
         try {
             setScore(parse(xml));
-        } catch(e){
+        } catch (e) {
             showErrorRef.current('An issue was encountered while processing this file.');
         }
     }, [xml]);
@@ -177,11 +177,11 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             let timeSignatures = [...score!.tracks[0].timeSignatures].reverse(); // we reverse the array because we want to find the latest key signature.
             let keySignatures = [...score!.tracks[0].keySignatures].reverse();
 
-        let currentTime = timeSignatures.find(timeSignature => timeSignature.measure <= measureNumber)!;
-        let currentKey = keySignatures.find(keySignature => keySignature.measure <= measureNumber);
+            let currentTime = timeSignatures.find(timeSignature => timeSignature.measure <= measureNumber)!;
+            let currentKey = keySignatures.find(keySignature => keySignature.measure <= measureNumber);
 
-        if (!currentTime) currentTime = score!.tracks[0].timeSignatures[0]; // sometimes, signatures are defined on the second measure which results in find failure above. This line adds error handling for this.
-        if (!keySignatures) currentKey = score!.tracks[0].keySignatures[0];
+            if (!currentTime) currentTime = score!.tracks[0].timeSignatures[0]; // sometimes, signatures are defined on the second measure which results in find failure above. This line adds error handling for this.
+            if (!keySignatures) currentKey = score!.tracks[0].keySignatures[0];
 
             return {currentTime, currentKey};
         }
@@ -218,9 +218,11 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             const noteHeadSVG: JSX.Element[] = [];
             const noteTailSVG: JSX.Element[] = [];
             score!.tracks.forEach(track => {
-                track.measures[measureNumber].forEach(note => {
+                track.measures[measureNumber].forEach((note, idx) => {
                     noteHeadSVG.push(noteHead(note, key++));
-                    noteTailSVG.push(noteTail(note, key++));
+                    // check if the note is a tied note that continues to next row
+                    let noteSpansRow = (note.attributes.ties.includes(Tie.Start)) && (idx === track.measures[measureNumber].length - 1) && (measureNumber % measuresPerRow === measuresPerRow - 1);
+                    noteTailSVG.push(noteTail(note, key++, noteSpansRow));
                 });
             });
 
@@ -277,7 +279,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         //     y: verticalPadding + row * (rowHeight + measureLabelSpace + rowPadding) + rowHeight + measureLabelSpace
         // });
 
-        let noteTail = (note: basicNote, i: number) => {
+        let noteTail = (note: basicNote, i: number, noteSpansRow: boolean) => {
             let key = 0;
             let boxes: JSX.Element[] = [];
 
@@ -285,9 +287,9 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             let {x: xStart, y: yStart} = noteTimeToPos(note.time);
             let {x: xEnd} = noteTimeToPos(note.time + note.duration);
 
-            let pushBox = (x1: number, x2: number, y: number) => {
-                boxes.push(<rect key={key++} x={x1} y={y - (line + 1) * noteSymbolSize / 2} width={x2 - x1} height={noteSymbolSize} fill={colorPreferenceStyles[preferences.noteDurationColor]} fillOpacity={.5} />);
-            }
+            // let pushBox = (x1: number, x2: number, y: number) => {
+            //     boxes.push(<rect key={key++} x={x1} y={y - (line + 1) * noteSymbolSize / 2} width={x2 - x1} height={noteSymbolSize} fill={colorPreferenceStyles[preferences.noteDurationColor]} fillOpacity={.5} />);
+            // }
             // while (rowStart < rowEnd) {
             //     //only executes rarely so it is faster to compute this value in the loop
             //     pushBox(xStart, horizontalPadding + staffLabelSpace + octaveLabelSpace + measuresPerRow * measureWidth, yStart);
@@ -297,7 +299,19 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             //     xStart = x;
             //     yStart = y;
             // }
-            pushBox(xStart, xEnd, yStart);
+            if (noteSpansRow) {
+                let radius = noteSymbolSize / 3; // radius of the arc
+                boxes.push(
+                    <path
+                        key={key++}
+                        d={`m${xStart} ${yStart - (line + 1) * noteSymbolSize / 2} h${xEnd - xStart - radius} a${radius} ${radius} 0 0 1 ${radius} ${radius} v${noteSymbolSize - 2 * radius} a${radius} ${radius} 0 0 1 ${-radius} ${radius} h${-(xEnd - xStart - radius)} z`}
+                        fill={colorPreferenceStyles[preferences.noteDurationColor]}
+                        fillOpacity={0.5}
+                    />
+                );
+            } else {
+                boxes.push(<rect key={key++} x={xStart} y={yStart - (line + 1) * noteSymbolSize / 2} width={xEnd - xStart} height={noteSymbolSize} fill={colorPreferenceStyles[preferences.noteDurationColor]} fillOpacity={.5} />);
+            }
 
             return (
                 <React.Fragment key={i}>
@@ -365,8 +379,8 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                 {svgRows}
             </div>
         );
-    } catch(e){
-        if(!dialogState.shown){
+    } catch (e) {
+        if (!dialogState.shown) {
             showError('An issue was encountered while generating WYSIWYP output for the selected file.');
         }
         //console.error(e);

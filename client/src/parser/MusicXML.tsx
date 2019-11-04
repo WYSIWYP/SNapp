@@ -134,7 +134,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
     // handle unprovided signatures
     tracks.forEach(track => {
         // add default values for key signatures if it is not provided.
-        if (track.keySignatures.length === 0) track.keySignatures.push({ measure: 0, fifths: 0 });
+        if (track.keySignatures.length === 0) track.keySignatures.push({measure: 0, fifths: 0});
         // handling unprovided time signatures requires extra care. We go through each measure and assign appropriate beatTypes for each measure.
         if (track.timeSignatures.length === 0) {
             if (track.measures.length === 1) {
