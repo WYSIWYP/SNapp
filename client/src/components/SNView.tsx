@@ -4,7 +4,7 @@ import {range} from '../util/Util';
 import MusicXML from 'musicxml-interfaces';
 import {parse} from '../parser/MusicXML'
 import {basicNote, Score, Tie} from '../parser/Types'
-import {colorPreferenceStyles, usePreferencesState} from '../contexts/Preferences';
+import {colorPreferenceStyles, usePreferencesState, spacingPreferenceOption, scalePreferenceOption} from '../contexts/Preferences';
 import {useDialogState} from '../contexts/Dialog';
 import * as Dialog from '../util/Dialog';
 import {navigate} from '@reach/router';
@@ -74,27 +74,63 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
 
     try {
         let devMode = false;
-        //let maxStaffNumber = 2;
+
+        // fetch preference values
+        let {
+            noteDurationColor,
+            noteSymbolColor,
+            staffScale,
+            horizontalSpacing,
+            verticalSpacing,
+            noteScale,
+            naturalNoteShape,
+            sharpNoteShape,
+            flatNoteShape,
+            measuresPerRow,
+            accidentalType
+        } = preferences;
+
+        // Map preference strings to numeric values 
+        let noteScaleMap: Record<scalePreferenceOption, number> = {
+            small: 15,
+            medium: 20,
+            large: 25
+        }
+        let staffScaleMap: Record<scalePreferenceOption, number> = {
+            small: 18,
+            medium: 25,
+            large: 32
+        };
+        let verticalSpacingMap: Record<spacingPreferenceOption, number> = {
+            narrow: 10,
+            moderate: 30,
+            wide: 50
+        };
+        let horizontalSpacingMap: Record<spacingPreferenceOption, number> = {
+            narrow: 20,
+            moderate: 40,
+            wide: 60
+        };
 
         //general spacing
-        let noteSymbolSize = 20; //width/height of note symbols
+        let noteSymbolSize = noteScaleMap[noteScale]; //width/height of note symbols
         let strokeWidth = 2;
         let tickSize = 7;
 
         //vertical spacing
         let verticalPadding = 30; //top/bottom padding
-        let rowPadding = 30; //space between rows
+        let rowPadding = verticalSpacingMap[verticalSpacing]; //space between rows
         let measureLabelSpace = 15; //space for measure labels
 
         //horizontal spacing
-        let horizontalPadding = 20; //left/right padding
-        let staffLabelSpace = 25; //space for staff labels
+        let horizontalPadding = horizontalSpacingMap[horizontalSpacing]; //left/right padding
+        let staffLabelSpace = staffScaleMap[staffScale]; //space for staff labels
         let octaveLabelSpace = measureLabelSpace; //space for octave labels
         // let tieExtensionSpace = measureLabelSpace;
 
         // composite horizontal spacing
         let scoreWidth = width - 2 * horizontalPadding - staffLabelSpace - octaveLabelSpace; // width of just the WYSIWYP score
-        let beatWidth = scoreWidth / score.tracks[0].timeSignatures[0].beats / preferences.measuresPerRow;
+        let beatWidth = scoreWidth / score.tracks[0].timeSignatures[0].beats / measuresPerRow;
 
         // get key signature
         let keyFifths = score.tracks[0].keySignatures[0].fifths;
@@ -117,8 +153,8 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             let line = Math.floor(note / 12 - 1) * 7 + noteMap[note % 12];
 
             // if note is flat, we need to bring it a line higher.
-            if (preferences.accidentalType === 'auto' && getNoteAccidental(note) < 0) line++;
-            else if (preferences.accidentalType === 'flat' && getNoteAccidental(note) !== 0) line++; // user overrided the accidental setting
+            if (accidentalType === 'auto' && getNoteAccidental(note) < 0) line++;
+            else if (accidentalType === 'flat' && getNoteAccidental(note) !== 0) line++; // user overrided the accidental setting
 
             return line;
         };
@@ -163,7 +199,6 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         // if (measuresPerRow <= 0) {
         //     throw new Error('Could not place a measure in the allowed space');
         // }
-        let measuresPerRow = preferences.measuresPerRow;
         horizontalPadding += (availableMeasureSpace - measuresPerRow * measureWidth) / 2; //update horizontal padding to center rows
 
         //calculate the number of rows
@@ -194,7 +229,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         let measure = (x: number, y: number, measureNumber: number) => {
             // Get time signature of current measure
             let {currentTime, currentKey} = getCurrentSignatures(measureNumber);
-            beatWidth = scoreWidth / currentTime.beats / preferences.measuresPerRow;
+            beatWidth = scoreWidth / currentTime.beats / measuresPerRow;
             beatsPerMeasure = currentTime.beats;
             keyFifths = currentKey!.fifths;
 
@@ -293,7 +328,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             let {x: xEnd} = noteTimeToPos(note.time + note.duration);
 
             // let pushBox = (x1: number, x2: number, y: number) => {
-            //     boxes.push(<rect key={key++} x={x1} y={y - (line + 1) * noteSymbolSize / 2} width={x2 - x1} height={noteSymbolSize} fill={colorPreferenceStyles[preferences.noteDurationColor]} fillOpacity={.5} />);
+            //     boxes.push(<rect key={key++} x={x1} y={y - (line + 1) * noteSymbolSize / 2} width={x2 - x1} height={noteSymbolSize} fill={colorPreferenceStyles[noteDurationColor]} fillOpacity={.5} />);
             // }
             // while (rowStart < rowEnd) {
             //     //only executes rarely so it is faster to compute this value in the loop
@@ -310,12 +345,12 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                     <path
                         key={key++}
                         d={`m${xStart} ${yStart - (line + 1) * noteSymbolSize / 2} h${xEnd - xStart - radius} a${radius} ${radius} 0 0 1 ${radius} ${radius} v${noteSymbolSize - 2 * radius} a${radius} ${radius} 0 0 1 ${-radius} ${radius} h${-(xEnd - xStart - radius)} z`}
-                        fill={colorPreferenceStyles[preferences.noteDurationColor]}
+                        fill={colorPreferenceStyles[noteDurationColor]}
                         fillOpacity={0.5}
                     />
                 );
             } else {
-                boxes.push(<rect key={key++} x={xStart} y={yStart - (line + 1) * noteSymbolSize / 2} width={xEnd - xStart} height={noteSymbolSize} fill={colorPreferenceStyles[preferences.noteDurationColor]} fillOpacity={.5} />);
+                boxes.push(<rect key={key++} x={xStart} y={yStart - (line + 1) * noteSymbolSize / 2} width={xEnd - xStart} height={noteSymbolSize} fill={colorPreferenceStyles[noteDurationColor]} fillOpacity={.5} />);
             }
 
             return (
@@ -340,19 +375,19 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             let strokeWidth = 3;
             let crossCircleWidth = noteSymbolSize / 2 / Math.sqrt(2);
 
-            let triangleUp = <polygon key={i} points={`${x},${y - triHeight / 2} ${x + noteSymbolSize / 2},${y + triHeight / 2} ${x - noteSymbolSize / 2},${y + triHeight / 2}`} fill={colorPreferenceStyles[preferences.noteSymbolColor]} />;
-            let triangleDown = <polygon key={i} points={`${x},${y + triHeight / 2} ${x + noteSymbolSize / 2},${y - triHeight / 2} ${x - noteSymbolSize / 2},${y - triHeight / 2}`} fill={colorPreferenceStyles[preferences.noteSymbolColor]} />;
-            let hollowCircle = <circle key={i} cx={x} cy={y} r={(noteSymbolSize - strokeWidth) / 2} strokeWidth={strokeWidth} stroke={colorPreferenceStyles[preferences.noteSymbolColor]} fill='none' />;
-            let circle = <circle key={i} cx={x} cy={y} r={noteSymbolSize / 2} fill={colorPreferenceStyles[preferences.noteSymbolColor]} />;
+            let triangleUp = <polygon key={i} points={`${x},${y - triHeight / 2} ${x + noteSymbolSize / 2},${y + triHeight / 2} ${x - noteSymbolSize / 2},${y + triHeight / 2}`} fill={colorPreferenceStyles[noteSymbolColor]} />;
+            let triangleDown = <polygon key={i} points={`${x},${y + triHeight / 2} ${x + noteSymbolSize / 2},${y - triHeight / 2} ${x - noteSymbolSize / 2},${y - triHeight / 2}`} fill={colorPreferenceStyles[noteSymbolColor]} />;
+            let hollowCircle = <circle key={i} cx={x} cy={y} r={(noteSymbolSize - strokeWidth) / 2} strokeWidth={strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} fill='none' />;
+            let circle = <circle key={i} cx={x} cy={y} r={noteSymbolSize / 2} fill={colorPreferenceStyles[noteSymbolColor]} />;
 
             let crossCircle = <g key={i}>
-                <circle cx={x} cy={y} r={(noteSymbolSize - 2) / 2} strokeWidth={2} stroke={colorPreferenceStyles[preferences.noteSymbolColor]} fill='none' />;
-                <line x1={x - crossCircleWidth} y1={y - crossCircleWidth} x2={x + crossCircleWidth} y2={y + crossCircleWidth} stroke={colorPreferenceStyles[preferences.noteSymbolColor]} strokeWidth={2} />
-                <line x1={x - crossCircleWidth} y1={y + crossCircleWidth} x2={x + crossCircleWidth} y2={y - crossCircleWidth} stroke={colorPreferenceStyles[preferences.noteSymbolColor]} strokeWidth={2} />
+                <circle cx={x} cy={y} r={(noteSymbolSize - 2) / 2} strokeWidth={2} stroke={colorPreferenceStyles[noteSymbolColor]} fill='none' />;
+                <line x1={x - crossCircleWidth} y1={y - crossCircleWidth} x2={x + crossCircleWidth} y2={y + crossCircleWidth} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={2} />
+                <line x1={x - crossCircleWidth} y1={y + crossCircleWidth} x2={x + crossCircleWidth} y2={y - crossCircleWidth} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={2} />
             </g>
 
-            let square = <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} fill={colorPreferenceStyles[preferences.noteSymbolColor]} />
-            let hollowSquare = <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} stroke={colorPreferenceStyles[preferences.noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />
+            let square = <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} fill={colorPreferenceStyles[noteSymbolColor]} />
+            let hollowSquare = <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />
 
             let noteShapes = {
                 '▲': triangleUp,
@@ -364,9 +399,9 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                 '⨂': crossCircle,
             } as any;
 
-            if (accidental === 0)  return noteShapes[preferences.naturalNoteShape];
-            else if (preferences.accidentalType === 'auto') return accidental > 0 ? noteShapes[preferences.sharpNoteShape] : noteShapes[preferences.flatNoteShape];
-            else return preferences.accidentalType === 'sharp' ? noteShapes[preferences.sharpNoteShape] : noteShapes[preferences.flatNoteShape];
+            if (accidental === 0) return noteShapes[naturalNoteShape];
+            else if (accidentalType === 'auto') return accidental > 0 ? noteShapes[sharpNoteShape] : noteShapes[flatNoteShape];
+            else return accidentalType === 'sharp' ? noteShapes[sharpNoteShape] : noteShapes[flatNoteShape];
         }
 
         // let devSvg = devMode ? (
