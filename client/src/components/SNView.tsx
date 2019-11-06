@@ -155,10 +155,11 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
 
         //calculate tne number of measures per row
         let availableMeasureSpace = width - horizontalPadding * 2 - staffLabelSpace - octaveLabelSpace;
-        let measuresPerRow = Math.floor(availableMeasureSpace / measureWidth);
-        if (measuresPerRow <= 0) {
-            throw new Error('Could not place a measure in the allowed space');
-        }
+        // let measuresPerRow = Math.floor(availableMeasureSpace / measureWidth);
+        // if (measuresPerRow <= 0) {
+        //     throw new Error('Could not place a measure in the allowed space');
+        // }
+        let measuresPerRow = preferences.measuresPerRow;
         horizontalPadding += (availableMeasureSpace - measuresPerRow * measureWidth) / 2; //update horizontal padding to center rows
 
         //calculate the number of rows
