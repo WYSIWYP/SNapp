@@ -7,7 +7,7 @@ import dropDown from '../images/dropDown.svg'
 import {useCurrentFileState} from '../contexts/CurrentFile';
 import {
     usePreferencesState, colorPreferenceOptions, scalePreferenceOptions, 
-    spacingPreferenceOptions, noteHeadPreferenceOptions, measuresPerRowOptions
+    spacingPreferenceOptions, noteHeadPreferenceOptions, measuresPerRowOptions, accidentalTypeOptions
 } from '../contexts/Preferences';
 import jsPDF from 'jspdf';
 import canvg from 'canvg';
@@ -232,6 +232,13 @@ const Convert: React.FC<Props> = () => {
                         <select style={styles.select} value={preferences.measuresPerRow} onChange={
                             (e) => {setPreferences({type: 'set', val: {measuresPerRow: e.target.value as any}});}
                         }>{measuresPerRowOptions.map(x => <option key={x}>{x}</option>)}</select>
+                    </div>
+
+                    <div style={styles.line}>
+                        <div style={styles.name}>Accidental Type</div>
+                        <select style={styles.select} value={preferences.accidentalType} onChange={
+                            (e) => {setPreferences({type: 'set', val: {accidentalType: e.target.value as any}});}
+                        }>{accidentalTypeOptions.map(x => <option key={x}>{x}</option>)}</select>
                     </div>
                 </div>
             </label>

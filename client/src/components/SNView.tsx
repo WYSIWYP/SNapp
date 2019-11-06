@@ -115,7 +115,11 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         // We map C0 (midi note 12) to line 0.
         let getNoteLine = (note: number) => {
             let line = Math.floor(note / 12 - 1) * 7 + noteMap[note % 12];
-            line += getNoteAccidental(note) < 0 ? 1 : 0; // if note is flat, we need to bring it a line higher.
+
+            // if note is flat, we need to bring it a line higher.
+            if (preferences.accidentalType === 'auto' && getNoteAccidental(note) < 0) line++;
+            else if (preferences.accidentalType === 'flat' && getNoteAccidental(note) !== 0) line++; // user overrided the accidental setting
+
             return line;
         };
         //calculate lowest and highest note
@@ -359,7 +363,10 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                 '□': hollowSquare,
                 '⨂': crossCircle,
             } as any;
-            return accidental === 0 ? noteShapes[preferences.naturalNoteShape] : (accidental > 0 ? noteShapes[preferences.sharpNoteShape] : noteShapes[preferences.flatNoteShape]);
+
+            if (accidental === 0)  return noteShapes[preferences.naturalNoteShape];
+            else if (preferences.accidentalType === 'auto') return accidental > 0 ? noteShapes[preferences.sharpNoteShape] : noteShapes[preferences.flatNoteShape];
+            else return preferences.accidentalType === 'sharp' ? noteShapes[preferences.sharpNoteShape] : noteShapes[preferences.flatNoteShape];
         }
 
         // let devSvg = devMode ? (
