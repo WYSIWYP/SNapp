@@ -7,7 +7,7 @@ import dropDown from '../images/dropDown.svg'
 import {useCurrentFileState} from '../contexts/CurrentFile';
 import {
     usePreferencesState, colorPreferenceOptions, scalePreferenceOptions, 
-    spacingPreferenceOptions, noteHeadPreferenceOptions, measuresPerRowOptions
+    spacingPreferenceOptions, noteHeadPreferenceOptions, measuresPerRowOptions, accidentalTypeOptions
 } from '../contexts/Preferences';
 import jsPDF from 'jspdf';
 import canvg from 'canvg';
@@ -179,6 +179,14 @@ const Convert: React.FC<Props> = () => {
                     </div>
 
                     <div style={styles.line}>
+                        <div style={styles.name}>Note Scale</div>
+                        {/* deleted value and onchange */}
+                        <select style={styles.select} value={preferences.noteScale} onChange={
+                            (e) => {setPreferences({type: 'set', val: {noteScale: e.target.value as any}});}
+                        }>{scalePreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                    </div>
+
+                    <div style={styles.line}>
                         <div style={styles.name}>Horizontal Spacing</div>
                         {/* deleted value and onchange */}
                         <select style={styles.select} value={preferences.horizontalSpacing} onChange={
@@ -192,15 +200,6 @@ const Convert: React.FC<Props> = () => {
                         <select style={styles.select} value={preferences.verticalSpacing} onChange={
                             (e) => {setPreferences({type: 'set', val: {verticalSpacing: e.target.value as any}});}
                         }>{spacingPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
-
-
-                    <div style={styles.line}>
-                        <div style={styles.name}>Note Scale</div>
-                        {/* deleted value and onchange */}
-                        <select style={styles.select} value={preferences.noteScale} onChange={
-                            (e) => {setPreferences({type: 'set', val: {noteScale: e.target.value as any}});}
-                        }>{scalePreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
                     </div>
 
                     <div style={styles.line}>
@@ -232,6 +231,13 @@ const Convert: React.FC<Props> = () => {
                         <select style={styles.select} value={preferences.measuresPerRow} onChange={
                             (e) => {setPreferences({type: 'set', val: {measuresPerRow: e.target.value as any}});}
                         }>{measuresPerRowOptions.map(x => <option key={x}>{x}</option>)}</select>
+                    </div>
+
+                    <div style={styles.line}>
+                        <div style={styles.name}>Accidental Type</div>
+                        <select style={styles.select} value={preferences.accidentalType} onChange={
+                            (e) => {setPreferences({type: 'set', val: {accidentalType: e.target.value as any}});}
+                        }>{accidentalTypeOptions.map(x => <option key={x}>{x}</option>)}</select>
                     </div>
                 </div>
             </label>

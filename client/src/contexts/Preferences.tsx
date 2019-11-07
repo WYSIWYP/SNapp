@@ -18,14 +18,17 @@ export type colorPreferenceOption = (typeof colorPreferenceOptions)[number];
 export const scalePreferenceOptions = ['small', 'medium', 'large'] as const;
 export type scalePreferenceOption = (typeof scalePreferenceOptions)[number];
 
-export const spacingPreferenceOptions = [1, 2, 3, 4] as const;
+export const spacingPreferenceOptions = ['narrow', 'moderate', 'wide'] as const;
 export type spacingPreferenceOption = (typeof spacingPreferenceOptions)[number];
 
-export const noteHeadPreferenceOptions = ["▲", "▼", "●", "○", "⨂","◼","□"] as const;
+export const noteHeadPreferenceOptions = ["▲", "▼", "●", "○", "⨂","◼", "□"] as const;
 export type noteHeadPreferenceOption = (typeof noteHeadPreferenceOptions)[number];
 
-export const measuresPerRowOptions = [1, 2, 3, 4, 5, 6, 7] as const; // TODO: Consider using a slider
+export const measuresPerRowOptions = [1, 2, 3, 4, 5, 6] as const; // TODO: Consider using a slider
 export type measuresPerRowOption = (typeof measuresPerRowOptions)[number];
+
+export const accidentalTypeOptions = ['auto', 'sharp', 'flat'] as const;
+export type accidentalTypeOption = (typeof accidentalTypeOptions)[number];
 
 export type state = {
     noteDurationColor: colorPreferenceOption;
@@ -38,6 +41,7 @@ export type state = {
     sharpNoteShape: noteHeadPreferenceOption;
     flatNoteShape: noteHeadPreferenceOption;
     measuresPerRow: measuresPerRowOption;
+    accidentalType: accidentalTypeOption
 };
 export type action = {
     type: "set";
@@ -48,13 +52,14 @@ let initialState: state = {
     noteDurationColor: "grey",
     noteSymbolColor: "black",
     staffScale: 'medium',
-    horizontalSpacing: 2,
-    verticalSpacing: 2,
+    horizontalSpacing: 'moderate',
+    verticalSpacing: 'moderate',
     noteScale: 'medium',
     naturalNoteShape: '●',
     sharpNoteShape: '▲',
     flatNoteShape: '▼',
     measuresPerRow: 4,
+    accidentalType: 'auto'
 };
 
 export const PreferencesContext = createContext(undefined! as [
