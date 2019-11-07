@@ -21,6 +21,7 @@ enum Accidental {
 }
 
 const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
+    console.log(xml)
     const ref = useRef(null! as HTMLDivElement);
     let [width, setWidth] = useState<number | undefined>(undefined);
     let [score, setScore] = useState<Score | undefined>(undefined);
@@ -118,6 +119,25 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             line += getNoteAccidental(note) < 0 ? 1 : 0; // if note is flat, we need to bring it a line higher.
             return line;
         };
+
+        //find the title and author
+        let title = '';
+        try {
+            title = xml.movementTitle;
+            title = xml.work.workTitle;
+        } catch(e){}
+
+        let author = '';
+        try {
+            let credits = xml.credits.filter(x=>x.creditWords !== undefined && x.creditWords.length > 0).map(x=>x.creditWords);
+            credits.forEach(credit=>{credit.forEach(words=>{
+                if(Math.abs(words.words.length-20)<Math.abs(author.length-20)){
+                    author = words.words;
+                }
+            })})
+        } catch(e){}
+
+
         //calculate lowest and highest note
         let minNote = 128, maxNote = -1;
         score.tracks.forEach(track => track.measures.forEach(measure =>
@@ -244,7 +264,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         let row = (i: number): JSX.Element => {
             let height = (rowHeight + measureLabelSpace) + noteSymbolSize / 2;
             return (
-                <div className={`snview-row snview-row-${i}`} key={i} style={{position: 'relative', height: 'auto', paddingBottom: `${rowPadding}px`}}>
+                <div className={`snview-row snview-row-${i+1}`} key={i} style={{position: 'relative', height: 'auto', paddingBottom: `${rowPadding}px`}}>
                     <svg viewBox={`0 0 ${width} ${height}`}>
                         <g id={`row${i}`} key={i} transform={`translate(${horizontalPadding}, 0)`}>
                             {devMode ? <rect y={measureLabelSpace} width={staffLabelSpace} height={rowHeight} fill="#ffdddd" /> : null}
@@ -376,6 +396,13 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         return (
             <div id="snview" ref={ref} style={{width: '100%', height: 'auto', overflow: 'hidden', minWidth: '350px', userSelect: 'text', paddingTop: verticalPadding, paddingBottom: verticalPadding}}>
                 {/*devSvg*/}
+                <div className={`snview-row snview-row-0`} style={{position: 'relative', height: 'auto', paddingBottom: `${rowPadding}px`}}>
+                    <svg viewBox={`0 0 ${width} ${180}`}>
+                        <text x={width/2} y={50} fontSize={40} textAnchor="middle" alignmentBaseline="hanging">{title}</text>
+                        <text x={70} y={170} fontSize={25} textAnchor="start">60 bpm</text>
+                        <text x={width-70} y={170} fontSize={25} textAnchor="end">{author}</text>
+                    </svg>
+                </div>
                 {svgRows}
             </div>
         );
