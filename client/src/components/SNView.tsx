@@ -305,7 +305,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             //     yStart = y;
             // }
             if (noteSpansRow) {
-                let radius = noteSymbolSize / 3; // radius of the arc
+                let radius = noteSymbolSize / 2; // radius of the arc
                 boxes.push(
                     <path
                         key={key++}
