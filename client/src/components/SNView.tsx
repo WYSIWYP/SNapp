@@ -280,9 +280,11 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             score!.tracks.forEach(track => {
                 track.measures[measureNumber].forEach((note, idx) => {
                     noteHeadSVG.push(noteHead(note, key++));
+                    let tieStart = note.attributes.ties.includes(Tie.Start);
+                    let tieStop = note.attributes.ties.includes(Tie.Stop);
                     // check if the note is a tied note that continues to next row
-                    let noteSpansRow = (note.attributes.ties.includes(Tie.Start)) && (idx === track.measures[measureNumber].length - 1) && (measureNumber % measuresPerRow === measuresPerRow - 1);
-                    noteTailSVG.push(noteTail(note, key++, noteSpansRow));
+                    let noteSpansRow = tieStart /*&& (idx === track.measures[measureNumber].length - 1)*/ && (measureNumber % measuresPerRow === measuresPerRow - 1);
+                    noteTailSVG.push(noteTail(note, key++, tieStart, tieStop, noteSpansRow));
                 });
             });
 
@@ -339,7 +341,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         //     y: verticalPadding + row * (rowHeight + measureLabelSpace + rowPadding) + rowHeight + measureLabelSpace
         // });
 
-        let noteTail = (note: basicNote, i: number, noteSpansRow: boolean) => {
+        let noteTail = (note: basicNote, i: number, tieStart: boolean, tieStop: boolean, noteSpansRow: boolean) => {
             let key = 0;
             let boxes: JSX.Element[] = [];
 
@@ -359,19 +361,42 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             //     xStart = x;
             //     yStart = y;
             // }
-            if (noteSpansRow) {
-                let radius = noteSymbolSize / 2; // radius of the arc
-                boxes.push(
-                    <path
-                        key={key++}
-                        d={`m${xStart} ${yStart - (line + 1) * noteSymbolSize / 2} h${xEnd - xStart - radius} a${radius} ${radius} 0 0 1 ${radius} ${radius} v${noteSymbolSize - 2 * radius} a${radius} ${radius} 0 0 1 ${-radius} ${radius} h${-(xEnd - xStart - radius)} z`}
-                        fill={colorPreferenceStyles[noteDurationColor]}
-                        fillOpacity={0.5}
-                    />
-                );
-            } else {
-                boxes.push(<rect key={key++} x={xStart} y={yStart - (line + 1) * noteSymbolSize / 2} width={xEnd - xStart} height={noteSymbolSize} fill={colorPreferenceStyles[noteDurationColor]} fillOpacity={.5} />);
+
+            let roundingSpace = Math.max(Math.min(noteSymbolSize, xEnd-xStart),0);
+            let radiusStart = roundingSpace/4;
+            let radiusEnd = roundingSpace/2;
+            let pointedEnd = noteSpansRow;
+            
+            if(tieStart){
+                //if(!noteSpansRow){ //this check prevents pointed ends from extending past the end of the row
+                    radiusEnd = 0;
+                //}
             }
+            if(tieStop){
+                radiusStart = 0;
+            }
+            boxes.push(
+                <path
+                    key={key++}
+                    d={`
+                        M${xStart+radiusStart} ${yStart - (line + 1) * noteSymbolSize / 2}
+                        H${xEnd - radiusEnd}
+                        ${pointedEnd?`l`:`a${radiusEnd} ${radiusEnd} 0 0 ${noteSpansRow?0:1} `}${radiusEnd} ${radiusEnd}
+                        ${pointedEnd?`
+                            l${noteSymbolSize/2 - radiusEnd} ${noteSymbolSize/2 - radiusEnd}
+                            l${-noteSymbolSize/2 + radiusEnd} ${noteSymbolSize/2 - radiusEnd}
+                        `:`v${noteSymbolSize - 2 * radiusEnd}`}
+                        ${pointedEnd?`l`:`a${radiusEnd} ${radiusEnd} 0 0 ${noteSpansRow?0:1} `}${-radiusEnd} ${radiusEnd}
+                        H${xStart + radiusStart}
+                        a${radiusStart} ${radiusStart} 0 0 1 ${-radiusStart} ${-radiusStart}
+                        v${-noteSymbolSize + 2 * radiusStart}
+                        a${radiusStart} ${radiusStart} 0 0 1 ${radiusStart} ${-radiusStart}
+                        z
+                    `}
+                    fill={colorPreferenceStyles[noteDurationColor]}
+                    fillOpacity={0.5}
+                />
+            );
 
             return (
                 <React.Fragment key={i}>
