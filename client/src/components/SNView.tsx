@@ -284,7 +284,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
 
                     let tieStart = note.attributes.ties.includes(Tie.Start);
                     let tieStop = note.attributes.ties.includes(Tie.Stop);
-                    let isLastMeasure = (measureNumber % measuresPerRow === measuresPerRow - 1);
+                    let isLastMeasure = ((measureNumber + 1) % measuresPerRow === 0); // whether current measure is the last measure of the row
                     let isLastNote = note.time + note.duration >= currentTime.beats; // whether the note reaches the end of the measure
                     let noteSpansRow = tieStart && isLastMeasure && isLastNote; // whether tied note spans next row
                     noteTailSVG.push(noteTail(note, key++, tieStart, tieStop, noteSpansRow));
