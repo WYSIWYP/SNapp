@@ -3,7 +3,7 @@ import {range} from '../util/Util';
 // import {Note} from '@tonejs/midi/dist/Note';
 import MusicXML from 'musicxml-interfaces';
 import {parse} from '../parser/MusicXML'
-import {basicNote, Score, Tie} from '../parser/Types'
+import {basicNote, Score, Tie, TimeSignature, KeySignature} from '../parser/Types'
 import {colorPreferenceStyles, usePreferencesState, spacingPreferenceOption, scalePreferenceOption} from '../contexts/Preferences';
 import {useDialogState} from '../contexts/Dialog';
 import * as Dialog from '../util/Dialog';
@@ -233,20 +233,21 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         //calculate required height (vert padding + row height + row padding)
         // let height = verticalPadding * 2 + rowNumber * (rowHeight + measureLabelSpace) + (rowNumber - 1) * rowPadding;
 
-        let getCurrentSignatures = (measureNumber: number) => {
+        let getCurrentSignatures = (measureNumber: number): {currentTime: TimeSignature, currentKey: KeySignature} => {
             let timeSignatures = [...score!.tracks[0].timeSignatures].reverse(); // we reverse the array because we want to find the latest key signature.
             let keySignatures = [...score!.tracks[0].keySignatures].reverse();
 
-            let currentTime = timeSignatures.find(timeSignature => timeSignature.measure <= measureNumber)!;
+            let currentTime = timeSignatures.find(timeSignature => timeSignature.measure <= measureNumber);
             let currentKey = keySignatures.find(keySignature => keySignature.measure <= measureNumber);
 
-            if (!currentTime) currentTime = score!.tracks[0].timeSignatures[0]; // sometimes, signatures are defined on the second measure which results in find failure above. This line adds error handling for this.
-            if (!keySignatures) currentKey = score!.tracks[0].keySignatures[0];
-
+            // sometimes, signatures are defined on the second measure. Below lines handle such cases.
+            if (!currentTime) currentTime = score!.tracks[0].timeSignatures[0]; 
+            if (!currentKey) currentKey = score!.tracks[0].keySignatures[0];
             return {currentTime, currentKey};
         }
 
         let measure = (x: number, y: number, measureNumber: number) => {
+            // TODO: handle pick up measures
             // Get time signature of current measure
             let {currentTime, currentKey} = getCurrentSignatures(measureNumber);
             beatWidth = scoreWidth / currentTime.beats / measuresPerRow;
@@ -278,12 +279,14 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             const noteHeadSVG: JSX.Element[] = [];
             const noteTailSVG: JSX.Element[] = [];
             score!.tracks.forEach(track => {
-                track.measures[measureNumber].forEach((note, idx) => {
+                track.measures[measureNumber].forEach((note, _idx) => {
                     noteHeadSVG.push(noteHead(note, key++));
+
                     let tieStart = note.attributes.ties.includes(Tie.Start);
                     let tieStop = note.attributes.ties.includes(Tie.Stop);
-                    // check if the note is a tied note that continues to next row
-                    let noteSpansRow = tieStart /*&& (idx === track.measures[measureNumber].length - 1)*/ && (measureNumber % measuresPerRow === measuresPerRow - 1);
+                    let isLastMeasure = ((measureNumber + 1) % measuresPerRow === 0); // whether current measure is the last measure of the row
+                    let isLastNote = note.time + note.duration >= currentTime.beats; // whether the note reaches the end of the measure
+                    let noteSpansRow = tieStart && isLastMeasure && isLastNote; // whether tied note spans next row
                     noteTailSVG.push(noteTail(note, key++, tieStart, tieStop, noteSpansRow));
                 });
             });
@@ -326,7 +329,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         let noteTimeToPos = (noteTime: number) => ({
             x: beatWidth * noteTime,
             y: rowHeight + measureLabelSpace
-        })
+        });
 
         // let beatsToPos = (beat: number) => {
         //     let row = Math.floor(beat / beatsPerRow);
