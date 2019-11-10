@@ -123,6 +123,18 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         let rowPadding = verticalSpacingMap[verticalSpacing]; //space between rows
         let measureLabelSpace = 15; //space for measure labels
 
+        // spacing between two clefs (aka grand staff distance)
+        let dynamicsSpace = 20;
+        let lyricsSpace = 20;
+        let staffPadding = 5; 
+        let staffDistance = dynamicsSpace + lyricsSpace + 2 * staffPadding; 
+
+        // annotation space for each clef
+        let fingeringSpace = 20;
+        let articulationSpace = 20;
+        let articulationPadding = 5;
+        let annotationSpace = fingeringSpace + articulationSpace + 2 * articulationPadding;
+
         //horizontal spacing
         let horizontalPadding = horizontalSpacingMap[horizontalSpacing]; //left/right padding
         let staffLabelSpace = staffScaleMap[staffScale]; //space for staff labels

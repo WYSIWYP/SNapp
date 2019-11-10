@@ -7,7 +7,21 @@ const pitchToMidi = (pitch: {octave: number, step: string, alter?: number}) => {
     return (pitch.octave + 1) * 12 + step + (pitch.alter === undefined ? 0 : Math.round(pitch.alter));
 };
 
+// get piano part name from xml.
+const getPianoPart = (xml: MusicXML.ScoreTimewise): string => {
+    // TODO: better type check
+    let pianoPart = xml.partList.find((part) => {
+        if ((part as MusicXML.ScorePart).partName) {
+            return (part as MusicXML.ScorePart).partName.partName.toLowerCase() === 'piano';
+        }
+        return false;
+    });
+    let partId = (pianoPart as MusicXML.ScorePart).id;
+    return partId;
+};
+
 export const parse = (xml: MusicXML.ScoreTimewise): Score => {
+    getPianoPart(xml);
     let currentBeatType = 4;
     let parts: {
         [index: string]: {
