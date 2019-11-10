@@ -66,6 +66,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             setScore(parse(xml));
         } catch (e) {
             showErrorRef.current('An issue was encountered while processing this file.');
+            console.error(e);
         }
     }, [xml]);
 
@@ -490,6 +491,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             </div>
         );
     } catch (e) {
+        console.error(e);
         if (!dialogState.shown) {
             showError('An issue was encountered while generating WYSIWYP output for the selected file.');
         }

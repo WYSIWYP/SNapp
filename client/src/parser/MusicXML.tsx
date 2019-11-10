@@ -7,21 +7,30 @@ const pitchToMidi = (pitch: {octave: number, step: string, alter?: number}) => {
     return (pitch.octave + 1) * 12 + step + (pitch.alter === undefined ? 0 : Math.round(pitch.alter));
 };
 
+const isScorePart = (part: MusicXML.PartGroup | MusicXML.ScorePart): part is MusicXML.ScorePart => {
+    return part && part._class === 'ScorePart';
+};
+
 // get piano part name from xml.
-const getPianoPart = (xml: MusicXML.ScoreTimewise): string => {
-    // TODO: better type check
-    let pianoPart = xml.partList.find((part) => {
-        if ((part as MusicXML.ScorePart).partName) {
-            return (part as MusicXML.ScorePart).partName.partName.toLowerCase() === 'piano';
-        }
-        return false;
+const getPianoPart = (xml: MusicXML.ScoreTimewise): {pianoPartName: string, numStaves: number} => {
+    let pianoPart = xml.partList.find(part => isScorePart(part) && part.partName.partName.toLowerCase() === 'piano');
+    let pianoPartName = pianoPart ? (pianoPart as MusicXML.ScorePart).id : 'P1'; // if there is no piano, we just render the first part.
+    let numStaves: number = 0;
+    xml.measures.some(measure => {
+        measure.parts[pianoPartName].some(entry => {
+            if (entry.staves) {
+                numStaves = entry.staves;
+                return true;
+            }
+        });
+        return numStaves > 0;
     });
-    let partId = (pianoPart as MusicXML.ScorePart).id;
-    return partId;
+    if (!numStaves) numStaves = 1;
+    return {pianoPartName, numStaves};
 };
 
 export const parse = (xml: MusicXML.ScoreTimewise): Score => {
-    getPianoPart(xml);
+    console.log(getPianoPart(xml));
     let currentBeatType = 4;
     let parts: {
         [index: string]: {
@@ -130,6 +139,8 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                     case 'Barline':
                         break;
                     case 'Direction':
+                        break;
+                    case 'Sound':
                         break;
                     default:
                         console.error(`Unrecognized MusicXML entry: '${entry._class}'`);
