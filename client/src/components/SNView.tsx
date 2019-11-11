@@ -3,7 +3,7 @@ import {range} from '../util/Util';
 // import {Note} from '@tonejs/midi/dist/Note';
 import MusicXML from 'musicxml-interfaces';
 import {parse} from '../parser/MusicXML'
-import {basicNote, Score, Tie, TimeSignature, KeySignature} from '../parser/Types'
+import {Note, Score, Tie, TimeSignature, KeySignature} from '../parser/Types'
 import {colorPreferenceStyles, usePreferencesState, spacingPreferenceOption, scalePreferenceOption} from '../contexts/Preferences';
 import {useDialogState} from '../contexts/Dialog';
 import * as Dialog from '../util/Dialog';
@@ -37,7 +37,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
     }
     let showErrorRef = useRef(showError);
 
-    console.log('Score:', score);
+    // console.log('Score:', score);
     useEffect(() => {
         if (forcedWidth === undefined) {
             let width: number = undefined!;
@@ -168,7 +168,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
 
             // if note is flat, we need to bring it a line higher.
             if (accidentalType === 'auto' && getNoteAccidental(note) < 0) line++;
-            else if (accidentalType === 'flat' && getNoteAccidental(note) !== 0) line++; // user overrided the accidental setting
+            else if (accidentalType === 'flat' && getNoteAccidental(note) !== 0) line++; // handle user override
 
             return line;
         };
@@ -357,7 +357,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         //     y: verticalPadding + row * (rowHeight + measureLabelSpace + rowPadding) + rowHeight + measureLabelSpace
         // });
 
-        let noteTail = (note: basicNote, i: number, tieStart: boolean, tieStop: boolean, noteSpansRow: boolean) => {
+        let noteTail = (note: Note, i: number, tieStart: boolean, tieStop: boolean, noteSpansRow: boolean) => {
             let key = 0;
             let boxes: JSX.Element[] = [];
 
@@ -421,7 +421,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             );
         }
 
-        let noteHead = (note: basicNote, i: number) => {
+        let noteHead = (note: Note, i: number) => {
             if (note.attributes.ties.includes(Tie.Stop))
                 return;
             let accidental: Accidental = getNoteAccidental(note.midi);

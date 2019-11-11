@@ -1,5 +1,5 @@
 import MusicXML from 'musicxml-interfaces';
-import {basicNote, TimeSignature, KeySignature, Tracks, Score, Tie, measure} from './Types'
+import {Note, TimeSignature, KeySignature, Tracks, Score, Tie, measure, TrackType} from './Types'
 
 const pitchToMidi = (pitch: {octave: number, step: string, alter?: number}) => {
     // we assume C4 = 60 as middle C. Note that typical 88-key piano contains notes from A0 (21) - C8 (108).
@@ -11,26 +11,46 @@ const isScorePart = (part: MusicXML.PartGroup | MusicXML.ScorePart): part is Mus
     return part && part._class === 'ScorePart';
 };
 
-// get piano part name from xml.
-const getPianoPart = (xml: MusicXML.ScoreTimewise): {pianoPartName: string, numStaves: number} => {
-    let pianoPart = xml.partList.find(part => isScorePart(part) && part.partName.partName.toLowerCase() === 'piano');
-    let pianoPartName = pianoPart ? (pianoPart as MusicXML.ScorePart).id : 'P1'; // if there is no piano, we just render the first part.
-    let numStaves: number = 0;
+// get piano part name from xml
+const getPianoPartID = (xml: MusicXML.ScoreTimewise): string | undefined => {
+    const pianoPart = xml.partList.find(part => isScorePart(part) && part.partName.partName.toLowerCase() === 'piano');
+    return pianoPart ? (pianoPart as MusicXML.ScorePart).id : undefined;
+    // if (!pianoPart) return undefined;
+    // const pianoPartId = (pianoPart as MusicXML.ScorePart).id;
+
+    // get the number of staves 
+    // let numStaves: number | undefined;
+    // xml.measures.some(measure => measure.parts[pianoPartId].some(entry => numStaves = entry.staves)); // loop until entry.staves is defined
+    // if (numStaves === undefined) numStaves = 1; // default is 1
+    // return {pianoPartId, numStaves};
+};
+
+const getLyricsPartID = (xml: MusicXML.ScoreTimewise): string | undefined => {
+    let lyricsPartId: string | undefined;
+    // loop until we find a part with some lyrics defined. 
     xml.measures.some(measure => {
-        measure.parts[pianoPartName].some(entry => {
-            if (entry.staves) {
-                numStaves = entry.staves;
-                return true;
-            }
+        return Object.keys(measure.parts).some(partName => {
+            let part = measure.parts[partName];
+            let partContainsLyrics = part.some(entry => entry.lyrics !== undefined);
+            lyricsPartId = partContainsLyrics ? partName : undefined;
+            return lyricsPartId !== undefined;
         });
-        return numStaves > 0;
     });
-    if (!numStaves) numStaves = 1;
-    return {pianoPartName, numStaves};
+    return lyricsPartId;
 };
 
 export const parse = (xml: MusicXML.ScoreTimewise): Score => {
-    console.log(getPianoPart(xml));
+    let lyricsPartId = getLyricsPartID(xml);
+    let pianoPartId = getPianoPartID(xml);
+
+    console.log(`lyrics partId: ${lyricsPartId}, piano partId: ${pianoPartId}`);
+
+    // currently, SNApp renders piano and lyric parts. We store the ids of the tracks we have to parse below.
+    // let trackTypeMap: Partial<Record<string, TrackType>> = {
+    //     [pianoPartId]: 'Piano',
+    //     ...(lyricsPartId && {[lyricsPartId]: 'Lyrics'}) // conditionally assign lyrics part
+    // }
+
     let currentBeatType = 4;
     let parts: {
         [index: string]: {
@@ -41,8 +61,33 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
             measures: measure[],
         }
     } = {};
+
+    /** 
+     * Multitrack Handling Logic
+     * 
+     * We parse:
+     *      1) just the instrument part from a two part work for instrument and vocal
+     *      2) just the piano part from a work with multiple instrument parts
+     *      3) just one instrument part from a work with multiple instruments and none of them are piano
+     */
+
+    // parts that we want to parse. We may add more ids here if we decide to render more instruments parts.
+    let trackIDsToParse: string[] = [];
+
+    if (pianoPartId !== undefined) {
+        trackIDsToParse.push(pianoPartId); // case 1 or 2
+    } else {
+        trackIDsToParse.push('P1') // case 3 // TODO don't assume that first instrument part is 'P1'
+    }
+    if (lyricsPartId !== undefined) {
+        trackIDsToParse.push(lyricsPartId) // case 1
+    }
+    console.log('parsing tracks: ' + trackIDsToParse);
+
     xml.measures.forEach((measure, measureNumber) => {
-        Object.keys(measure.parts).forEach(partName => {
+        trackIDsToParse.forEach(partName => {
+            if (measure.parts[partName] === undefined) return; // if part has not started yet, skip this measure.
+            
             if (parts[partName] === undefined) {
                 parts[partName] = {
                     divisions: undefined!,
@@ -53,7 +98,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                 };
             }
             let part = parts[partName];
-            let notes: basicNote[] = [];
+            let notes: Note[] = [];
             // computes note lengh with respect to the beat type
             let divisionsToNoteLength = (divisions: number) => {
                 if (part.divisions === undefined) {
@@ -160,17 +205,17 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
     tracks.forEach(track => {
         // add default values for key signatures if it is not provided.
         if (track.keySignatures.length === 0) track.keySignatures.push({measure: 0, fifths: 0});
-        // handling unprovided time signatures requires extra care. We go through each measure and assign appropriate beatTypes for each measure.
+
         if (track.timeSignatures.length === 0) {
             if (track.measures.length === 1) {
                 // case 1: all notes grouped into a single measure
                 let measure = track.measures[0];
-                let newMeasures: basicNote[][] = Array(Math.ceil(measure.length / 4)).fill([]).map((_, index) => index * 4).map(start => measure.slice(start, start + 4)); // divide notes into chunks of four
+                let newMeasures: Note[][] = Array(Math.ceil(measure.length / 4)).fill([]).map((_, index) => index * 4).map(start => measure.slice(start, start + 4)); // divide notes into chunks of four
                 newMeasures.forEach((measure, idx) => measure.forEach(note => note.time -= 4 * idx)); // shift note start time appropriately
                 track.timeSignatures.push({measure: newMeasures.length, beats: 4, beatTypes: 4})
                 track.measures = newMeasures;
             } else {
-                // case 2: time signature is just not provided
+                // case 2: time signature is not provided at all
                 let currentMeasureLength = 4; // start with assuming 4/4 time signature.
                 track.measures.forEach((measure, measureNumber) => {
                     let lastNote = measure[measure.length - 1];

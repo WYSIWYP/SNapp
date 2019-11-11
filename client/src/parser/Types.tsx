@@ -7,7 +7,7 @@ export enum Tie {
     Stop = "STOP",
 }
 
-export type basicNote = {
+export type Note = {
     time: number,
     duration: number,
     midi: number,
@@ -17,7 +17,11 @@ export type basicNote = {
     }
 };
 
-export type measure = basicNote[];
+export type TrackType = 'Instrument' | 'Lyrics'; // part types that app currently handles
+
+export type staff = Note[]; 
+
+export type measure = Note[];
 
 export type TimeSignature = {
     measure: number,
@@ -30,12 +34,15 @@ export type KeySignature = {
     fifths: number
 }
 
-export type Tracks = {
+export type Track = {
     measures: measure[],
     timeSignatures: TimeSignature[],
-    keySignatures: KeySignature[]
-}[]
+    keySignatures: KeySignature[],
+    trackType?: TrackType
+};
+
+export type Tracks = Track[];
 
 export type Score = {
     tracks: Tracks,
-}
+};
