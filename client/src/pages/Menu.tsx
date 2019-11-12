@@ -13,7 +13,8 @@ type Props = {} & RouteComponentProps;
 const Menu: React.FC<Props> = () => {
     type recentFile = {
         file_name: string,
-        date: number,
+        date_created: number,
+        date_opened: number,
         id: string,
     };
 
@@ -49,8 +50,14 @@ const Menu: React.FC<Props> = () => {
             try {
                 // Set this song as the current work in localStorage
                 localStorage.setItem('current_file', x.id);
+
+                // Update the accessed date for this song and move it to the top of the list
+                localStorage.setItem('recent_files', JSON.stringify([
+                    {...x, date_opened: new Date().getTime()} as recentFile,
+                    ...recentFiles.filter(y=>y.id!==x.id)
+                ]));
             } catch(e){
-                // Local storage may be disabled
+                // Writing to local storage may be disabled currently
                 console.error(e);
             }
 
@@ -133,63 +140,6 @@ const Menu: React.FC<Props> = () => {
             };
             reader2.readAsText((e.target as any).files[0]);
 
-
-
-
-
-            // let reader = new FileReader();
-            // reader.onload = function () {
-            //     try {
-            //         let data = reader.result;
-            //         let parsed: ScoreTimewise;
-            //         if(data === null){
-            //             throw new Error('Failed to read file - null');
-            //         }
-            //         try {
-            //             //try to interpret this file as uncompressed
-            //             parsed = MusicXML.parseScore(data.toString());
-            //             console.log(data.toString());
-            //             console.log(parsed);
-            //         } catch(e){
-
-            //             throw new Error('...');
-            //         }
-
-            //         let id = `file_${Array.from({length: 16}, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
-
-            //         // Set this song as the current work in the global context
-            //         setCurrentFile({type: 'set', val: {id, file_name: fileName, data: parsed}});
-
-            //         // Fail silently if localStorage is disabled
-            //         try {
-                        
-            //             // Set this song as the current work in localStorage
-            //             localStorage.setItem(id, JSON.stringify(parsed));
-            //             localStorage.setItem('current_file', id);
-
-            //             // Add this song to the recent songs list
-            //             let newRecentFiles = recentFiles.map(x => x);
-
-            //             for (let i = 0; i < newRecentFiles.length; i++) {
-            //                 if (newRecentFiles[i]['file_name'] === fileName) {
-            //                     newRecentFiles.splice(i, 1);
-            //                 }
-            //             }
-
-            //             newRecentFiles.unshift({file_name: fileName, date: new Date().getTime(), id});
-            //             localStorage.setItem('recent_files', JSON.stringify(newRecentFiles));
-
-            //         } catch (e) {
-            //             console.error(e);
-            //         }
-
-            //         navigate('convert');
-            //     } catch (e) {
-            //         showError('An issue was encountered while reading the selected file.');
-            //         console.error(e);
-            //     }
-            // };
-            // reader.readAsArrayBuffer((e.target as any).files[0]);
         } catch (e) {
             showError('An issue was encountered while reading the selected file.');
             console.error(e);
@@ -210,16 +160,10 @@ const Menu: React.FC<Props> = () => {
             localStorage.setItem('current_file', id);
 
             // Add this song to the recent songs list
-            let newRecentFiles = recentFiles.map(x => x);
-
-            for (let i = 0; i < newRecentFiles.length; i++) {
-                if (newRecentFiles[i]['file_name'] === fileName) {
-                    newRecentFiles.splice(i, 1);
-                }
-            }
-
-            newRecentFiles.unshift({file_name: fileName, date: new Date().getTime(), id});
-            localStorage.setItem('recent_files', JSON.stringify(newRecentFiles));
+            localStorage.setItem('recent_files', JSON.stringify([
+                {file_name: fileName, date_created: new Date().getTime(), date_opened: new Date().getTime(), id} as recentFile,
+                ...recentFiles.filter(x=>x.file_name!==fileName)
+            ]));
 
         } catch (e) {
             console.error(e);
@@ -250,12 +194,12 @@ const Menu: React.FC<Props> = () => {
                             <div style={{...styles.recentFilesInner}}>
                                 {recentFiles.map(x => <Fragment key={x.id}>
                                     <div className="button-recent-file" style={styles.recentFilesItem} onClick={() => {loadFile(x);}}>
-                                        <div style={{...styles.recentFilesItemInner, flex: '0 1 auto', fontWeight: 'bold'}}>
+                                        <div style={{...styles.recentFilesItemInner, flex: '0 100000 auto', fontWeight: 'bold'}}>
                                             {x.file_name}
                                         </div>
                                         <div style={{...styles.recentFilesItemInner, width: '10px', flex: '1 1 auto'}} />
-                                        <div style={{...styles.recentFilesItemInner, flex: '0 100000 auto', fontSize: '22px'}}>
-                                            {(d => `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`)(new Date(x.date))}
+                                        <div style={{...styles.recentFilesItemInner, flex: '0 1 auto', fontSize: '22px'}}>
+                                            {(d => `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`)(new Date(x.date_created || (x as any).date /*migrate from x.date to x.date_created*/))}
                                         </div>
                                     </div>
                                     <div style={styles.recentFilesSeparator}></div>
@@ -306,7 +250,7 @@ const styleMap = {
     },
     recentFiles: {
         color: '#31B7D6',
-        maxWidth: '600px',
+        maxWidth: '750px',
         height: '250px',
         borderRadius: '10px',
         border: '2px solid #BBBBBB',

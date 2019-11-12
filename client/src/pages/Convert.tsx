@@ -157,74 +157,6 @@ const Convert: React.FC<Props> = () => {
         <form onSubmit={() => {setShow(false);}} >
             <label>
                 <div style={styles.sideBarContent}>
-                    <div style={styles.line}>
-                        <div style={styles.name}>Note Duration Color</div>
-                        <select style={styles.select} value={preferences.noteDurationColor} onChange={
-                            (e) => {setPreferences({type: 'set', val: {noteDurationColor: e.target.value as any}});}
-                        }>{colorPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
-                    <div style={styles.line}>
-                        <div style={styles.name}>Note Symbol Color</div>
-                        <select style={styles.select} value={preferences.noteSymbolColor} onChange={
-                            (e) => {setPreferences({type: 'set', val: {noteSymbolColor: e.target.value as any}});}
-                        }>{colorPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
-
-                    <div style={styles.line}>
-                        <div style={styles.name}>Staff Scale</div>
-                        {/* deleted value and onchange */}
-                        <select style={styles.select} value={preferences.staffScale} onChange={
-                            (e) => {setPreferences({type: 'set', val: {staffScale: e.target.value as any}});}
-                        }>{scalePreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
-
-                    <div style={styles.line}>
-                        <div style={styles.name}>Note Scale</div>
-                        {/* deleted value and onchange */}
-                        <select style={styles.select} value={preferences.noteScale} onChange={
-                            (e) => {setPreferences({type: 'set', val: {noteScale: e.target.value as any}});}
-                        }>{scalePreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
-
-                    <div style={styles.line}>
-                        <div style={styles.name}>Horizontal Spacing</div>
-                        {/* deleted value and onchange */}
-                        <select style={styles.select} value={preferences.horizontalSpacing} onChange={
-                            (e) => {setPreferences({type: 'set', val: {horizontalSpacing: e.target.value as any}});}
-                        }>{spacingPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
-
-                    <div style={styles.line}>
-                        <div style={styles.name}>Vertical Spacing</div>
-                        {/* deleted value and onchange */}
-                        <select style={styles.select} value={preferences.verticalSpacing} onChange={
-                            (e) => {setPreferences({type: 'set', val: {verticalSpacing: e.target.value as any}});}
-                        }>{spacingPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
-
-                    <div style={styles.line}>
-                        <div style={styles.name}>Natural Note Shape</div>
-                        {/* deleted value and onchange */}
-                        <select style={styles.select} value={preferences.naturalNoteShape} onChange={
-                            (e) => {setPreferences({type: 'set', val: {naturalNoteShape: e.target.value as any}});}
-                        }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
-
-                    <div style={styles.line}>
-                        <div style={styles.name}>Sharp Note Shape</div>
-                        {/* deleted value and onchange */}
-                        <select style={styles.select} value={preferences.sharpNoteShape} onChange={
-                            (e) => {setPreferences({type: 'set', val: {sharpNoteShape: e.target.value as any}});}
-                        }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
-
-                    <div style={styles.line}>
-                        <div style={styles.name}>Flat Note Shape</div>
-                        {/* deleted value and onchange */}
-                        <select style={styles.select} value={preferences.flatNoteShape} onChange={
-                            (e) => {setPreferences({type: 'set', val: {flatNoteShape: e.target.value as any}});}
-                        }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
 
                     <div style={styles.line}>
                         <div style={styles.name}>Measures per Row</div>
@@ -239,6 +171,77 @@ const Convert: React.FC<Props> = () => {
                             (e) => {setPreferences({type: 'set', val: {accidentalType: e.target.value as any}});}
                         }>{accidentalTypeOptions.map(x => <option key={x}>{x}</option>)}</select>
                     </div>
+
+                    <div style={styles.line}>
+                        <div style={styles.name}>Note Size</div>
+                        {/* deleted value and onchange */}
+                        <select style={styles.select} value={preferences.noteScale} onChange={
+                            (e) => {setPreferences({type: 'set', val: {noteScale: e.target.value as any}});}
+                        }>{scalePreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                    </div>
+
+                    <div style={styles.line}>
+                        <div style={styles.name}>Clef Size</div>
+                        {/* deleted value and onchange */}
+                        <select style={styles.select} value={preferences.staffScale} onChange={
+                            (e) => {setPreferences({type: 'set', val: {staffScale: e.target.value as any}});}
+                        }>{scalePreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                    </div>
+
+                    <div style={styles.line}>
+                        <div style={styles.name}>Margin Size</div>
+                        {/* deleted value and onchange */}
+                        <select style={styles.select} value={preferences.horizontalSpacing} onChange={
+                            (e) => {setPreferences({type: 'set', val: {horizontalSpacing: e.target.value as any}});}
+                        }>{spacingPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                    </div>
+
+                    <div style={styles.line}>
+                        <div style={styles.name}>Staff Spacing Size</div>
+                        {/* deleted value and onchange */}
+                        <select style={styles.select} value={preferences.verticalSpacing} onChange={
+                            (e) => {setPreferences({type: 'set', val: {verticalSpacing: e.target.value as any}});}
+                        }>{spacingPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                    </div>
+
+                    <div style={styles.line}>
+                        <div style={styles.name}>Natural Notehead</div>
+                        {/* deleted value and onchange */}
+                        <select style={styles.select} value={preferences.naturalNoteShape} onChange={
+                            (e) => {setPreferences({type: 'set', val: {naturalNoteShape: e.target.value as any}});}
+                        }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                    </div>
+
+                    <div style={styles.line}>
+                        <div style={styles.name}>Sharp Notehead</div>
+                        {/* deleted value and onchange */}
+                        <select style={styles.select} value={preferences.sharpNoteShape} onChange={
+                            (e) => {setPreferences({type: 'set', val: {sharpNoteShape: e.target.value as any}});}
+                        }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                    </div>
+
+                    <div style={styles.line}>
+                        <div style={styles.name}>Flat Notehead</div>
+                        {/* deleted value and onchange */}
+                        <select style={styles.select} value={preferences.flatNoteShape} onChange={
+                            (e) => {setPreferences({type: 'set', val: {flatNoteShape: e.target.value as any}});}
+                        }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                    </div>
+
+                    <div style={styles.line}>
+                        <div style={styles.name}>Notehead Color</div>
+                        <select style={styles.select} value={preferences.noteSymbolColor} onChange={
+                            (e) => {setPreferences({type: 'set', val: {noteSymbolColor: e.target.value as any}});}
+                        }>{colorPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                    </div>
+
+                    <div style={styles.line}>
+                        <div style={styles.name}>Duration Color</div>
+                        <select style={styles.select} value={preferences.noteDurationColor} onChange={
+                            (e) => {setPreferences({type: 'set', val: {noteDurationColor: e.target.value as any}});}
+                        }>{colorPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                    </div>
+
                 </div>
             </label>
         </form>
