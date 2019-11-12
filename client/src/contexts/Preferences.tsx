@@ -21,7 +21,7 @@ export type scalePreferenceOption = (typeof scalePreferenceOptions)[number];
 export const spacingPreferenceOptions = ['narrow', 'moderate', 'wide'] as const;
 export type spacingPreferenceOption = (typeof spacingPreferenceOptions)[number];
 
-export const noteHeadPreferenceOptions = ["▲", "▼", "●", "○", "⨂","◼", "□"] as const;
+export const noteHeadPreferenceOptions = ["●", "◼", "▲", "▼", "○", "☐", "△", "▽", "⊗", "⊠"] as const; // Previous symbols: ⨂, □
 export type noteHeadPreferenceOption = (typeof noteHeadPreferenceOptions)[number];
 
 export const measuresPerRowOptions = [1, 2, 3, 4, 5, 6] as const; // TODO: Consider using a slider

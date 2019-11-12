@@ -150,7 +150,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         let keyFifths = score.tracks[0].keySignatures[0].fifths;
 
         // let octaveGroups = [1, 1, 0, 0, 0, 1, 1]; //octaveGroups (C D E / F G A B)
-        let staffLabels = ['𝒯', '𝐵'];
+        let staffLabels = ['𝒯', '𝄢'];
         let octaveLines = [
             {color: 'red', number: true}, undefined, undefined, /* C, D, E */
             {color: 'blue'}, undefined, undefined, undefined, /* F, G, A, B */
@@ -442,7 +442,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
 
         let noteHead = (note: Note, i: number) => {
             if (note.attributes.ties.includes(Tie.Stop))
-                return;
+                return null!;
             let accidental: Accidental = getNoteAccidental(note.midi);
             let line = getNoteLine(note.midi) - minLine;
 
@@ -452,36 +452,49 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             y -= line * noteSymbolSize / 2;
             let triHeight = noteSymbolSize * Math.sqrt(3) / 2;
 
-            let strokeWidth = 3;
+            let strokeWidth = noteSymbolSize / 8;
             let crossCircleWidth = noteSymbolSize / 2 / Math.sqrt(2);
 
-            let triangleUp = <polygon key={i} points={`${x},${y - triHeight / 2} ${x + noteSymbolSize / 2},${y + triHeight / 2} ${x - noteSymbolSize / 2},${y + triHeight / 2}`} fill={colorPreferenceStyles[noteSymbolColor]} />;
-            let triangleDown = <polygon key={i} points={`${x},${y + triHeight / 2} ${x + noteSymbolSize / 2},${y - triHeight / 2} ${x - noteSymbolSize / 2},${y - triHeight / 2}`} fill={colorPreferenceStyles[noteSymbolColor]} />;
-            let hollowCircle = <circle key={i} cx={x} cy={y} r={(noteSymbolSize - strokeWidth) / 2} strokeWidth={strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} fill='none' />;
-            let circle = <circle key={i} cx={x} cy={y} r={noteSymbolSize / 2} fill={colorPreferenceStyles[noteSymbolColor]} />;
+            let autoNoteShape = accidentalType === 'sharp' ? sharpNoteShape : flatNoteShape;
+            let shape = {
+                [Accidental.Natural]: naturalNoteShape,
+                [Accidental.Flat]: accidentalType === 'auto' ? flatNoteShape : autoNoteShape,
+                [Accidental.Sharp]: accidentalType === 'auto' ? sharpNoteShape : autoNoteShape,
+            }[accidental];
 
-            let crossCircle = <g key={i}>
-                <circle cx={x} cy={y} r={(noteSymbolSize - 2) / 2} strokeWidth={2} stroke={colorPreferenceStyles[noteSymbolColor]} fill='none' />;
-                <line x1={x - crossCircleWidth} y1={y - crossCircleWidth} x2={x + crossCircleWidth} y2={y + crossCircleWidth} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={2} />
-                <line x1={x - crossCircleWidth} y1={y + crossCircleWidth} x2={x + crossCircleWidth} y2={y - crossCircleWidth} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={2} />
-            </g>
+            switch(shape){
+                case '●':
+                    return <circle key={i} cx={x} cy={y} r={noteSymbolSize / 2} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                case '◼':
+                    return <rect key={i} x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                case '▲':
+                    return <polygon key={i} points={`${x},${y - triHeight / 2} ${x + noteSymbolSize / 2},${y + triHeight / 2} ${x - noteSymbolSize / 2},${y + triHeight / 2}`} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                case '▼':
+                    return <polygon key={i} points={`${x},${y + triHeight / 2} ${x + noteSymbolSize / 2},${y - triHeight / 2} ${x - noteSymbolSize / 2},${y - triHeight / 2}`} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                case '○':
+                    return <circle key={i} cx={x} cy={y} r={(noteSymbolSize - strokeWidth) / 2} strokeWidth={strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} fill='none' />;
+                case '☐':
+                    return <rect key={i} x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />;
+                case '△':
+                    return <polygon key={i} points={`${x},${y - triHeight / 2 + strokeWidth} ${x + noteSymbolSize / 2 - Math.sqrt(3)*strokeWidth/2},${y + triHeight / 2 - strokeWidth/2} ${x - noteSymbolSize / 2 + Math.sqrt(3)*strokeWidth/2},${y + triHeight / 2 - strokeWidth/2}`} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />;
+                case '▽':
+                    return <polygon key={i} points={`${x},${y + triHeight / 2 - strokeWidth} ${x + noteSymbolSize / 2 - Math.sqrt(3)*strokeWidth/2},${y - triHeight / 2 + strokeWidth/2} ${x - noteSymbolSize / 2 + Math.sqrt(3)*strokeWidth/2},${y - triHeight / 2 + strokeWidth/2}`} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />;
+                case '⊗':
+                    return (<g key={i}>
+                        <circle cx={x} cy={y} r={(noteSymbolSize - 2) / 2} strokeWidth={strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} fill='none' />;
+                        <line x1={x - crossCircleWidth} y1={y - crossCircleWidth} x2={x + crossCircleWidth} y2={y + crossCircleWidth} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} />
+                        <line x1={x - crossCircleWidth} y1={y + crossCircleWidth} x2={x + crossCircleWidth} y2={y - crossCircleWidth} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} />
+                    </g>);
+                case '⊠':
+                    return (<g key={i}>
+                        <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />
+                        <line x1={x - noteSymbolSize / 2 + strokeWidth / 2} y1={y - noteSymbolSize / 2 + strokeWidth / 2} x2={x + noteSymbolSize / 2 - strokeWidth / 2} y2={y + noteSymbolSize / 2 - strokeWidth / 2} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} />
+                        <line x1={x - noteSymbolSize / 2 + strokeWidth / 2} y1={y + noteSymbolSize / 2 - strokeWidth / 2} x2={x + noteSymbolSize / 2 - strokeWidth / 2} y2={y - noteSymbolSize / 2 + strokeWidth / 2} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} />
+                    </g>);
+            }
 
-            let square = <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} fill={colorPreferenceStyles[noteSymbolColor]} />
-            let hollowSquare = <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />
 
-            let noteShapes = {
-                '▲': triangleUp,
-                '▼': triangleDown,
-                '○': hollowCircle,
-                '●': circle,
-                '◼': square,
-                '□': hollowSquare,
-                '⨂': crossCircle,
-            } as any;
-
-            if (accidental === 0) return noteShapes[naturalNoteShape];
-            else if (accidentalType === 'auto') return accidental > 0 ? noteShapes[sharpNoteShape] : noteShapes[flatNoteShape];
-            else return accidentalType === 'sharp' ? noteShapes[sharpNoteShape] : noteShapes[flatNoteShape];
+            
         }
 
         // let devSvg = devMode ? (
