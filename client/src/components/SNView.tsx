@@ -296,7 +296,6 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             const noteTailSVG: JSX.Element[] = [];
             score!.tracks.forEach(track => {
                 if (!track.trackTypes.includes('Instrument')) return; // we do not render notes for lyrics only track.
-                console.log(track); 
                 let notes = track.measures[measureNumber].filter(note => {
                     // TODO: optimize this
                     if (type === 'treble') return note.staff === 1; // staff 1 is treble

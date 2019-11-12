@@ -77,7 +77,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
     if (lyricsPartId !== undefined && !trackIDsToParse.includes(lyricsPartId)) {
         trackIDsToParse.push(lyricsPartId) 
     }
-    console.log(`lyrics partId: ${lyricsPartId}, instrument partId: ${instrumentId}`);
+    // console.log(`lyrics partId: ${lyricsPartId}, instrument partId: ${instrumentId}`);
 
     xml.measures.forEach((measure, measureNumber) => {
         trackIDsToParse.forEach(partName => {
