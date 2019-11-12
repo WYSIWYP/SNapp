@@ -37,7 +37,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
     }
     let showErrorRef = useRef(showError);
 
-    // console.log('Score:', score);
+    console.log('Score:', score);
     useEffect(() => {
         if (forcedWidth === undefined) {
             let width: number = undefined!;
@@ -127,8 +127,8 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         // spacing between two clefs (aka grand staff distance)
         let dynamicsSpace = 20;
         let lyricsSpace = 20;
-        let staffPadding = 5; 
-        let staffDistance = dynamicsSpace + lyricsSpace + 2 * staffPadding; 
+        let staffPadding = 5;
+        let staffDistance = dynamicsSpace + lyricsSpace + 2 * staffPadding;
 
         // annotation space for each clef
         let fingeringSpace = 20;
@@ -150,7 +150,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         let keyFifths = score.tracks[0].keySignatures[0].fifths;
 
         // let octaveGroups = [1, 1, 0, 0, 0, 1, 1]; //octaveGroups (C D E / F G A B)
-        // let staffLabels = ['𝒯','𝐵'];
+        let staffLabels = ['𝒯', '𝐵'];
         let octaveLines = [
             {color: 'red', number: true}, undefined, undefined, /* C, D, E */
             {color: 'blue'}, undefined, undefined, undefined, /* F, G, A, B */
@@ -178,27 +178,30 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         try {
             title = xml.movementTitle;
             title = xml.work.workTitle;
-        } catch(e){}
+        } catch (e) {}
 
         let author = '';
         try {
-            let credits = xml.credits.filter(x=>x.creditWords !== undefined && x.creditWords.length > 0).map(x=>x.creditWords);
-            credits.forEach(credit=>{credit.forEach(words=>{
-                if(Math.abs(words.words.length-20)<Math.abs(author.length-20)){
-                    author = words.words;
-                }
-            })})
-        } catch(e){}
+            let credits = xml.credits.filter(x => x.creditWords !== undefined && x.creditWords.length > 0).map(x => x.creditWords);
+            credits.forEach(credit => {
+                credit.forEach(words => {
+                    if (Math.abs(words.words.length - 20) < Math.abs(author.length - 20)) {
+                        author = words.words;
+                    }
+                })
+            })
+        } catch (e) {}
 
 
         //calculate lowest and highest note
         let minNote = 128, maxNote = -1;
-        score.tracks.forEach(track => track.measures.forEach(measure =>
+        score.tracks.filter(track => track.trackTypes.includes('Instrument')).forEach(track => track.measures.forEach(measure =>
             measure.forEach(note => {
                 minNote = Math.min(minNote, note.midi);
                 maxNote = Math.max(maxNote, note.midi);
             })
         ));
+        // TODO: get separate min and max notes for bass and treble clef.
 
         //if there was an issue, abort
         if (minNote >= 128 || minNote < 0 || maxNote >= 128 || maxNote < 0) {
@@ -220,7 +223,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             minLine -= (minLine % 7 === 0) ? 4 : 3;
         }
 
-        let rowHeight = (maxLine - minLine) * noteSymbolSize / 2; //not including measure labels
+        let staffHeight = (maxLine - minLine) * noteSymbolSize / 2; //not including measure labels
 
         //calculate the number of beats per measure
         let beatsPerMeasure = score.tracks[0].timeSignatures[0].beats;
@@ -244,7 +247,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         let rowNumber = Math.ceil(measureNumber / measuresPerRow);
 
         //calculate required height (vert padding + row height + row padding)
-        // let height = verticalPadding * 2 + rowNumber * (rowHeight + measureLabelSpace) + (rowNumber - 1) * rowPadding;
+        // let height = verticalPadding * 2 + rowNumber * (staffHeight + measureLabelSpace) + (rowNumber - 1) * rowPadding;
 
         let getCurrentSignatures = (measureNumber: number): {currentTime: TimeSignature, currentKey: KeySignature} => {
             let timeSignatures = [...score!.tracks[0].timeSignatures].reverse(); // we reverse the array because we want to find the latest key signature.
@@ -254,12 +257,12 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             let currentKey = keySignatures.find(keySignature => keySignature.measure <= measureNumber);
 
             // sometimes, signatures are defined on the second measure. Below lines handle such cases.
-            if (!currentTime) currentTime = score!.tracks[0].timeSignatures[0]; 
+            if (!currentTime) currentTime = score!.tracks[0].timeSignatures[0];
             if (!currentKey) currentKey = score!.tracks[0].keySignatures[0];
             return {currentTime, currentKey};
         }
 
-        let measure = (x: number, y: number, measureNumber: number) => {
+        let measure = (x: number, y: number, measureNumber: number, type: 'treble' | 'bass') => {
             // TODO: handle pick up measures
             // Get time signature of current measure
             let {currentTime, currentKey} = getCurrentSignatures(measureNumber);
@@ -270,11 +273,11 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             // Draw measure
             let key = 0;
             let measureSVG: JSX.Element[] = [];
-            measureSVG.push(<rect key={key++} x={measureWidth - strokeWidth / 2} y={measureLabelSpace - strokeWidth / 2} width={strokeWidth} height={rowHeight + strokeWidth} fill="#000000" />);
+            measureSVG.push(<rect key={key++} x={measureWidth - strokeWidth / 2} y={measureLabelSpace - strokeWidth / 2} width={strokeWidth} height={staffHeight + strokeWidth} fill="#000000" />);
             for (let j = minLine; j <= maxLine; j++) {
                 let octaveLine = octaveLines[j % 7];
                 if (octaveLine !== undefined) {
-                    let lineY = measureLabelSpace + rowHeight - (j - minLine) * noteSymbolSize / 2;
+                    let lineY = measureLabelSpace + staffHeight - (j - minLine) * noteSymbolSize / 2;
                     measureSVG.push(<rect key={key++} x={strokeWidth / 2} y={lineY - strokeWidth / 2} width={measureWidth - strokeWidth} height={strokeWidth} fill={octaveLine.color} />);
                     if (measureNumber % measuresPerRow === 0 && octaveLine.number === true) {
                         measureSVG.push(<text x={-strokeWidth} key={key++} y={lineY} fontSize={measureLabelSpace} textAnchor="end" dominantBaseline="middle">{Math.floor(j / 7)}</text>);
@@ -292,9 +295,15 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             const noteHeadSVG: JSX.Element[] = [];
             const noteTailSVG: JSX.Element[] = [];
             score!.tracks.forEach(track => {
-                track.measures[measureNumber].forEach((note, _idx) => {
+                if (!track.trackTypes.includes('Instrument')) return; // we do not render notes for lyrics only track.
+                console.log(track); 
+                let notes = track.measures[measureNumber].filter(note => {
+                    // TODO: optimize this
+                    if (type === 'treble') return note.staff === 1; // staff 1 is treble
+                    else return note.staff !== 1; // other staffs are bass
+                });
+                notes.forEach((note, _idx) => {
                     noteHeadSVG.push(noteHead(note, key++));
-
                     let tieStart = note.attributes.ties.includes(Tie.Start);
                     let tieStop = note.attributes.ties.includes(Tie.Stop);
                     let isLastMeasure = ((measureNumber + 1) % measuresPerRow === 0); // whether current measure is the last measure of the row
@@ -319,29 +328,40 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             );
         }
 
-        let row = (i: number): JSX.Element => {
-            let height = (rowHeight + measureLabelSpace) + noteSymbolSize / 2;
-            return (
-                <div className={`snview-row snview-row-${i+1}`} key={i} style={{position: 'relative', height: 'auto', paddingBottom: `${rowPadding}px`}}>
-                    <svg viewBox={`0 0 ${width} ${height}`}>
-                        <g id={`row${i}`} key={i} transform={`translate(${horizontalPadding}, 0)`}>
-                            {devMode ? <rect y={measureLabelSpace} width={staffLabelSpace} height={rowHeight} fill="#ffdddd" /> : null}
-                            {devMode ? <rect x={staffLabelSpace} y={measureLabelSpace} width={octaveLabelSpace} height={rowHeight} fill="#ffddff" /> : null}
-                            <text x={staffLabelSpace} y={measureLabelSpace + rowHeight / 2} fontSize={staffLabelSpace * 1.5} textAnchor="end" dominantBaseline="middle">𝒯</text>
-                            <rect x={staffLabelSpace + octaveLabelSpace - strokeWidth / 2} y={measureLabelSpace - strokeWidth / 2} width={strokeWidth} height={rowHeight + strokeWidth} fill="#000000" />
+        let grandStaff = (i: number): JSX.Element => {
+            let staffSpaceHeight = (staffHeight + measureLabelSpace) + noteSymbolSize / 2 + annotationSpace;
+            let grandStaffHeight = staffSpaceHeight * 2 + staffDistance;
 
-                            {range(0, i < rowNumber - 1 ? measuresPerRow : measureNumber - (rowNumber - 1) * measuresPerRow).map(j =>
-                                measure(staffLabelSpace + octaveLabelSpace + j * measureWidth, 0, i * measuresPerRow + j)
-                            )}
-                        </g>
+            return (
+                <div className={`snview-row snview-row-${i + 1}`} key={i} style={{position: 'relative', height: 'auto', paddingBottom: `${rowPadding}px`}}>
+                    <svg viewBox={`0 0 ${width} ${grandStaffHeight}`}>
+                        {staff(i, 'treble')}
+                        {staff(i, 'bass')}
                     </svg>
                 </div>
             );
         }
 
+        let staff = (i: number, type: 'treble' | 'bass'): JSX.Element => {
+            let staffSpaceHeight = (staffHeight + measureLabelSpace + annotationSpace) + noteSymbolSize / 2 ;
+            let yOffset = type === 'treble' ? 0 : staffSpaceHeight + staffDistance;
+            let staffName = type === 'treble' ? staffLabels[0] : staffLabels[1];
+            return <g id={`row${i}${type}`} key={type + i} transform={`translate(${horizontalPadding}, ${yOffset})`}>
+                {devMode ? <rect y={measureLabelSpace} width={staffLabelSpace} height={staffHeight} fill="#ffdddd" /> : null}
+                {devMode ? <rect x={staffLabelSpace} y={measureLabelSpace} width={octaveLabelSpace} height={staffHeight} fill="#ffddff" /> : null}
+                <text x={staffLabelSpace} y={measureLabelSpace + staffHeight / 2} fontSize={staffLabelSpace * 1.5} textAnchor="end" dominantBaseline="middle">{staffName}</text>
+                <rect x={staffLabelSpace + octaveLabelSpace - strokeWidth / 2} y={measureLabelSpace - strokeWidth / 2} width={strokeWidth} height={staffHeight + strokeWidth} fill="#000000" />
+
+                {range(0, i < rowNumber - 1 ? measuresPerRow : measureNumber - (rowNumber - 1) * measuresPerRow).map(j =>
+                    measure(staffLabelSpace + octaveLabelSpace + j * measureWidth, 0, i * measuresPerRow + j, type)
+                )}
+            </g>
+        }
+
+
         let noteTimeToPos = (noteTime: number) => ({
             x: beatWidth * noteTime,
-            y: rowHeight + measureLabelSpace
+            y: staffHeight + measureLabelSpace
         });
 
         // let beatsToPos = (beat: number) => {
@@ -354,7 +374,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         // }
         // let rowMeasureToPos = (row: number, measure: number) => ({
         //     x: horizontalPadding + staffLabelSpace + octaveLabelSpace + measure * measureWidth,
-        //     y: verticalPadding + row * (rowHeight + measureLabelSpace + rowPadding) + rowHeight + measureLabelSpace
+        //     y: verticalPadding + row * (staffHeight + measureLabelSpace + rowPadding) + staffHeight + measureLabelSpace
         // });
 
         let noteTail = (note: Note, i: number, tieStart: boolean, tieStop: boolean, noteSpansRow: boolean) => {
@@ -378,31 +398,31 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             //     yStart = y;
             // }
 
-            let roundingSpace = Math.max(Math.min(noteSymbolSize, xEnd-xStart),0);
-            let radiusStart = roundingSpace/4;
-            let radiusEnd = roundingSpace/2;
+            let roundingSpace = Math.max(Math.min(noteSymbolSize, xEnd - xStart), 0);
+            let radiusStart = roundingSpace / 4;
+            let radiusEnd = roundingSpace / 2;
             let pointedEnd = noteSpansRow;
-            
-            if(tieStart){
+
+            if (tieStart) {
                 //if(!noteSpansRow){ //this check prevents pointed ends from extending past the end of the row
-                    radiusEnd = 0;
+                radiusEnd = 0;
                 //}
             }
-            if(tieStop){
+            if (tieStop) {
                 radiusStart = 0;
             }
             boxes.push(
                 <path
                     key={key++}
                     d={`
-                        M${xStart+radiusStart} ${yStart - (line + 1) * noteSymbolSize / 2}
+                        M${xStart + radiusStart} ${yStart - (line + 1) * noteSymbolSize / 2}
                         H${xEnd - radiusEnd}
-                        ${pointedEnd?`l`:`a${radiusEnd} ${radiusEnd} 0 0 ${noteSpansRow?0:1} `}${radiusEnd} ${radiusEnd}
-                        ${pointedEnd?`
-                            l${noteSymbolSize/2 - radiusEnd} ${noteSymbolSize/2 - radiusEnd}
-                            l${-noteSymbolSize/2 + radiusEnd} ${noteSymbolSize/2 - radiusEnd}
-                        `:`v${noteSymbolSize - 2 * radiusEnd}`}
-                        ${pointedEnd?`l`:`a${radiusEnd} ${radiusEnd} 0 0 ${noteSpansRow?0:1} `}${-radiusEnd} ${radiusEnd}
+                        ${pointedEnd ? `l` : `a${radiusEnd} ${radiusEnd} 0 0 ${noteSpansRow ? 0 : 1} `}${radiusEnd} ${radiusEnd}
+                        ${pointedEnd ? `
+                            l${noteSymbolSize / 2 - radiusEnd} ${noteSymbolSize / 2 - radiusEnd}
+                            l${-noteSymbolSize / 2 + radiusEnd} ${noteSymbolSize / 2 - radiusEnd}
+                        `: `v${noteSymbolSize - 2 * radiusEnd}`}
+                        ${pointedEnd ? `l` : `a${radiusEnd} ${radiusEnd} 0 0 ${noteSpansRow ? 0 : 1} `}${-radiusEnd} ${radiusEnd}
                         H${xStart + radiusStart}
                         a${radiusStart} ${radiusStart} 0 0 1 ${-radiusStart} ${-radiusStart}
                         v${-noteSymbolSize + 2 * radiusStart}
@@ -476,15 +496,15 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         //     </g>
         // ) : null;
 
-        let svgRows: JSX.Element[] = range(0, rowNumber).map(i => row(i));
+        let svgRows: JSX.Element[] = range(0, rowNumber).map(i => grandStaff(i));
         return (
             <div id="snview" ref={ref} style={{width: '100%', height: 'auto', overflow: 'hidden', minWidth: '350px', userSelect: 'text', paddingTop: verticalPadding, paddingBottom: verticalPadding}}>
                 {/*devSvg*/}
                 <div className={`snview-row snview-row-0`} style={{position: 'relative', height: 'auto', paddingBottom: `${rowPadding}px`}}>
                     <svg viewBox={`0 0 ${width} ${180}`}>
-                        <text x={width/2} y={50} fontSize={40} textAnchor="middle" alignmentBaseline="hanging">{title}</text>
+                        <text x={width / 2} y={50} fontSize={40} textAnchor="middle" alignmentBaseline="hanging">{title}</text>
                         <text x={70} y={170} fontSize={25} textAnchor="start">60 bpm</text>
-                        <text x={width-70} y={170} fontSize={25} textAnchor="end">{author}</text>
+                        <text x={width - 70} y={170} fontSize={25} textAnchor="end">{author}</text>
                     </svg>
                 </div>
                 {svgRows}

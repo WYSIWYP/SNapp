@@ -7,21 +7,20 @@ export enum Tie {
     Stop = "STOP",
 }
 
+export type TrackType = 'Instrument' | 'Lyrics'; // part types that app currently handles
+
 export type Note = {
     time: number,
     duration: number,
     midi: number,
+    staff: number,
     attributes: {
         ties: Tie[], // TODO: consider making this optional
         // other attributes like slurs and dynamics can go here
     }
 };
 
-export type TrackType = 'Instrument' | 'Lyrics'; // part types that app currently handles
-
-export type staff = Note[]; 
-
-export type measure = Note[];
+export type Measure = Note[]; // note: each part should have 1 staff or 2 staves (for piano)
 
 export type TimeSignature = {
     measure: number,
@@ -35,10 +34,10 @@ export type KeySignature = {
 }
 
 export type Track = {
-    measures: measure[],
+    measures: Measure[],
     timeSignatures: TimeSignature[],
     keySignatures: KeySignature[],
-    trackType?: TrackType
+    trackTypes: TrackType[] // we use an array here because a track might contain both lyrics and piano part.
 };
 
 export type Tracks = Track[];

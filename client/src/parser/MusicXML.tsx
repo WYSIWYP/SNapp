@@ -1,5 +1,5 @@
 import MusicXML from 'musicxml-interfaces';
-import {Note, TimeSignature, KeySignature, Tracks, Score, Tie, measure, TrackType} from './Types'
+import {Note, TimeSignature, KeySignature, Tracks, Score, Tie, Measure, Track, TrackType} from './Types'
 
 const pitchToMidi = (pitch: {octave: number, step: string, alter?: number}) => {
     // we assume C4 = 60 as middle C. Note that typical 88-key piano contains notes from A0 (21) - C8 (108).
@@ -43,8 +43,6 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
     let lyricsPartId = getLyricsPartID(xml);
     let pianoPartId = getPianoPartID(xml);
 
-    console.log(`lyrics partId: ${lyricsPartId}, piano partId: ${pianoPartId}`);
-
     // currently, SNApp renders piano and lyric parts. We store the ids of the tracks we have to parse below.
     // let trackTypeMap: Partial<Record<string, TrackType>> = {
     //     [pianoPartId]: 'Piano',
@@ -58,7 +56,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
             progress: number,
             timeSignatures: TimeSignature[];
             keySignatures: KeySignature[];
-            measures: measure[],
+            measures: Measure[],
         }
     } = {};
 
@@ -74,20 +72,17 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
     // parts that we want to parse. We may add more ids here if we decide to render more instruments parts.
     let trackIDsToParse: string[] = [];
 
-    if (pianoPartId !== undefined) {
-        trackIDsToParse.push(pianoPartId); // case 1 or 2
-    } else {
-        trackIDsToParse.push('P1') // case 3 // TODO don't assume that first instrument part is 'P1'
+    let instrumentId = pianoPartId !== undefined ? pianoPartId : 'P1';
+    trackIDsToParse.push(instrumentId);
+    if (lyricsPartId !== undefined && !trackIDsToParse.includes(lyricsPartId)) {
+        trackIDsToParse.push(lyricsPartId) 
     }
-    if (lyricsPartId !== undefined) {
-        trackIDsToParse.push(lyricsPartId) // case 1
-    }
-    console.log('parsing tracks: ' + trackIDsToParse);
+    console.log(`lyrics partId: ${lyricsPartId}, instrument partId: ${instrumentId}`);
 
     xml.measures.forEach((measure, measureNumber) => {
         trackIDsToParse.forEach(partName => {
             if (measure.parts[partName] === undefined) return; // if part has not started yet, skip this measure.
-            
+
             if (parts[partName] === undefined) {
                 parts[partName] = {
                     divisions: undefined!,
@@ -132,10 +127,12 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                 console.error('A note was marked as a rest but was also given a pitch');
                             }
                             if (entry.pitch !== undefined) {
-                                const entryTies = entry.ties as {type: number}[];
+                                let entryTies = entry.ties as {type: number}[];
+                                let staffNumber = entry.staff ? entry.staff : 1;
                                 notes.push({
                                     time, duration: divisionsToNoteLength(entry.duration),
                                     midi: pitchToMidi(entry.pitch),
+                                    staff: staffNumber,
                                     attributes: {
                                         ties: entryTies ? entryTies.map(tie => tie.type === 0 ? Tie.Start : Tie.Stop) : []
                                     }
@@ -194,13 +191,20 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
             });
         });
     });
-    let tracks: Tracks = Object.keys(parts).map(x => ({
-        measures: parts[x].measures,
-        timeSignatures: parts[x].timeSignatures,
-        keySignatures: parts[x].keySignatures
-    }));
+    let tracks: Tracks = Object.keys(parts).map(partId => {
+        let trackTypes: TrackType[] = []
+        if (partId === lyricsPartId) trackTypes.push('Lyrics');
+        if (partId === instrumentId) trackTypes.push('Instrument');
 
-    // TODO: more error checking
+        return {
+            measures: parts[partId].measures,
+            timeSignatures: parts[partId].timeSignatures,
+            keySignatures: parts[partId].keySignatures,
+            trackTypes: trackTypes
+        } as Track;
+    });
+
+    // TODO: handle grace note 
     // handle unprovided signatures
     tracks.forEach(track => {
         // add default values for key signatures if it is not provided.
