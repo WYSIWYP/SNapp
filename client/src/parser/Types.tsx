@@ -9,11 +9,13 @@ export enum Tie {
 
 export type TrackType = 'Instrument' | 'Lyrics'; // part types that app currently handles
 
+export type StaffType = 'treble' | 'bass';
+
 export type Note = {
     time: number,
     duration: number,
     midi: number,
-    staff: number,
+    staff: StaffType,
     attributes: {
         ties: Tie[], // TODO: consider making this optional
         // other attributes like slurs and dynamics can go here

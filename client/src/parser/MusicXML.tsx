@@ -132,7 +132,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                 notes.push({
                                     time, duration: divisionsToNoteLength(entry.duration),
                                     midi: pitchToMidi(entry.pitch),
-                                    staff: staffNumber,
+                                    staff: staffNumber === 1 ? 'treble' : 'bass',
                                     attributes: {
                                         ties: entryTies ? entryTies.map(tie => tie.type === 0 ? Tie.Start : Tie.Stop) : []
                                     }
