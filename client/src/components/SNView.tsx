@@ -192,62 +192,64 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             })
         } catch (e) {}
 
-        let boundaryMap: Record<StaffType, Record<string, number>> = {
-            treble: {minNote: 128, minLine: 128, maxNote: -1, maxLine: -1},
-            bass: {minNote: 128, minLine: 128, maxNote: -1, maxLine: -1}
-        }; // lowest and highest note and their line number for each staff. Values are computed below.
+        let minNote: Record<StaffType, number> = {
+            treble: 128,
+            bass: 128
+        };
+
+        let maxNote: Record<StaffType, number> = {
+            treble: -1,
+            bass: -1
+        };
 
         //calculate lowest and highest note
         let instrumentTrack = score.tracks.filter(track => track.trackTypes.includes('Instrument'))[0];
-        let trackHasBassClef = false;
         instrumentTrack.measures.forEach(measure => {
             measure.forEach(note => {
-                if (note.staff === 'bass') trackHasBassClef = true;
-                let staffBoundary = boundaryMap[note.staff];
-                staffBoundary.minNote = Math.min(staffBoundary.minNote, note.midi);
-                staffBoundary.maxNote = Math.max(staffBoundary.maxNote, note.midi);
+                minNote[note.staff] = Math.min(minNote[note.staff], note.midi);
+                maxNote[note.staff] = Math.max(maxNote[note.staff], note.midi);
             })
         });
-        // TODO: get separate min and max notes for bass and treble clef.
 
         let staffTypes: StaffType[] = ['treble', 'bass'];
         //if there was an issue, abort
 
         // if bass clef is empty, then we create an empty clef // TODO: consider not displaying bass if it is empty.
-        if (!trackHasBassClef) {
-            boundaryMap.bass.minNote = 48;
-            boundaryMap.bass.maxNote = 60;
+        if (minNote.bass === 128 && maxNote.bass === -1) {
+            minNote.bass = 48;
+            maxNote.bass = 60;
         }
-        
-        // staffTypes.forEach(staffType => {
-        //     let staff = boundaryMap[staffType];
-        //     if (staff.minNote >= 128 || staff.minNote < 0 || staff.maxNote >= 128 || staff.maxNote < 0) {
-        //         console.log(staff.minNote, staff.maxNote);
-        //         throw new Error('An issue was detected while analyzing this work\'s note range');
-        //     }
-        // });
+
+        staffTypes.forEach(staff => {
+            if (minNote[staff] >= 128 || minNote[staff] < 0 || maxNote[staff] >= 128 || maxNote[staff] < 0) {
+                console.log(minNote[staff], maxNote[staff]);
+                throw new Error('An issue was detected while analyzing this work\'s note range');
+            }
+        });
 
         //calculate the height of each row (based upon low/high notes and oct groups)
-        staffTypes.forEach(staffType => {
-            let staff = boundaryMap[staffType];
-            let minLine = getNoteLine(staff.minNote);
-            let maxLine = getNoteLine(staff.maxNote);
-
+        let minLine: Record<StaffType, number> = {
+            treble: getNoteLine(minNote.treble),
+            bass: getNoteLine(minNote.bass)
+        }
+        let maxLine: Record<StaffType, number> = {
+            treble: getNoteLine(maxNote.treble),
+            bass: getNoteLine(maxNote.bass)
+        }
+        staffTypes.forEach(staff => {
             // find the closest note line
-            while (minLine % 7 !== 0 && minLine % 7 !== 3) minLine--;
-            while (maxLine % 7 !== 0 && maxLine % 7 !== 3) maxLine++;
+            while (minLine[staff] % 7 !== 0 && minLine[staff] % 7 !== 3) minLine[staff]--;
+            while (maxLine[staff] % 7 !== 0 && maxLine[staff] % 7 !== 3) maxLine[staff]++;
 
             // widen staff range if it is too small
-            if (Math.abs(maxLine - minLine) <= 1) {
-                maxLine += (maxLine % 7 === 0) ? 3 : 4;
-                minLine -= (minLine % 7 === 0) ? 4 : 3;
+            if (Math.abs(maxLine[staff] - minLine[staff]) <= 1) {
+                maxLine[staff] += (maxLine[staff] % 7 === 0) ? 3 : 4;
+                minLine[staff] -= (minLine[staff] % 7 === 0) ? 4 : 3;
             }
-            staff.minLine = minLine;
-            staff.maxLine = maxLine;
         });
         let staffHeights: Record<StaffType, number> = {
-            treble: (boundaryMap.treble.maxLine - boundaryMap.treble.minLine) * noteSymbolSize / 2,
-            bass: (boundaryMap.bass.maxLine - boundaryMap.bass.minLine) * noteSymbolSize / 2
+            treble: (maxLine.treble - minLine.treble) * noteSymbolSize / 2,
+            bass: (maxLine.bass - minLine.bass) * noteSymbolSize / 2
         }
 
         //calculate the number of beats per measure
@@ -287,7 +289,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             return {currentTime, currentKey};
         }
 
-        let measure = (x: number, y: number, measureNumber: number, type: StaffType) => {
+        let measure = (x: number, y: number, measureNumber: number, staff: StaffType) => {
             // TODO: handle pick up measures
             // Get time signature of current measure
             let {currentTime, currentKey} = getCurrentSignatures(measureNumber);
@@ -298,16 +300,16 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             // Draw measure
             let key = 0;
             let measureSVG: JSX.Element[] = [];
-            measureSVG.push(<rect key={key++} x={measureWidth - strokeWidth / 2} y={measureLabelSpace - strokeWidth / 2} width={strokeWidth} height={staffHeights[type] + strokeWidth} fill="#000000" />);
-            for (let j = boundaryMap[type].minLine; j <= boundaryMap[type].maxLine; j++) {
+            measureSVG.push(<rect key={key++} x={measureWidth - strokeWidth / 2} y={measureLabelSpace - strokeWidth / 2} width={strokeWidth} height={staffHeights[staff] + strokeWidth} fill="#000000" />);
+            for (let j = minLine[staff]; j <= maxLine[staff]; j++) {
                 let octaveLine = octaveLines[j % 7];
                 if (octaveLine !== undefined) {
-                    let lineY = measureLabelSpace + staffHeights[type] - (j - boundaryMap[type].minLine) * noteSymbolSize / 2;
+                    let lineY = measureLabelSpace + staffHeights[staff] - (j - minLine[staff]) * noteSymbolSize / 2;
                     measureSVG.push(<rect key={key++} x={strokeWidth / 2} y={lineY - strokeWidth / 2} width={measureWidth - strokeWidth} height={strokeWidth} fill={octaveLine.color} />);
                     if (measureNumber % measuresPerRow === 0 && octaveLine.number === true) {
                         measureSVG.push(<text x={-strokeWidth} key={key++} y={lineY} fontSize={measureLabelSpace} textAnchor="end" dominantBaseline="middle">{Math.floor(j / 7)}</text>);
                     }
-                    if (j < boundaryMap[type].maxLine) {
+                    if (j < maxLine[staff]) {
                         for (let measureNumber = 1; measureNumber < beatsPerMeasure; measureNumber++) {
                             let tickX = measureWidth / beatsPerMeasure * measureNumber;
                             measureSVG.push(<rect key={key++} x={tickX - strokeWidth / 2} y={lineY - tickSize} width={strokeWidth} height={tickSize - strokeWidth / 2} fill="#000000" />);
@@ -321,15 +323,15 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             const noteTailSVG: JSX.Element[] = [];
             score!.tracks.forEach(track => {
                 if (!track.trackTypes.includes('Instrument')) return; // we do not render notes for lyrics only track.
-                let notes = track.measures[measureNumber].filter(note => note.staff === type);
+                let notes = track.measures[measureNumber].filter(note => note.staff === staff);
                 notes.forEach((note, _idx) => {
-                    noteHeadSVG.push(noteHead(note, key++, type));
+                    noteHeadSVG.push(noteHead(note, key++, staff));
                     let tieStart = note.attributes.ties.includes(Tie.Start);
                     let tieStop = note.attributes.ties.includes(Tie.Stop);
                     let isLastMeasure = ((measureNumber + 1) % measuresPerRow === 0); // whether current measure is the last measure of the row
                     let isLastNote = note.time + note.duration >= currentTime.beats; // whether the note reaches the end of the measure
                     let noteSpansRow = tieStart && isLastMeasure && isLastNote; // whether tied note spans next row
-                    noteTailSVG.push(noteTail(note, key++, tieStart, tieStop, noteSpansRow, type));
+                    noteTailSVG.push(noteTail(note, key++, tieStart, tieStop, noteSpansRow, staff));
                 });
             });
 
@@ -363,27 +365,27 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             );
         }
 
-        let staff = (i: number, type: StaffType): JSX.Element => {
-            let staffHeight = staffHeights[type];
+        let staff = (i: number, staff: StaffType): JSX.Element => {
+            let staffHeight = staffHeights[staff];
             let trebleStaffHeight = staffHeights.treble + measureLabelSpace + noteSymbolSize / 2; // 
-            let yOffset = type === 'treble' ? 0 : trebleStaffHeight + staffDistance;
-            let staffName = type === 'treble' ? staffLabels[0] : staffLabels[1];
-            return <g id={`row${i}${type}`} key={type + i} transform={`translate(${horizontalPadding}, ${yOffset})`}>
+            let yOffset = staff === 'treble' ? 0 : trebleStaffHeight + staffDistance;
+            let staffName = staff === 'treble' ? staffLabels[0] : staffLabels[1];
+            return <g id={`row${i}${staff}`} key={staff + i} transform={`translate(${horizontalPadding}, ${yOffset})`}>
                 {devMode ? <rect y={measureLabelSpace} width={staffLabelSpace} height={staffHeight} fill="#ffdddd" /> : null}
                 {devMode ? <rect x={staffLabelSpace} y={measureLabelSpace} width={octaveLabelSpace} height={staffHeight} fill="#ffddff" /> : null}
                 <text x={staffLabelSpace} y={measureLabelSpace + staffHeight / 2} fontSize={staffLabelSpace * 1.5} textAnchor="end" dominantBaseline="middle">{staffName}</text>
                 <rect x={staffLabelSpace + octaveLabelSpace - strokeWidth / 2} y={measureLabelSpace - strokeWidth / 2} width={strokeWidth} height={staffHeight + strokeWidth} fill="#000000" />
 
                 {range(0, i < rowNumber - 1 ? measuresPerRow : measureNumber - (rowNumber - 1) * measuresPerRow).map(j =>
-                    measure(staffLabelSpace + octaveLabelSpace + j * measureWidth, 0, i * measuresPerRow + j, type)
+                    measure(staffLabelSpace + octaveLabelSpace + j * measureWidth, 0, i * measuresPerRow + j, staff)
                 )}
             </g>
         }
 
 
-        let noteTimeToPos = (noteTime: number, type: StaffType) => ({
+        let noteTimeToPos = (noteTime: number, staff: StaffType) => ({
             x: beatWidth * noteTime,
-            y: staffHeights[type] + measureLabelSpace
+            y: staffHeights[staff] + measureLabelSpace
         });
 
         // let beatsToPos = (beat: number) => {
@@ -399,13 +401,13 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         //     y: verticalPadding + row * (staffHeight + measureLabelSpace + rowPadding) + staffHeight + measureLabelSpace
         // });
 
-        let noteTail = (note: Note, i: number, tieStart: boolean, tieStop: boolean, noteSpansRow: boolean, type: StaffType) => {
+        let noteTail = (note: Note, i: number, tieStart: boolean, tieStop: boolean, noteSpansRow: boolean, staff: StaffType) => {
             let key = 0;
             let boxes: JSX.Element[] = [];
 
-            let line = getNoteLine(note.midi) - boundaryMap[type].minLine;
-            let {x: xStart, y: yStart} = noteTimeToPos(note.time, type);
-            let {x: xEnd} = noteTimeToPos(note.time + note.duration, type);
+            let line = getNoteLine(note.midi) - minLine[staff];
+            let {x: xStart, y: yStart} = noteTimeToPos(note.time, staff);
+            let {x: xEnd} = noteTimeToPos(note.time + note.duration, staff);
 
             // let pushBox = (x1: number, x2: number, y: number) => {
             //     boxes.push(<rect key={key++} x={x1} y={y - (line + 1) * noteSymbolSize / 2} width={x2 - x1} height={noteSymbolSize} fill={colorPreferenceStyles[noteDurationColor]} fillOpacity={.5} />);
@@ -463,13 +465,13 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             );
         }
 
-        let noteHead = (note: Note, i: number, type: StaffType) => {
+        let noteHead = (note: Note, i: number, staff: StaffType) => {
             if (note.attributes.ties.includes(Tie.Stop))
                 return null!;
             let accidental: Accidental = getNoteAccidental(note.midi);
-            let line = getNoteLine(note.midi) - boundaryMap[type].minLine;
+            let line = getNoteLine(note.midi) - minLine[staff];
 
-            let {x, y} = noteTimeToPos(note.time, type);
+            let {x, y} = noteTimeToPos(note.time, staff);
 
             x += noteSymbolSize / 2;
             y -= line * noteSymbolSize / 2;
