@@ -20,6 +20,7 @@ export const showMessage = (title: string, body: any, buttonText: string, button
     </div>}};
 }
 
+export const showPrompt = (title: string, body: any, buttonText1: string, buttonAction1: () => void, buttonText2: string, buttonAction2: () => void): DialogAction => {
     return {
         type: 'open', val: {
             title, width: 400, height: 275, contents: <div style={styles.body}>
