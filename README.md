@@ -8,9 +8,17 @@ These instructions will allow you to get a copy of the project up and running on
 
 ### Prerequisites
 
-To run SNapp locally, [Node.js and npm](https://nodejs.org/en/download/) must be installed. Clone the SNapp project localy and, from a shell of your choice, navigate to the project's `client` directory. Run `npm install` to install the required dependencies and `npm start` to run the app in development mode. This should automatically open a browser window with the app.
+To run SNapp locally, [Node.js and npm](https://nodejs.org/en/download/) must be installed. Clone the SNapp project locally and, from a shell of your choice, navigate to the project's `client` directory. Run `npm install` to install the required dependencies and `npm start` to run the app in development mode. This should automatically open a browser window with the app.
 
-These instructions has been last tested on commit `0de542e` using Node.js version 12.13.0 on Windows and MacOS machines.
+The following commands can be entered in the console to clone, install, and run the app.
+```
+git clone https://github.com/radiotech/SNapp.git SNapp
+cd SNapp/client
+npm install
+npm start
+```
+
+These instructions have last been tested on commit `0de542e` using Node.js version 12.13.0 on Windows and MacOS machines.
 
 ## Testing
 Users can use the command `npm run test` from the project's client directory to run the project's automated test suite. This will launch Jest in [watch mode](https://create-react-app.dev/docs/running-tests/#command-line-interface).
@@ -25,7 +33,7 @@ SNapp can be built for deployment by running `npm run build` from the project's 
 Routing in SNapp is currently implemented using the full path portion of page URLs. As a result, when hosting a deployment, all paths under the deployment subdomain should be configured to serve the project's main `index.html` document. This also means that SNapp must be hosted at your domain or subdomain's root path. When using GitHub pages, this can be achieved by renaming `index.html` to `404.html` and by setting up a custom domain name for the project.
 
 ## Technologies used
-The client for this project was developed using [React](https://reactjs.org/) and [Typescript](https://www.typescriptlang.org/). Test cases were implemented using [jest](https://jestjs.io/) with [enzyme](https://airbnb.io/enzyme/) and snapshotting. The project is designed to work with the [musicxml](https://www.musicxml.com/) and [mxl](https://www.musicxml.com/tutorial/compressed-mxl-files/) file formats and uses the localStorage API and SVGs in the browser to render WYSIWYP content. A basic architecture diagram is included below for reference. A set of architecture decision records related to the app are available from the [project wiki](https://github.com/radiotech/SNapp/wiki/Architecture-Decision-Records) on GitHub.
+The client for this project was developed using [React](https://reactjs.org/) and [Typescript](https://www.typescriptlang.org/). Test cases were implemented using [jest](https://jestjs.io/) with [enzyme](https://airbnb.io/enzyme/) and snapshotting. The project is designed to work with the [musicxml](https://www.musicxml.com/) and [mxl](https://www.musicxml.com/tutorial/compressed-mxl-files/) file formats and uses the `localStorage` API and SVGs in the browser to render WYSIWYP content. A basic architecture diagram is included below for reference. A set of architecture decision records related to the app are available from the [project wiki]() on GitHub.
 
 <img src="http://comp523k.web.unc.edu/files/2019/10/Architecture-Diagram.png" width="350"></img>
 
@@ -37,7 +45,7 @@ Please read our [Behavior Guide](https://github.com/radiotech/SNapp/wiki/Behavio
 
 * **Andrew Harvey** - Project Manager
 
-    Coordinated the development of project deliverables and worked to implement routing, test cases, PDF generation, and localStorage access within the app.
+    Coordinated the development of project deliverables and worked to implement routing, test cases, PDF generation, and `localStorage` access within the app.
 
 * **William Lee** - Tech Lead
 
