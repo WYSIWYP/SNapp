@@ -6,7 +6,7 @@ import {saveAs} from 'file-saver';
 import dropDown from '../images/dropDown.svg'
 import {useCurrentFileState} from '../contexts/CurrentFile';
 import {
-    usePreferencesState, colorPreferenceOptions, scalePreferenceOptions, 
+    usePreferencesState, colorPreferenceOptions, scalePreferenceOptions,
     spacingPreferenceOptions, noteHeadPreferenceOptions, measuresPerRowOptions, accidentalTypeOptions
 } from '../contexts/Preferences';
 import jsPDF from 'jspdf';
@@ -72,27 +72,27 @@ const Convert: React.FC<Props> = () => {
 
             let hidden = document.getElementById('hidden-pdf-generation') as HTMLDivElement;
             let canvas = hidden.getElementsByClassName('canvas')[0] as HTMLCanvasElement;
-            
+
             let pdf = new jsPDF(); //210 x 297 mm (A4 paper dimensions)
             let width = 210;
             let height = 297;
 
             // should change with preferences
-            margin = width*margin/100;
-            padding = width*padding/100;
+            margin = width * margin / 100;
+            padding = width * padding / 100;
 
 
             let rows = hidden.getElementsByClassName('snview-row');
-            
+
             let nextRowY = margin;
-            for(let i = 0; i < rows.length; i++) {
+            for (let i = 0; i < rows.length; i++) {
                 let row = rows[i];
 
-                let [,,w,h] = row.getElementsByTagName('svg')[0].getAttribute('viewBox')!.split(' ').map(x=>parseInt(x));
-                let canvasRowHeight = Math.ceil(1000*h/w);
-                let pdfRowHeight = Math.ceil((width-margin*2)*h/w);
+                let [, , w, h] = row.getElementsByTagName('svg')[0].getAttribute('viewBox')!.split(' ').map(x => parseInt(x));
+                let canvasRowHeight = Math.ceil(1000 * h / w);
+                let pdfRowHeight = Math.ceil((width - margin * 2) * h / w);
 
-                if(nextRowY+pdfRowHeight > height-margin){
+                if (nextRowY + pdfRowHeight > height - margin) {
                     pdf.addPage();
                     nextRowY = margin;
                 }
@@ -102,14 +102,14 @@ const Convert: React.FC<Props> = () => {
                 ctx.fillStyle = "white";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "black";
-                canvg(canvas,row.innerHTML,{ignoreClear: true});
-                pdf.addImage(canvas, 'JPEG', margin, nextRowY, width-margin*2, pdfRowHeight);
+                canvg(canvas, row.innerHTML, {ignoreClear: true});
+                pdf.addImage(canvas, 'JPEG', margin, nextRowY, width - margin * 2, pdfRowHeight);
 
-                nextRowY += pdfRowHeight+padding;
+                nextRowY += pdfRowHeight + padding;
             }
-            
-            
-            
+
+
+
             // pdf.rect(0,0,200,287,'F');
             // pdf.addPage();
             // pdf.rect(0,10,200,287,'F');
@@ -141,7 +141,8 @@ const Convert: React.FC<Props> = () => {
         }
         e.target.value = "";
     };
-    let sidebar = (<div style={styles.sideBar}>
+    let sidebar = (
+    <div style={styles.sideBar}>
         <div style={styles.sideBarTop}>
             <div id="export" title="Click to export" style={styles.sideBarTopOptions} onClick={() => {exportFile();}}>
                 Export
@@ -154,94 +155,94 @@ const Convert: React.FC<Props> = () => {
                 Close X
             </div>
         </div>
-        <form onSubmit={() => {setShow(false);}} >
-            <label>
-                <div style={styles.sideBarContent}>
-                    <div style={styles.line}>
-                        <div style={styles.name}>Note Duration Color</div>
-                        <select style={styles.select} value={preferences.noteDurationColor} onChange={
-                            (e) => {setPreferences({type: 'set', val: {noteDurationColor: e.target.value as any}});}
-                        }>{colorPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
-                    <div style={styles.line}>
-                        <div style={styles.name}>Note Symbol Color</div>
-                        <select style={styles.select} value={preferences.noteSymbolColor} onChange={
-                            (e) => {setPreferences({type: 'set', val: {noteSymbolColor: e.target.value as any}});}
-                        }>{colorPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
 
-                    <div style={styles.line}>
-                        <div style={styles.name}>Staff Scale</div>
-                        {/* deleted value and onchange */}
-                        <select style={styles.select} value={preferences.staffScale} onChange={
-                            (e) => {setPreferences({type: 'set', val: {staffScale: e.target.value as any}});}
-                        }>{scalePreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
+        <div style={styles.sideBarContent}>
+            <div>
+            <div style={styles.line}>
+                <div style={styles.name}>Note Duration Color</div>
+                <select value={preferences.noteDurationColor} onChange={
+                    (e) => {setPreferences({type: 'set', val: {noteDurationColor: e.target.value as any}});}
+                }>{colorPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+            </div>
+            <div style={styles.line}>
+                <div style={styles.name}>Note Symbol Color</div>
+                <select value={preferences.noteSymbolColor} onChange={
+                    (e) => {setPreferences({type: 'set', val: {noteSymbolColor: e.target.value as any}});}
+                }>{colorPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+            </div>
 
-                    <div style={styles.line}>
-                        <div style={styles.name}>Note Scale</div>
-                        {/* deleted value and onchange */}
-                        <select style={styles.select} value={preferences.noteScale} onChange={
-                            (e) => {setPreferences({type: 'set', val: {noteScale: e.target.value as any}});}
-                        }>{scalePreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
+            <div style={styles.line}>
+                <div style={styles.name}>Staff Scale</div>
+                {/* deleted value and onchange */}
+                <select value={preferences.staffScale} onChange={
+                    (e) => {setPreferences({type: 'set', val: {staffScale: e.target.value as any}});}
+                }>{scalePreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+            </div>
 
-                    <div style={styles.line}>
-                        <div style={styles.name}>Horizontal Spacing</div>
-                        {/* deleted value and onchange */}
-                        <select style={styles.select} value={preferences.horizontalSpacing} onChange={
-                            (e) => {setPreferences({type: 'set', val: {horizontalSpacing: e.target.value as any}});}
-                        }>{spacingPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
+            <div style={styles.line}>
+                <div style={styles.name}>Note Scale</div>
+                {/* deleted value and onchange */}
+                <select value={preferences.noteScale} onChange={
+                    (e) => {setPreferences({type: 'set', val: {noteScale: e.target.value as any}});}
+                }>{scalePreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+            </div>
 
-                    <div style={styles.line}>
-                        <div style={styles.name}>Vertical Spacing</div>
-                        {/* deleted value and onchange */}
-                        <select style={styles.select} value={preferences.verticalSpacing} onChange={
-                            (e) => {setPreferences({type: 'set', val: {verticalSpacing: e.target.value as any}});}
-                        }>{spacingPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
+            <div style={styles.line}>
+                <div style={styles.name}>Horizontal Spacing</div>
+                {/* deleted value and onchange */}
+                <select value={preferences.horizontalSpacing} onChange={
+                    (e) => {setPreferences({type: 'set', val: {horizontalSpacing: e.target.value as any}});}
+                }>{spacingPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+            </div>
 
-                    <div style={styles.line}>
-                        <div style={styles.name}>Natural Note Shape</div>
-                        {/* deleted value and onchange */}
-                        <select style={styles.select} value={preferences.naturalNoteShape} onChange={
-                            (e) => {setPreferences({type: 'set', val: {naturalNoteShape: e.target.value as any}});}
-                        }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
+            <div style={styles.line}>
+                <div style={styles.name}>Vertical Spacing</div>
+                {/* deleted value and onchange */}
+                <select value={preferences.verticalSpacing} onChange={
+                    (e) => {setPreferences({type: 'set', val: {verticalSpacing: e.target.value as any}});}
+                }>{spacingPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+            </div>
 
-                    <div style={styles.line}>
-                        <div style={styles.name}>Sharp Note Shape</div>
-                        {/* deleted value and onchange */}
-                        <select style={styles.select} value={preferences.sharpNoteShape} onChange={
-                            (e) => {setPreferences({type: 'set', val: {sharpNoteShape: e.target.value as any}});}
-                        }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
+            <div style={styles.line}>
+                <div style={styles.name}>Natural Note Shape</div>
+                {/* deleted value and onchange */}
+                <select value={preferences.naturalNoteShape} onChange={
+                    (e) => {setPreferences({type: 'set', val: {naturalNoteShape: e.target.value as any}});}
+                }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+            </div>
 
-                    <div style={styles.line}>
-                        <div style={styles.name}>Flat Note Shape</div>
-                        {/* deleted value and onchange */}
-                        <select style={styles.select} value={preferences.flatNoteShape} onChange={
-                            (e) => {setPreferences({type: 'set', val: {flatNoteShape: e.target.value as any}});}
-                        }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
+            <div style={styles.line}>
+                <div style={styles.name}>Sharp Note Shape</div>
+                {/* deleted value and onchange */}
+                <select value={preferences.sharpNoteShape} onChange={
+                    (e) => {setPreferences({type: 'set', val: {sharpNoteShape: e.target.value as any}});}
+                }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+            </div>
 
-                    <div style={styles.line}>
-                        <div style={styles.name}>Measures per Row</div>
-                        <select style={styles.select} value={preferences.measuresPerRow} onChange={
-                            (e) => {setPreferences({type: 'set', val: {measuresPerRow: e.target.value as any}});}
-                        }>{measuresPerRowOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
+            <div style={styles.line}>
+                <div style={styles.name}>Flat Note Shape</div>
+                {/* deleted value and onchange */}
+                <select value={preferences.flatNoteShape} onChange={
+                    (e) => {setPreferences({type: 'set', val: {flatNoteShape: e.target.value as any}});}
+                }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+            </div>
 
-                    <div style={styles.line}>
-                        <div style={styles.name}>Accidental Type</div>
-                        <select style={styles.select} value={preferences.accidentalType} onChange={
-                            (e) => {setPreferences({type: 'set', val: {accidentalType: e.target.value as any}});}
-                        }>{accidentalTypeOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
-                </div>
-            </label>
-        </form>
+            <div style={styles.line}>
+                <div style={styles.name}>Measures per Row</div>
+                <select value={preferences.measuresPerRow} onChange={
+                    (e) => {setPreferences({type: 'set', val: {measuresPerRow: e.target.value as any}});}
+                }>{measuresPerRowOptions.map(x => <option key={x}>{x}</option>)}</select>
+            </div>
+
+            <div style={styles.line}>
+                <div style={styles.name}>Accidental Type</div>
+                <select value={preferences.accidentalType} onChange={
+                    (e) => {setPreferences({type: 'set', val: {accidentalType: e.target.value as any}});}
+                }>{accidentalTypeOptions.map(x => <option key={x}>{x}</option>)}</select>
+            </div>
+        </div>
+        </div>
+
     </div>)
 
     return (
@@ -268,7 +269,7 @@ const Convert: React.FC<Props> = () => {
                 {currentFile.data === undefined ? null : <SNView xml={currentFile.data} />}
             </div>
             <div id="hidden-pdf-generation" style={styles.hidden}>
-                <canvas className="canvas" width={1000} height={1000}/>
+                <canvas className="canvas" width={1000} height={1000} />
                 {currentFile.data === undefined ? null : <SNView xml={currentFile.data} forcedWidth={1000} />}
             </div>
 
@@ -332,20 +333,14 @@ const styleMap = {
         minWidth: '350px',
     },
     sideBarTop: {
-        position: 'sticky',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-
-        borderBottom: '1px solid #BBBBBB',
+        borderBottom: 'solid 1px #bbb',
         height: '65px',
         color: '#31B7D6',
         fontSize: '23px',
         fontWeight: 'bold',
-        width: 'auto',
-        backgroundColor: '#4c4c4c',
-        opacity: 1,
-        zIndex: 1,
     },
     sideBarTopOptions: {
         position: 'relative',
@@ -366,40 +361,28 @@ const styleMap = {
         opacity: 0,
     },
     sideBarContent: {
-        zIndex: 0,
-        padding: '0 20px',
-        position: 'relative',
-        marginTop: '40px',
+        position: 'absolute',
+        top: '65px',
+        height: "calc(100% - 65px)",
     },
     line: {
-        fontSize: '17px',
-        margin: '30px 0px',
+        marginTop: '30px',
+        marginBottom: '30px',
         justifyContent: 'center',
         alignItems: 'baseline',
         display: 'flex',
         position: 'relative',
         height: 'auto',
+        width: '100%'
+
 
     },
     name: {
         position: 'relative',
-        width: '60%',
+        width: '50%',
+        display: 'inline-block'
     },
-    select: {
-        fontSize: '17px',
-        height: '40px',
-        backgroundPosition: '95% center',
-        backgroundRepeat: 'no-repeat',
-        backgroundImage: `url(${dropDown})`,
-        backgroundColor: 'rgba(255,255,255,0.6)',
-        paddingLeft: '20px',
-        border: 'none',
-        borderRadius: '10px',
-        position: 'relative',
-        width: '40%',
-        textAlign: 'center',
-        WebkitAppearance: 'none',
-    },
+
     hidden: {
         width: '0px',
         height: '0px',

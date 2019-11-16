@@ -28,6 +28,26 @@ const Menu: React.FC<Props> = () => {
         }));
     }
 
+    let deleteAllPrompt = () => {
+        setDialogState(Dialog.showPrompt('Delete Confirmation', 'Are you sure you want to delete all files?', 'Cancel', () => {
+            setDialogState(Dialog.close());
+        }, 'Continue', () => {
+            setRecentFiles([]);
+            localStorage.setItem('recent_files', JSON.stringify([]));
+            setDialogState(Dialog.close());
+        }));
+    }
+    let deleteSinglePrompt = (x: recentFile) => {
+        setDialogState(Dialog.showPrompt('Delete Confirmation', 'Are you sure you want to delete this file?', 'Cancel', () => {
+            setDialogState(Dialog.close());
+        }, 'Continue', () => {
+            let newRecentFiles = recentFiles.filter(y => y.id !== x.id);
+            setRecentFiles(newRecentFiles);
+            localStorage.setItem('recent_files', JSON.stringify(newRecentFiles));
+            setDialogState(Dialog.close());
+        }));
+    }
+
     useEffect(() => {
         let recent: recentFile[] = null!;
         try {
@@ -60,7 +80,28 @@ const Menu: React.FC<Props> = () => {
             console.error(e);
         }
     };
-    
+
+    const deleteFile = (x: recentFile) => {
+        try {
+            deleteSinglePrompt(x);
+            // let newRecentFiles = recentFiles.filter(y => y.id !== x.id);
+            // setRecentFiles(newRecentFiles);
+            // localStorage.setItem('recent_files', JSON.stringify(newRecentFiles));
+        } catch (e) {
+            showError('An issue was encountered while deleting this file.');
+            console.error(e);
+        }
+    };
+
+    const deleteAllFiles = () => {
+        try {
+            deleteAllPrompt();
+        } catch (e) {
+            showError('An issue was encountered while deleting all file(s).');
+            console.error(e);
+        }
+    }
+
     const uploadFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         let fileName = (e.target as any).files[0].name.replace(/\.(?:musicxml|mxl)$/i, '');
         let failedReads = 0;
@@ -79,7 +120,7 @@ const Menu: React.FC<Props> = () => {
                         throw new Error('Failed to read file - null');
                     }
                     //try to interpret this file as compressed
-                    
+
                     (async ()=>{
                         try {
                             let zip = await JSZip.loadAsync(data);
@@ -119,12 +160,12 @@ const Menu: React.FC<Props> = () => {
                     }
                     //try to interpret this file as uncompressed
                     let parsed = MusicXML.parseScore(data as string);
-                    
+
                     if(parsed.measures === undefined){
                         throw new Error('Invalid MusicXML format');
                     }
                     console.log(parsed);
-                    
+
                     onUpload(fileName,parsed);
                 } catch (e) {
                     fail();
@@ -162,7 +203,7 @@ const Menu: React.FC<Props> = () => {
 
             //         // Fail silently if localStorage is disabled
             //         try {
-                        
+
             //             // Set this song as the current work in localStorage
             //             localStorage.setItem(id, JSON.stringify(parsed));
             //             localStorage.setItem('current_file', id);
@@ -204,7 +245,7 @@ const Menu: React.FC<Props> = () => {
 
         // Fail silently if localStorage is disabled
         try {
-            
+
             // Set this song as the current work in localStorage
             localStorage.setItem(id, JSON.stringify(parsed));
             localStorage.setItem('current_file', id);
@@ -249,17 +290,21 @@ const Menu: React.FC<Props> = () => {
                         <div style={{...styles.item, ...styles.recentFiles}}>
                             <div style={{...styles.recentFilesInner}}>
                                 {recentFiles.map(x => <Fragment key={x.id}>
-                                    <div className="button-recent-file" style={styles.recentFilesItem} onClick={() => {loadFile(x);}}>
-                                        <div style={{...styles.recentFilesItemInner, flex: '0 1 auto', fontWeight: 'bold'}}>
+                                    <div className="button-recent-file" style={styles.recentFilesItem}>
+                                        <div onClick={() => {loadFile(x);}} style={{...styles.recentFilesItemInner, flex: '0 1 auto', fontWeight: 'bold'}}>
                                             {x.file_name}
                                         </div>
-                                        <div style={{...styles.recentFilesItemInner, width: '10px', flex: '1 1 auto'}} />
-                                        <div style={{...styles.recentFilesItemInner, flex: '0 100000 auto', fontSize: '22px'}}>
+                                        <div onClick={() => {loadFile(x);}} style={{...styles.recentFilesItemInner, width: '10px', flex: '1 1 auto'}} />
+                                        <div onClick={() => {loadFile(x);}} style={{...styles.recentFilesItemInner, flex: '0 100000 auto', fontSize: '22px'}}>
                                             {(d => `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`)(new Date(x.date))}
+                                        </div>
+                                        <div onClick={() => {deleteFile(x);}} style={{...styles.recentFilesItemInner, color: 'gray', width: '25px'}} >
+                                            <svg style={{paddingTop: '9px'}} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                         </div>
                                     </div>
                                     <div style={styles.recentFilesSeparator}></div>
                                 </Fragment>)}
+                                <div onClick={() => {deleteAllFiles();}} style={styles.deleteAll} >Delete All Files</div>
                             </div>
                         </div>
                         <div style={{...styles.item, flex: '.24 0 auto'}} />
@@ -354,6 +399,17 @@ const styleMap = {
         cursor: 'pointer',
         fontSize: '28px',
         fontWeight: 'bold',
+    },
+    deleteAll: {
+        height: 'fit-content',
+        width: 'fit-content',
+        marginTop: '5px',
+        top: 'auto',
+        left: '50%',
+        background: 'gainsboro',
+        transform: 'translate(-50%, 0)',
+        cursor: 'pointer',
+        padding:'5px 10px',
     },
     icon: {
         height: '1em',

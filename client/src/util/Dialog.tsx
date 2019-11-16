@@ -20,6 +20,25 @@ export const showMessage = (title: string, body: any, buttonText: string, button
     </div>}};
 }
 
+    return {
+        type: 'open', val: {
+            title, width: 400, height: 275, contents: <div style={styles.body}>
+                <div style={styles.space} />
+                <div style={styles.top}>
+                    {body}
+                </div>
+                <div style={styles.space} />
+                <div style={styles.bottom}>
+                    <span style={styles.link} onClick={buttonAction1}>
+                        {buttonText1}
+                    </span>
+                    <span style={{...styles.link,color:'indianred'}} onClick={buttonAction2}>
+                        {buttonText2}
+                    </span>
+                </div>
+            </div>}};
+}
+
 const styleMap = {
     body: {
         display: 'flex',
@@ -58,6 +77,7 @@ const styleMap = {
         cursor: 'pointer',
         fontSize: '28px',
         fontWeight: 'bold',
+        padding:'0 30px',
     }
 } as const;
 const styles: Record<keyof typeof styleMap, CSSProperties> = styleMap;

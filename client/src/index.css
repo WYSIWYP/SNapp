@@ -9,6 +9,7 @@ a {
     color: inherit;
     text-decoration: inherit;
 }
+
 div {
     top: 0px;
     left: 0px;
@@ -18,21 +19,31 @@ div {
     box-sizing: border-box;
     user-select: none;
 }
+
 input {
     border: 2px solid #ccc;
     padding: 2px;
     border-radius: 4px;
     outline: none;
 }
+
 select {
-    border: 2px solid #ccc;
-    padding-left: 2px;
-    padding-right: 2px;
-    padding-top: 1px;
-    padding-bottom: 1px;
-    border-radius: 4px;
     outline: none;
+    font-size: 17px;
+    height: 40px;
+    background-position: 95% center;
+    background-repeat: no-repeat;
+    background-image: url("./images/dropDown.svg");
+    background-color: rgba(255, 255, 255, 0.6);
+    padding-left: 20px;
+    border: none;
+    border-radius: 10px;
+    position: relative;
+    width: 40%;
+    text-align: center;
+    -webkit-appearance: none;
 }
+
 option {
     padding: none;
 }
@@ -44,15 +55,18 @@ input[type=file]::-webkit-file-upload-button {
 ::-webkit-scrollbar {
     width: 10px;
 }
+
 /* Track */
 ::-webkit-scrollbar-track {
     background: #00000000;
 }
+
 /* Handle */
 ::-webkit-scrollbar-thumb {
     background: #BBBBBB;
     border-radius: 10px;
 }
+
 /* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
     background: #929292;
@@ -66,10 +80,12 @@ input[type=file]::-webkit-file-upload-button {
 .animated {
     transition: width 1s;
 }
-.open{
+
+.open {
     width: 350px;
 }
-.close{
+
+.close {
     width: 0px;
 }
 
