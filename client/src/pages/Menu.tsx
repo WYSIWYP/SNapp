@@ -22,8 +22,8 @@ const Menu: React.FC<Props> = () => {
     let [, setDialogState] = useDialogState();
     let [, setCurrentFile] = useCurrentFileState();
 
-    let showError = (error: string)=>{
-        setDialogState(Dialog.showMessage('An Error Occurred',error,'Close',()=>{
+    let showError = (error: string) => {
+        setDialogState(Dialog.showMessage('An Error Occurred', error, 'Close', () => {
             setDialogState(Dialog.close());
         }));
     }
@@ -69,7 +69,7 @@ const Menu: React.FC<Props> = () => {
             try {
                 // Set this song as the current work in localStorage
                 localStorage.setItem('current_file', x.id);
-            } catch(e){
+            } catch (e) {
                 // Local storage may be disabled
                 console.error(e);
             }
@@ -105,9 +105,9 @@ const Menu: React.FC<Props> = () => {
     const uploadFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         let fileName = (e.target as any).files[0].name.replace(/\.(?:musicxml|mxl)$/i, '');
         let failedReads = 0;
-        let fail = ()=>{
+        let fail = () => {
             failedReads++;
-            if(failedReads === 2){ //both reads failed
+            if (failedReads === 2) { //both reads failed
                 showError('An issue was encountered while reading the selected file.');
             }
         }
@@ -116,12 +116,12 @@ const Menu: React.FC<Props> = () => {
             reader1.onload = function () {
                 try {
                     let data = reader1.result;
-                    if(data === null){
+                    if (data === null) {
                         throw new Error('Failed to read file - null');
                     }
                     //try to interpret this file as compressed
 
-                    (async ()=>{
+                    (async () => {
                         try {
                             let zip = await JSZip.loadAsync(data);
                             let details = await zip.file('META-INF/container.xml').async("text");
@@ -129,18 +129,18 @@ const Menu: React.FC<Props> = () => {
                             let detailsDOM = parser.parseFromString(details, "application/xml");
                             let nodes = detailsDOM.getElementsByTagName('rootfile');
                             let musicXMLPath = nodes[0].getAttribute('full-path')!;
-                            for(let i = nodes.length-1; i >= 0; i--){
-                                if(nodes[i].getAttribute('media-type') === 'application/vnd.recordare.musicxml+xml'){
+                            for (let i = nodes.length - 1; i >= 0; i--) {
+                                if (nodes[i].getAttribute('media-type') === 'application/vnd.recordare.musicxml+xml') {
                                     musicXMLPath = nodes[i].getAttribute('full-path')!;
                                 }
                             }
                             let musicXMLData = await zip.file(musicXMLPath).async("text");
                             let parsed = MusicXML.parseScore(musicXMLData);
-                            if(parsed.measures === undefined){
+                            if (parsed.measures === undefined) {
                                 throw new Error('Invalid MusicXML format');
                             }
-                            onUpload(fileName,parsed);
-                        } catch(e){
+                            onUpload(fileName, parsed);
+                        } catch (e) {
                             fail();
                             console.error(e);
                         }
@@ -155,18 +155,18 @@ const Menu: React.FC<Props> = () => {
             reader2.onload = function () {
                 try {
                     let data = reader2.result;
-                    if(data === null){
+                    if (data === null) {
                         throw new Error('Failed to read file - null');
                     }
                     //try to interpret this file as uncompressed
                     let parsed = MusicXML.parseScore(data as string);
 
-                    if(parsed.measures === undefined){
+                    if (parsed.measures === undefined) {
                         throw new Error('Invalid MusicXML format');
                     }
                     console.log(parsed);
 
-                    onUpload(fileName,parsed);
+                    onUpload(fileName, parsed);
                 } catch (e) {
                     fail();
                     console.error(e);
@@ -237,7 +237,7 @@ const Menu: React.FC<Props> = () => {
         }
     };
 
-    const onUpload = (fileName: string, parsed: ScoreTimewise)=>{
+    const onUpload = (fileName: string, parsed: ScoreTimewise) => {
         let id = `file_${Array.from({length: 16}, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
 
         // Set this song as the current work in the global context
@@ -270,7 +270,7 @@ const Menu: React.FC<Props> = () => {
     }
 
     return (
-        <Frame header="SNapp">
+        <Frame header="SNapp&nbsp;-&nbsp;Simplified&nbsp;Notation&nbsp;App&nbsp;for&nbsp;Sheet&nbsp;Music">
             {recentFiles === undefined ? null : <div style={styles.container}>
                 <div style={{...styles.item, flex: '1 0 auto'}} />
                 <div style={{...styles.item, maxWidth: '720px'}}>
@@ -409,7 +409,7 @@ const styleMap = {
         background: 'gainsboro',
         transform: 'translate(-50%, 0)',
         cursor: 'pointer',
-        padding:'5px 10px',
+        padding: '5px 10px',
     },
     icon: {
         height: '1em',

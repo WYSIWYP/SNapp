@@ -89,6 +89,10 @@ input[type=file]::-webkit-file-upload-button {
     width: 0px;
 }
 
+.animated-height {
+    transition: height .5s;
+}
+
 /* @keyframes slideRight {
   from {
     width: 350px; 
