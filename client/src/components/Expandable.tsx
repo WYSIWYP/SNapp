@@ -10,10 +10,12 @@ const Frame: React.FC<Props> = ({
 }) => {
     let [expanded, setExpanded] = useState(false);
     let ref = useRef(undefined! as HTMLDivElement);
+    let downArrow = <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -3 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>;
+    let rightArrow = <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -3 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>;
     return (
         <div style={styles.group}>
             <div style={styles.title} onClick={() => {setExpanded(s => !s)}}>
-                {`${expanded ? '▽' : '▷'} ${title}`}
+                {expanded ? downArrow : rightArrow} {title}
             </div>
             <div className={`animated-height`} style={{...styles.children, height: `${expanded ? Math.ceil(ref === undefined ? 0 : ref.current.clientHeight + 30) : 0}px`}}>
                 <div ref={ref} style={styles.childrenWrapper}>
