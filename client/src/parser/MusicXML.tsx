@@ -1,5 +1,5 @@
 import MusicXML from 'musicxml-interfaces';
-import {Note, TimeSignature, KeySignature, Tracks, Score, Tie, Measure, Track, TrackType} from './Types'
+import {Note, TimeSignature, KeySignature, Tracks, Score, Tie, Notes, Track, TrackType, isDynamics, Direction, Directions, Slur} from './Types'
 
 const pitchToMidi = (pitch: {octave: number, step: string, alter?: number}) => {
     // we assume C4 = 60 as middle C. Note that typical 88-key piano contains notes from A0 (21) - C8 (108).
@@ -50,13 +50,15 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
     // }
 
     let currentBeatType = 4;
+    let currentBeats = 4;
     let parts: {
         [index: string]: {
             divisions: number,
             progress: number,
             timeSignatures: TimeSignature[];
             keySignatures: KeySignature[];
-            measures: Measure[],
+            measures: Notes[],
+            directions: Directions[]
         }
     } = {};
 
@@ -75,7 +77,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
     let instrumentId = pianoPartId !== undefined ? pianoPartId : 'P1';
     trackIDsToParse.push(instrumentId);
     if (lyricsPartId !== undefined && !trackIDsToParse.includes(lyricsPartId)) {
-        trackIDsToParse.push(lyricsPartId) 
+        trackIDsToParse.push(lyricsPartId)
     }
     // console.log(`lyrics partId: ${lyricsPartId}, instrument partId: ${instrumentId}`);
 
@@ -89,11 +91,13 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                     progress: 0,
                     timeSignatures: [],
                     keySignatures: [],
-                    measures: Array(xml.measures.length)
+                    measures: Array(xml.measures.length).fill([]),
+                    directions: Array(xml.measures.length).fill([])
                 };
             }
             let part = parts[partName];
             let notes: Note[] = [];
+            let directions: Direction[] = [];
             // computes note lengh with respect to the beat type
             let divisionsToNoteLength = (divisions: number) => {
                 if (part.divisions === undefined) {
@@ -103,11 +107,15 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                 return divisions / part.divisions * (currentBeatType / 4);
             }
             part.progress = 0;
+            let measureEnd = 0;
+
             measure.parts[partName].forEach(entry => {
                 switch (entry._class) {
                     case 'Note':
                         if (entry.duration !== undefined) { //grace notes do not have a duration - are not displayed
                             let time = part.progress;
+
+                            measureEnd = Math.max(measureEnd, time + divisionsToNoteLength(entry.duration));
                             if (entry.chord !== undefined) {
                                 if (notes.length === 0) {
                                     console.error('The first note within a measure was marked as being part of a chord');
@@ -126,19 +134,32 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                             if (entry.rest !== undefined && entry.pitch !== undefined) {
                                 console.error('A note was marked as a rest but was also given a pitch');
                             }
+
                             if (entry.pitch !== undefined) {
                                 let entryTies = entry.ties as {type: number}[];
                                 let staffNumber = entry.staff ? entry.staff : 1;
+                                let entrySlur: Slur | undefined;
+                                if (entry.notations && entry.notations.length > 0) {
+                                    entry.notations.forEach((notation: any) => {
+                                        if (notation.slurs) {
+                                            notation.slurs.forEach((slur: any) => {
+                                                if (slur.type === 0) entrySlur = 'start'
+                                                if (slur.type === 1) entrySlur = 'end'
+                                            });
+                                        }
+                                    });
+                                }
                                 notes.push({
                                     time, duration: divisionsToNoteLength(entry.duration),
                                     midi: pitchToMidi(entry.pitch),
                                     staff: staffNumber === 1 ? 'treble' : 'bass',
                                     attributes: {
-                                        ties: entryTies ? entryTies.map(tie => tie.type === 0 ? Tie.Start : Tie.Stop) : []
+                                        ties: entryTies ? entryTies.map(tie => tie.type === 0 ? Tie.Start : Tie.Stop) : [],
+                                        slur: entrySlur
                                     }
                                 });
                             }
-                            part.measures[measureNumber] = notes;
+                            part.measures[measureNumber] = notes; // TODO: Optimize this
                         }
                         break;
                     case 'Backup':
@@ -160,6 +181,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                         beatTypes: entry.times[0].beatTypes[0],
                                     });
                                     currentBeatType = entry.times[0].beatTypes[0];
+                                    currentBeats = entry.times[0].beats[0];
                                 } catch (e) {
                                     console.error('Failed to parse time signature', entry.times[0]);
                                 }
@@ -181,6 +203,22 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                     case 'Barline':
                         break;
                     case 'Direction':
+                        if (!entry.directionTypes || entry.directionTypes === 0) break;
+                        entry.directionTypes.forEach((direction: any) => {
+                            // parse dynamics
+                            if (direction.hasOwnProperty('dynamics')) {
+                                Object.keys(direction.dynamics).forEach(key => {
+                                    if (isDynamics(key)) directions.push({time: part.progress, dynamics: key})
+                                });
+                            }
+                            // parse dynamics
+                            if (direction.hasOwnProperty('pedal')) {
+                                if (direction.pedal.type === 0) directions.push({time: part.progress, pedal: 'pedalStart'});
+                                if (direction.pedal.type === 1) directions.push({time: part.progress, pedal: 'pedalEnd'});
+                                // we disregard other pedal types
+                            }
+                            part.directions[measureNumber] = directions; // TODO: optimize this
+                        });
                         break;
                     case 'Sound':
                         break;
@@ -189,6 +227,11 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                         break;
                 }
             });
+            // check pick up measure
+            if (measureNumber === 0 && measureEnd < currentBeats) {
+                let offset = currentBeats - measureEnd;
+                part.measures[0].forEach(note => note.time += offset);
+            }
         });
     });
     let tracks: Tracks = Object.keys(parts).map(partId => {
@@ -198,13 +241,13 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
 
         return {
             measures: parts[partId].measures,
+            directions: parts[partId].directions,
             timeSignatures: parts[partId].timeSignatures,
             keySignatures: parts[partId].keySignatures,
             trackTypes: trackTypes
         } as Track;
     });
 
-    // TODO: handle grace note 
     // handle unprovided signatures
     tracks.forEach(track => {
         // add default values for key signatures if it is not provided.
