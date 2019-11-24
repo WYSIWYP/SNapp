@@ -290,7 +290,6 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         }
 
         let measure = (x: number, y: number, measureNumber: number, staff: StaffType) => {
-            // TODO: handle pick up measures
             // Get time signature of current measure
             let {currentTime, currentKey} = getCurrentSignatures(measureNumber);
             beatWidth = scoreWidth / currentTime.beats / measuresPerRow;
@@ -350,17 +349,45 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             );
         }
 
+        let pedal = (i: number) => {
+            let pedals: JSX.Element[] = [];
+            let instrumentTrack = score!.tracks.find(track => track.trackTypes.includes('Instrument'));
+            if (!instrumentTrack) return null;
+            let key = 0;
+
+            let directionsAtRow = instrumentTrack.directions.slice(i * measuresPerRow, (i + 1) * measuresPerRow);
+            directionsAtRow.forEach((directionsAtMeasure, measureNumber) => {
+                directionsAtMeasure.forEach(direction => {
+                    if (!direction.pedal) return;
+                    let pedalText = direction.pedal === 'pedalStart' ? 'Ped' : '✻';
+                    let x = horizontalPadding + staffLabelSpace + octaveLabelSpace + strokeWidth + measureNumber * measureWidth + noteTimeToPos(direction.time, 'treble').x;
+                    pedals.push(
+                        <text x={`${x}`} y='15' key={key++}>
+                            {pedalText}
+                        </text>
+                    )
+                })
+            });
+
+            return (
+                <svg viewBox={`0 0 ${width} 20`} key={i} style={{position: 'relative', height: 'auto', paddingBottom: `${rowPadding}px`}}>
+                    {pedals}
+                </svg>
+            );
+        }
+
         let grandStaff = (i: number): JSX.Element => {
             let trebleSpaceHeight = staffHeights.treble + measureLabelSpace + annotationSpace + noteSymbolSize / 2;
             let bassStaffHeight = staffHeights.bass + measureLabelSpace + annotationSpace + noteSymbolSize / 2;
             let grandStaffHeight = trebleSpaceHeight + bassStaffHeight + staffDistance;
 
             return (
-                <div className={`snview-row snview-row-${i + 1}`} key={i} style={{position: 'relative', height: 'auto', paddingBottom: `${rowPadding}px`}}>
+                <div className={`snview-row snview-row-${i + 1}`} key={i} style={{position: 'relative', height: 'auto'}}>
                     <svg viewBox={`0 0 ${width} ${grandStaffHeight}`}>
                         {staff(i, 'treble')}
                         {staff(i, 'bass')}
                     </svg>
+                    {pedal(i)}
                 </div>
             );
         }
@@ -388,19 +415,6 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             y: staffHeights[staff] + measureLabelSpace
         });
 
-        // let beatsToPos = (beat: number) => {
-        //     let row = Math.floor(beat / beatsPerRow);
-        //     let measure = (beat - row * beatsPerRow) / beatsPerMeasure;
-        //     return {
-        //         row, measure,
-        //         ...rowMeasureToPos(row, measure)
-        //     };
-        // }
-        // let rowMeasureToPos = (row: number, measure: number) => ({
-        //     x: horizontalPadding + staffLabelSpace + octaveLabelSpace + measure * measureWidth,
-        //     y: verticalPadding + row * (staffHeight + measureLabelSpace + rowPadding) + staffHeight + measureLabelSpace
-        // });
-
         let noteTail = (note: Note, i: number, tieStart: boolean, tieStop: boolean, noteSpansRow: boolean, staff: StaffType) => {
             let key = 0;
             let boxes: JSX.Element[] = [];
@@ -409,28 +423,13 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             let {x: xStart, y: yStart} = noteTimeToPos(note.time, staff);
             let {x: xEnd} = noteTimeToPos(note.time + note.duration, staff);
 
-            // let pushBox = (x1: number, x2: number, y: number) => {
-            //     boxes.push(<rect key={key++} x={x1} y={y - (line + 1) * noteSymbolSize / 2} width={x2 - x1} height={noteSymbolSize} fill={colorPreferenceStyles[noteDurationColor]} fillOpacity={.5} />);
-            // }
-            // while (rowStart < rowEnd) {
-            //     //only executes rarely so it is faster to compute this value in the loop
-            //     pushBox(xStart, horizontalPadding + staffLabelSpace + octaveLabelSpace + measuresPerRow * measureWidth, yStart);
-            //     rowStart++;
-            //     measureStart = 0;
-            //     let {x, y} = rowMeasureToPos(rowStart, measureStart);
-            //     xStart = x;
-            //     yStart = y;
-            // }
-
             let roundingSpace = Math.max(Math.min(noteSymbolSize, xEnd - xStart), 0);
             let radiusStart = roundingSpace / 4;
             let radiusEnd = roundingSpace / 2;
             let pointedEnd = noteSpansRow;
 
             if (tieStart) {
-                //if(!noteSpansRow){ //this check prevents pointed ends from extending past the end of the row
                 radiusEnd = 0;
-                //}
             }
             if (tieStop) {
                 radiusStart = 0;
