@@ -359,10 +359,10 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             directionsAtRow.forEach((directionsAtMeasure, measureNumber) => {
                 directionsAtMeasure.forEach(direction => {
                     if (!direction.pedal) return;
-                    let pedalText = direction.pedal === 'pedalStart' ? 'Ped' : '✻';
-                    let x = horizontalPadding + staffLabelSpace + octaveLabelSpace + strokeWidth + measureNumber * measureWidth + noteTimeToPos(direction.time, 'treble').x;
+                    let pedalText = direction.pedal === 'pedalStart' ? '𝒫𝑒𝒹.' : '✻';
+                    let x = horizontalPadding + staffLabelSpace + octaveLabelSpace + measureNumber * measureWidth + noteTimeToPos(direction.time, 'treble').x;
                     pedals.push(
-                        <text x={`${x}`} y='15' key={key++}>
+                        <text x={`${x}`} y='20' key={key++} fontSize = '20px' fontWeight='bold'>
                             {pedalText}
                         </text>
                     )
@@ -370,15 +370,15 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             });
 
             return (
-                <svg viewBox={`0 0 ${width} 20`} key={i} style={{position: 'relative', height: 'auto', paddingBottom: `${rowPadding}px`}}>
+                <svg viewBox={`0 0 ${width} 20`} key={i} style={{position: 'relative', height: 'auto', paddingBottom: `${rowPadding * 2}px`}}>
                     {pedals}
                 </svg>
             );
         }
 
         let grandStaff = (i: number): JSX.Element => {
-            let trebleSpaceHeight = staffHeights.treble + measureLabelSpace + annotationSpace + noteSymbolSize / 2;
-            let bassStaffHeight = staffHeights.bass + measureLabelSpace + annotationSpace + noteSymbolSize / 2;
+            let trebleSpaceHeight = staffHeights.treble + measureLabelSpace + noteSymbolSize / 2;
+            let bassStaffHeight = staffHeights.bass + measureLabelSpace + noteSymbolSize / 2;
             let grandStaffHeight = trebleSpaceHeight + bassStaffHeight + staffDistance;
 
             return (
@@ -394,7 +394,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
 
         let staff = (i: number, staff: StaffType): JSX.Element => {
             let staffHeight = staffHeights[staff];
-            let trebleStaffHeight = staffHeights.treble + measureLabelSpace + noteSymbolSize / 2; // 
+            let trebleStaffHeight = staffHeights.treble + measureLabelSpace + noteSymbolSize / 2; 
             let yOffset = staff === 'treble' ? 0 : trebleStaffHeight + staffDistance;
             let staffName = staff === 'treble' ? staffLabels[0] : staffLabels[1];
             return <g id={`row${i}${staff}`} key={staff + i} transform={`translate(${horizontalPadding}, ${yOffset})`}>
