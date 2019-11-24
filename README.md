@@ -1,44 +1,64 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# SNapp
 
-## Available Scripts
+This project aims to meet the needs of beginning music students who want to start playing an instrument without first learning to read traditional sheet music. The goal of this project is to make [WYSIWYP notation](http://comp523k.web.unc.edu/project/) freely available and easily accessible to music students.
 
-In the project directory, you can run:
+## Getting Started
 
-### `npm start`
+These instructions will allow you to get a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
 
-Runs the app in the development mode.<br>
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### Prerequisites
 
-The page will reload if you make edits.<br>
-You will also see any lint errors in the console.
+To run SNapp locally, [Node.js and npm](https://nodejs.org/en/download/) must be installed. Clone the SNapp project locally and, from a shell of your choice, navigate to the project's `client` directory. Run `npm install` to install the required dependencies and `npm start` to run the app in development mode. This should automatically open a browser window with the app.
 
-### `npm test`
+The following commands can be entered in the console to clone, install, and run the app.
+```
+git clone https://github.com/radiotech/SNapp.git SNapp
+cd SNapp/client
+npm install
+npm start
+```
 
-Launches the test runner in the interactive watch mode.<br>
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+These instructions have last been tested on commit `0de542e` using Node.js version 12.13.0 on Windows and MacOS machines.
 
-### `npm run build`
+## Testing
+Users can use the command `npm run test` from the project's client directory to run the project's automated test suite. This will launch Jest in [watch mode](https://create-react-app.dev/docs/running-tests/#command-line-interface).
 
-Builds the app for production to the `build` folder.<br>
-It correctly bundles React in production mode and optimizes the build for the best performance.
+To create a coverage report for the project, you can run the command `npm run test-coverage` from the project's client directory. This will display coverage information to the console and will also generate HTML and JSON files describing the results in the project's `client/coverage` folder. 
 
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
+## Deployment
+The project is currently deployed using [GitHub Pages](https://pages.github.com/) and the project's `gh-pages` branch. The deployment can be updated by modifying the contents of this branch in GitHub. New developers can gain access to the GitHub project by being added as a collaborator by an existing member.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+SNapp can be built for deployment by running `npm run build` from the project's `client` directory. A deployment-ready version of the app will be generated and placed in the `client/build` folder. Most hosting providers such as GoDaddy and AWS should be able to host a copy of the deployment by simply making the contents of this `build` folder publicly available as static web content. There are some additional configuration options listed below that should be taken into consideration when deploying the project.
 
-### `npm run eject`
+Routing in SNapp is currently implemented using the full path portion of page URLs. As a result, when hosting a deployment, all paths under the deployment subdomain should be configured to serve the project's main `index.html` document. This also means that SNapp must be hosted at your domain or subdomain's root path. When using GitHub pages, this can be achieved by renaming `index.html` to `404.html` and by setting up a custom domain name for the project.
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## Technologies used
+The client for this project was developed using [React](https://reactjs.org/) and [Typescript](https://www.typescriptlang.org/). Test cases were implemented using [jest](https://jestjs.io/) with [enzyme](https://airbnb.io/enzyme/) and snapshotting. The project is designed to work with the [musicxml](https://www.musicxml.com/) and [mxl](https://www.musicxml.com/tutorial/compressed-mxl-files/) file formats and uses the `localStorage` API and SVGs in the browser to render WYSIWYP content. A basic architecture diagram is included below for reference. A set of architecture decision records related to the app are available from the [project wiki]() on GitHub.
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+<img src="http://comp523k.web.unc.edu/files/2019/10/Architecture-Diagram.png" width="350"></img>
 
-Instead, it will copy all the configuration files and the transitive dependencies (Webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+## Contributing
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+Please read our [Behavior Guide](https://github.com/radiotech/SNapp/wiki/Behavior-Guide) and [Style Guide](https://github.com/radiotech/SNapp/wiki/Style-Guide) wiki pages for details relating to our code of conduct. Project information can be found on the project's [website](http://comp523k.web.unc.edu/) and [Trello board](https://trello.com/b/bnkZcxZr/snapp-comp-523-group-k). Details relating to the Git branching style used for the project can be found under the [Team](http://comp523k.web.unc.edu/team/) section of the project website. New contributors should request access to the SNapp GitHub project and Trello board.
 
-## Learn More
+## Authors
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+* **Andrew Harvey** - Project Manager
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+    Coordinated the development of project deliverables and worked to implement routing, test cases, PDF generation, and `localStorage` access within the app.
+
+* **William Lee** - Tech Lead
+
+    Incorporated musical elements including ties, signature changes, accidentals distinctions, and clef divisions into WYSIWYP parsing and rendering.
+
+* **Han Wang** - Webmaster and Design Lead
+
+    Designed the app's user interface, contributed to the layout of the app, and fine-tuned the user experience.
+
+## License
+
+This project is licensed under the MIT License - please see the [LICENSE.md](LICENSE.md) file for details.
+
+## Acknowledgments
+
+The notation used by SNapp, WYSIWYP, was developed by Stuart Byrom. Stuart also commissioned the SNapp project and provided the development team with helpful feedback throughout the app's construction. Our mentor, Benjamin Pollack, was especially helpful to the team during initial project development. 
