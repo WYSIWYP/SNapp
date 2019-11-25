@@ -536,7 +536,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                 <div className={`snview-row snview-row-0`} style={{position: 'relative', height: 'auto', paddingBottom: `${rowPadding}px`}}>
                     <svg viewBox={`0 0 ${width} ${180}`}>
                         <text x={width / 2} y={50} fontSize={40} textAnchor="middle" alignmentBaseline="hanging">{title}</text>
-                        <text x={70} y={170} fontSize={25} textAnchor="start">60 bpm</text>
+                        <text x={70} y={170} fontSize={25} textAnchor="start">{score.tempo} bpm</text>
                         <text x={width - 70} y={170} fontSize={25} textAnchor="end">{author}</text>
                     </svg>
                 </div>

@@ -44,10 +44,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
     let pianoPartId = getPianoPartID(xml);
 
     // currently, SNApp renders piano and lyric parts. We store the ids of the tracks we have to parse below.
-    // let trackTypeMap: Partial<Record<string, TrackType>> = {
-    //     [pianoPartId]: 'Piano',
-    //     ...(lyricsPartId && {[lyricsPartId]: 'Lyrics'}) // conditionally assign lyrics part
-    // }
+    let tempo: number | undefined;
 
     let currentBeatType = 4;
     let currentBeats = 4;
@@ -203,7 +200,13 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                     case 'Barline':
                         break;
                     case 'Direction':
+                        // parse tempo
+                        if (entry.hasOwnProperty('sound') && entry.sound.tempo !== undefined) {
+                            if (!tempo && entry.sound.tempo) tempo = parseInt(entry.sound.tempo); // take the first defined tempo
+                        }
                         if (!entry.directionTypes || entry.directionTypes === 0) break;
+
+                        // parse other directions
                         entry.directionTypes.forEach((direction: any) => {
                             // parse dynamics
                             if (direction.hasOwnProperty('dynamics')) {
@@ -211,7 +214,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                     if (isDynamics(key)) directions.push({time: part.progress, dynamics: key})
                                 });
                             }
-                            // parse dynamics
+                            // parse pedal
                             if (direction.hasOwnProperty('pedal')) {
                                 if (direction.pedal.type === 0) directions.push({time: part.progress, pedal: 'pedalStart'});
                                 if (direction.pedal.type === 1) directions.push({time: part.progress, pedal: 'pedalEnd'});
@@ -221,6 +224,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                         });
                         break;
                     case 'Sound':
+                        if (!tempo && entry.tempo) tempo = parseInt(entry.tempo); // take the first defined tempo
                         break;
                     default:
                         console.error(`Unrecognized MusicXML entry: '${entry._class}'`);
@@ -275,5 +279,6 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
             }
         }
     });
-    return {tracks}
+    if (!tempo) tempo = 60;
+    return {tracks, tempo}
 };

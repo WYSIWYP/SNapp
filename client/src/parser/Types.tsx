@@ -65,4 +65,5 @@ export type Tracks = Track[];
 
 export type Score = {
     tracks: Tracks,
+    tempo: number
 };
