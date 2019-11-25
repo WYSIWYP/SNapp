@@ -54,18 +54,18 @@ const styleMap = {
         backgroundColor: '#00000099',
     },
     frame: {
-        border: '2px solid #444',
+        // border: '2px solid #444',
         overflow: 'hidden',
         transform: 'translate(-50%,-50%)',
-        borderRadius: '10px',
+        borderRadius: '5px',
     },
     header: {
         height: '50px',
-        backgroundColor: '#ddd',
+        backgroundColor: 'rgb(49, 183, 214)',
         lineHeight: '50px',
         textAlign: 'center',
         userSelect: 'none',
-        borderBottom: '1px solid #444',
+        // borderBottom: '1px solid #444',
     },
     headerRight: {
         left: 'auto',

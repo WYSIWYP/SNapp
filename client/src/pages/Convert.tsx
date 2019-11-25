@@ -2,11 +2,11 @@ import React, {useEffect, useState, CSSProperties} from 'react';
 import {RouteComponentProps, navigate} from "@reach/router";
 import SNView from '../components/SNView';
 import Frame from '../components/Frame';
+import Expandable from '../components/Expandable';
 import {saveAs} from 'file-saver';
-import dropDown from '../images/dropDown.svg'
 import {useCurrentFileState} from '../contexts/CurrentFile';
 import {
-    usePreferencesState, colorPreferenceOptions, scalePreferenceOptions, 
+    usePreferencesState, colorPreferenceOptions, scalePreferenceOptions,
     spacingPreferenceOptions, noteHeadPreferenceOptions, measuresPerRowOptions, accidentalTypeOptions
 } from '../contexts/Preferences';
 import jsPDF from 'jspdf';
@@ -72,27 +72,27 @@ const Convert: React.FC<Props> = () => {
 
             let hidden = document.getElementById('hidden-pdf-generation') as HTMLDivElement;
             let canvas = hidden.getElementsByClassName('canvas')[0] as HTMLCanvasElement;
-            
+
             let pdf = new jsPDF(); //210 x 297 mm (A4 paper dimensions)
             let width = 210;
             let height = 297;
 
             // should change with preferences
-            margin = width*margin/100;
-            padding = width*padding/100;
+            margin = width * margin / 100;
+            padding = width * padding / 100;
 
 
             let rows = hidden.getElementsByClassName('snview-row');
-            
+
             let nextRowY = margin;
-            for(let i = 0; i < rows.length; i++) {
+            for (let i = 0; i < rows.length; i++) {
                 let row = rows[i];
 
-                let [,,w,h] = row.getElementsByTagName('svg')[0].getAttribute('viewBox')!.split(' ').map(x=>parseInt(x));
-                let canvasRowHeight = Math.ceil(1000*h/w);
-                let pdfRowHeight = Math.ceil((width-margin*2)*h/w);
+                let [, , w, h] = row.getElementsByTagName('svg')[0].getAttribute('viewBox')!.split(' ').map(x => parseInt(x));
+                let canvasRowHeight = Math.ceil(1000 * h / w);
+                let pdfRowHeight = Math.ceil((width - margin * 2) * h / w);
 
-                if(nextRowY+pdfRowHeight > height-margin){
+                if (nextRowY + pdfRowHeight > height - margin) {
                     pdf.addPage();
                     nextRowY = margin;
                 }
@@ -102,14 +102,14 @@ const Convert: React.FC<Props> = () => {
                 ctx.fillStyle = "white";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "black";
-                canvg(canvas,row.innerHTML,{ignoreClear: true});
-                pdf.addImage(canvas, 'JPEG', margin, nextRowY, width-margin*2, pdfRowHeight);
+                canvg(canvas, row.innerHTML, {ignoreClear: true});
+                pdf.addImage(canvas, 'JPEG', margin, nextRowY, width - margin * 2, pdfRowHeight);
 
-                nextRowY += pdfRowHeight+padding;
+                nextRowY += pdfRowHeight + padding;
             }
-            
-            
-            
+
+
+
             // pdf.rect(0,0,200,287,'F');
             // pdf.addPage();
             // pdf.rect(0,10,200,287,'F');
@@ -141,119 +141,125 @@ const Convert: React.FC<Props> = () => {
         }
         e.target.value = "";
     };
-    let sidebar = (<div style={styles.sideBar}>
-        <div style={styles.sideBarTop}>
-            <div id="export" title="Click to export" style={styles.sideBarTopOptions} onClick={() => {exportFile();}}>
-                Export
-            </div>
-            <div id="import" style={styles.sideBarTopOptions}>
-                Import
+    let sidebar = (
+        <div style={styles.sideBar}>
+            <div style={styles.sideBarTop}>
+                <div id="export" title="Click to export" style={styles.sideBarTopOptions} onClick={() => {exportFile();}}>
+                    Export
+                </div>
+                <div id="import" style={styles.sideBarTopOptions}>
+                    Import
                 <input style={styles.fileInput} type="file" title="Click to import" accept=".snapp" onChange={(e) => {importFile(e);}}></input>
+                </div>
+                <div id="close" style={styles.sideBarTopOptions} onClick={() => {setShow(false);}}>
+                    Close X
+                </div>
             </div>
-            <div id="close" style={styles.sideBarTopOptions} onClick={() => {setShow(false);}}>
-                Close X
-            </div>
-        </div>
-        <form onSubmit={() => {setShow(false);}} >
-            <label>
-                <div style={styles.sideBarContent}>
 
+            <div style={styles.sideBarContent}>
+                <Expandable title="Note Appearance">
                     <div style={styles.line}>
-                        <div style={styles.name}>Measures per Row</div>
-                        <select style={styles.select} value={preferences.measuresPerRow} onChange={
-                            (e) => {setPreferences({type: 'set', val: {measuresPerRow: e.target.value as any}});}
-                        }>{measuresPerRowOptions.map(x => <option key={x}>{x}</option>)}</select>
+                        <div style={styles.name}>Note Duration Color</div>
+                        <select value={preferences.noteDurationColor} onChange={
+                            (e) => {setPreferences({type: 'set', val: {noteDurationColor: e.target.value as any}});}
+                        }>{colorPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
                     </div>
 
                     <div style={styles.line}>
-                        <div style={styles.name}>Accidental Type</div>
-                        <select style={styles.select} value={preferences.accidentalType} onChange={
-                            (e) => {setPreferences({type: 'set', val: {accidentalType: e.target.value as any}});}
-                        }>{accidentalTypeOptions.map(x => <option key={x}>{x}</option>)}</select>
+                        <div style={styles.name}>Note Symbol Color</div>
+                        <select value={preferences.noteSymbolColor} onChange={
+                            (e) => {setPreferences({type: 'set', val: {noteSymbolColor: e.target.value as any}});}
+                        }>{colorPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
                     </div>
-
                     <div style={styles.line}>
-                        <div style={styles.name}>Note Size</div>
+                        <div style={styles.name}>Note Scale</div>
                         {/* deleted value and onchange */}
-                        <select style={styles.select} value={preferences.noteScale} onChange={
+                        <select value={preferences.noteScale} onChange={
                             (e) => {setPreferences({type: 'set', val: {noteScale: e.target.value as any}});}
                         }>{scalePreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
                     </div>
-
                     <div style={styles.line}>
-                        <div style={styles.name}>Clef Size</div>
+                        <div style={styles.name}>Natural Note Shape</div>
                         {/* deleted value and onchange */}
-                        <select style={styles.select} value={preferences.staffScale} onChange={
-                            (e) => {setPreferences({type: 'set', val: {staffScale: e.target.value as any}});}
-                        }>{scalePreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
-
-                    <div style={styles.line}>
-                        <div style={styles.name}>Margin Size</div>
-                        {/* deleted value and onchange */}
-                        <select style={styles.select} value={preferences.horizontalSpacing} onChange={
-                            (e) => {setPreferences({type: 'set', val: {horizontalSpacing: e.target.value as any}});}
-                        }>{spacingPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
-
-                    <div style={styles.line}>
-                        <div style={styles.name}>Staff Spacing Size</div>
-                        {/* deleted value and onchange */}
-                        <select style={styles.select} value={preferences.verticalSpacing} onChange={
-                            (e) => {setPreferences({type: 'set', val: {verticalSpacing: e.target.value as any}});}
-                        }>{spacingPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
-
-                    <div style={styles.line}>
-                        <div style={styles.name}>Natural Notehead</div>
-                        {/* deleted value and onchange */}
-                        <select style={styles.select} value={preferences.naturalNoteShape} onChange={
+                        <select value={preferences.naturalNoteShape} onChange={
                             (e) => {setPreferences({type: 'set', val: {naturalNoteShape: e.target.value as any}});}
                         }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
                     </div>
 
                     <div style={styles.line}>
-                        <div style={styles.name}>Sharp Notehead</div>
+                        <div style={styles.name}>Sharp Note Shape</div>
                         {/* deleted value and onchange */}
-                        <select style={styles.select} value={preferences.sharpNoteShape} onChange={
+                        <select value={preferences.sharpNoteShape} onChange={
                             (e) => {setPreferences({type: 'set', val: {sharpNoteShape: e.target.value as any}});}
                         }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
                     </div>
 
                     <div style={styles.line}>
-                        <div style={styles.name}>Flat Notehead</div>
+                        <div style={styles.name}>Flat Note Shape</div>
                         {/* deleted value and onchange */}
-                        <select style={styles.select} value={preferences.flatNoteShape} onChange={
+                        <select value={preferences.flatNoteShape} onChange={
                             (e) => {setPreferences({type: 'set', val: {flatNoteShape: e.target.value as any}});}
                         }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
                     </div>
 
                     <div style={styles.line}>
-                        <div style={styles.name}>Notehead Color</div>
-                        <select style={styles.select} value={preferences.noteSymbolColor} onChange={
-                            (e) => {setPreferences({type: 'set', val: {noteSymbolColor: e.target.value as any}});}
-                        }>{colorPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                        <div style={styles.name}>Accidental Type</div>
+                        <select value={preferences.accidentalType} onChange={
+                            (e) => {setPreferences({type: 'set', val: {accidentalType: e.target.value as any}});}
+                        }>{accidentalTypeOptions.map(x => <option key={x}>{x}</option>)}</select>
+                    </div>
+                </Expandable>
+
+                <Expandable title="Staff Appearance">
+
+
+                    <div style={styles.line}>
+                        <div style={styles.name}>Staff Scale</div>
+                        {/* deleted value and onchange */}
+                        <select value={preferences.staffScale} onChange={
+                            (e) => {setPreferences({type: 'set', val: {staffScale: e.target.value as any}});}
+                        }>{scalePreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
                     </div>
 
                     <div style={styles.line}>
-                        <div style={styles.name}>Duration Color</div>
-                        <select style={styles.select} value={preferences.noteDurationColor} onChange={
-                            (e) => {setPreferences({type: 'set', val: {noteDurationColor: e.target.value as any}});}
-                        }>{colorPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                        <div style={styles.name}>Horizontal Spacing</div>
+                        {/* deleted value and onchange */}
+                        <select value={preferences.horizontalSpacing} onChange={
+                            (e) => {setPreferences({type: 'set', val: {horizontalSpacing: e.target.value as any}});}
+                        }>{spacingPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
                     </div>
 
-                </div>
-            </label>
-        </form>
-    </div>)
+                    <div style={styles.line}>
+                        <div style={styles.name}>Vertical Spacing</div>
+                        {/* deleted value and onchange */}
+                        <select value={preferences.verticalSpacing} onChange={
+                            (e) => {setPreferences({type: 'set', val: {verticalSpacing: e.target.value as any}});}
+                        }>{spacingPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                    </div>
+
+
+
+                    <div style={styles.line}>
+                        <div style={styles.name}>Measures per Row</div>
+                        <select value={preferences.measuresPerRow} onChange={
+                            (e) => {setPreferences({type: 'set', val: {measuresPerRow: e.target.value as any}});}
+                        }>{measuresPerRowOptions.map(x => <option key={x}>{x}</option>)}</select>
+                    </div>
+                </Expandable>
+
+
+
+            </div>
+
+        </div>)
 
     return (
-        <Frame header="SNapp" showSideMenu={show} sideMenu={sidebar}>
+        <Frame showSideMenu={show} sideMenu={sidebar}>
             <div style={styles.subHeader}>
 
                 <div id="home" style={styles.left} onClick={() => {navigate('/');}}>
                     <svg style={styles.svg} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                    Home
+                    SNapp Home
                 </div>
                 <div style={styles.left} onClick={() => {openPDF();}}>
                     <svg style={styles.svg} xmlns="http://www.w3.org/2000/svg" padding-right="5px" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
@@ -267,11 +273,11 @@ const Convert: React.FC<Props> = () => {
                 </div>
 
             </div>
-            <div style={styles.SNView}>
+            <div style={styles.SNView} onClick={() => {setShow(false);}}>
                 {currentFile.data === undefined ? null : <SNView xml={currentFile.data} />}
             </div>
             <div id="hidden-pdf-generation" style={styles.hidden}>
-                <canvas className="canvas" width={1000} height={1000}/>
+                <canvas className="canvas" width={1000} height={1000} />
                 {currentFile.data === undefined ? null : <SNView xml={currentFile.data} forcedWidth={1000} />}
             </div>
 
@@ -328,27 +334,22 @@ const styleMap = {
     },
     SNView: {
         top: '65px',
-        height: 'auto',
+        height: 'calc(100% - 65px)',
+        overflow: 'auto',
     },
     sideBar: {
         color: 'white',
         minWidth: '350px',
     },
     sideBarTop: {
-        position: 'sticky',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-
-        borderBottom: '1px solid #BBBBBB',
+        borderBottom: 'solid 1px #bbb',
         height: '65px',
         color: '#31B7D6',
         fontSize: '23px',
         fontWeight: 'bold',
-        width: 'auto',
-        backgroundColor: '#4c4c4c',
-        opacity: 1,
-        zIndex: 1,
     },
     sideBarTopOptions: {
         position: 'relative',
@@ -369,39 +370,25 @@ const styleMap = {
         opacity: 0,
     },
     sideBarContent: {
-        zIndex: 0,
-        padding: '0 20px',
-        position: 'relative',
-        marginTop: '40px',
+        position: 'absolute',
+        top: '65px',
+        height: 'calc(100% - 65px)',
+        overflow: 'auto',
     },
     line: {
-        fontSize: '17px',
-        margin: '30px 0px',
+        marginTop: '30px',
+        marginBottom: '30px',
         justifyContent: 'center',
         alignItems: 'baseline',
         display: 'flex',
         position: 'relative',
         height: 'auto',
-
+        width: '100%'
     },
     name: {
         position: 'relative',
-        width: '60%',
-    },
-    select: {
-        fontSize: '17px',
-        height: '40px',
-        backgroundPosition: '95% center',
-        backgroundRepeat: 'no-repeat',
-        backgroundImage: `url(${dropDown})`,
-        backgroundColor: 'rgba(255,255,255,0.6)',
-        paddingLeft: '20px',
-        border: 'none',
-        borderRadius: '10px',
-        position: 'relative',
-        width: '40%',
-        textAlign: 'center',
-        WebkitAppearance: 'none',
+        width: '50%',
+        display: 'inline-block'
     },
     hidden: {
         width: '0px',
@@ -409,7 +396,6 @@ const styleMap = {
         overflow: 'hidden',
         opacity: .01,
     }
-
 } as const;
 const styles: Record<keyof typeof styleMap, CSSProperties> = styleMap;
 
