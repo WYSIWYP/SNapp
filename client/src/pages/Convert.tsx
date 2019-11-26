@@ -122,7 +122,9 @@ const Convert: React.FC<Props> = () => {
     };
     let exportFile = () => {
         var file = new Blob([JSON.stringify(preferences, null, 4)], {type: 'text/plain'});
-        saveAs(file, 'preferences.snapp');
+        saveAs(file, 'preferences.snapp', {
+            autoBom: false,
+        });
     };
     let importFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         try {
@@ -144,63 +146,56 @@ const Convert: React.FC<Props> = () => {
     let sidebar = (
         <div style={styles.sideBar}>
             <div style={styles.sideBarTop}>
-                <div id="export" title="Click to export" style={styles.sideBarTopOptions} onClick={() => {exportFile();}}>
-                    Export
+                <div id="export" title="Click to save your preferences" style={styles.sideBarTopOptions} onClick={() => {exportFile();}}>
+                    Save
                 </div>
                 <div id="import" style={styles.sideBarTopOptions}>
-                    Import
-                <input style={styles.fileInput} type="file" title="Click to import" accept=".snapp" onChange={(e) => {importFile(e);}}></input>
+                    Load
+                <input style={styles.fileInput} type="file" title="Click to load your preferences" accept=".snapp" onChange={(e) => {importFile(e);}}></input>
                 </div>
                 <div id="close" style={styles.sideBarTopOptions} onClick={() => {setShow(false);}}>
-                    Close X
+                    Close ✕
                 </div>
             </div>
 
             <div style={styles.sideBarContent}>
+
+            <Expandable title="Staff Appearance">
+
+                <div style={styles.line}>
+                    <div style={styles.name}>Measures per Row</div>
+                    <select value={preferences.measuresPerRow} onChange={
+                        (e) => {setPreferences({type: 'set', val: {measuresPerRow: e.target.value as any}});}
+                    }>{measuresPerRowOptions.map(x => <option key={x}>{x}</option>)}</select>
+                </div>
+
+                <div style={styles.line}>
+                    <div style={styles.name}>Clef Size</div>
+                    {/* deleted value and onchange */}
+                    <select value={preferences.staffScale} onChange={
+                        (e) => {setPreferences({type: 'set', val: {staffScale: e.target.value as any}});}
+                    }>{scalePreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                </div>
+
+                <div style={styles.line}>
+                    <div style={styles.name}>Margin Size</div>
+                    {/* deleted value and onchange */}
+                    <select value={preferences.horizontalSpacing} onChange={
+                        (e) => {setPreferences({type: 'set', val: {horizontalSpacing: e.target.value as any}});}
+                    }>{spacingPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                </div>
+
+                <div style={styles.line}>
+                    <div style={styles.name}>Staff Spacing Size</div>
+                    {/* deleted value and onchange */}
+                    <select value={preferences.verticalSpacing} onChange={
+                        (e) => {setPreferences({type: 'set', val: {verticalSpacing: e.target.value as any}});}
+                    }>{spacingPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                </div>
+
+                </Expandable>
+
                 <Expandable title="Note Appearance">
-                    <div style={styles.line}>
-                        <div style={styles.name}>Note Duration Color</div>
-                        <select value={preferences.noteDurationColor} onChange={
-                            (e) => {setPreferences({type: 'set', val: {noteDurationColor: e.target.value as any}});}
-                        }>{colorPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
-
-                    <div style={styles.line}>
-                        <div style={styles.name}>Note Symbol Color</div>
-                        <select value={preferences.noteSymbolColor} onChange={
-                            (e) => {setPreferences({type: 'set', val: {noteSymbolColor: e.target.value as any}});}
-                        }>{colorPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
-                    <div style={styles.line}>
-                        <div style={styles.name}>Note Scale</div>
-                        {/* deleted value and onchange */}
-                        <select value={preferences.noteScale} onChange={
-                            (e) => {setPreferences({type: 'set', val: {noteScale: e.target.value as any}});}
-                        }>{scalePreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
-                    <div style={styles.line}>
-                        <div style={styles.name}>Natural Note Shape</div>
-                        {/* deleted value and onchange */}
-                        <select value={preferences.naturalNoteShape} onChange={
-                            (e) => {setPreferences({type: 'set', val: {naturalNoteShape: e.target.value as any}});}
-                        }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
-
-                    <div style={styles.line}>
-                        <div style={styles.name}>Sharp Note Shape</div>
-                        {/* deleted value and onchange */}
-                        <select value={preferences.sharpNoteShape} onChange={
-                            (e) => {setPreferences({type: 'set', val: {sharpNoteShape: e.target.value as any}});}
-                        }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
-
-                    <div style={styles.line}>
-                        <div style={styles.name}>Flat Note Shape</div>
-                        {/* deleted value and onchange */}
-                        <select value={preferences.flatNoteShape} onChange={
-                            (e) => {setPreferences({type: 'set', val: {flatNoteShape: e.target.value as any}});}
-                        }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                    </div>
 
                     <div style={styles.line}>
                         <div style={styles.name}>Accidental Type</div>
@@ -208,46 +203,54 @@ const Convert: React.FC<Props> = () => {
                             (e) => {setPreferences({type: 'set', val: {accidentalType: e.target.value as any}});}
                         }>{accidentalTypeOptions.map(x => <option key={x}>{x}</option>)}</select>
                     </div>
-                </Expandable>
-
-                <Expandable title="Staff Appearance">
-
 
                     <div style={styles.line}>
-                        <div style={styles.name}>Staff Scale</div>
+                        <div style={styles.name}>Note Size</div>
                         {/* deleted value and onchange */}
-                        <select value={preferences.staffScale} onChange={
-                            (e) => {setPreferences({type: 'set', val: {staffScale: e.target.value as any}});}
+                        <select value={preferences.noteScale} onChange={
+                            (e) => {setPreferences({type: 'set', val: {noteScale: e.target.value as any}});}
                         }>{scalePreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
                     </div>
-
+                    
                     <div style={styles.line}>
-                        <div style={styles.name}>Horizontal Spacing</div>
+                        <div style={styles.name}>Natural Notehead</div>
                         {/* deleted value and onchange */}
-                        <select value={preferences.horizontalSpacing} onChange={
-                            (e) => {setPreferences({type: 'set', val: {horizontalSpacing: e.target.value as any}});}
-                        }>{spacingPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                        <select value={preferences.naturalNoteShape} onChange={
+                            (e) => {setPreferences({type: 'set', val: {naturalNoteShape: e.target.value as any}});}
+                        }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
                     </div>
 
                     <div style={styles.line}>
-                        <div style={styles.name}>Vertical Spacing</div>
+                        <div style={styles.name}>Sharp Notehead</div>
                         {/* deleted value and onchange */}
-                        <select value={preferences.verticalSpacing} onChange={
-                            (e) => {setPreferences({type: 'set', val: {verticalSpacing: e.target.value as any}});}
-                        }>{spacingPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                        <select value={preferences.sharpNoteShape} onChange={
+                            (e) => {setPreferences({type: 'set', val: {sharpNoteShape: e.target.value as any}});}
+                        }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
                     </div>
-
-
 
                     <div style={styles.line}>
-                        <div style={styles.name}>Measures per Row</div>
-                        <select value={preferences.measuresPerRow} onChange={
-                            (e) => {setPreferences({type: 'set', val: {measuresPerRow: e.target.value as any}});}
-                        }>{measuresPerRowOptions.map(x => <option key={x}>{x}</option>)}</select>
+                        <div style={styles.name}>Flat Notehead</div>
+                        {/* deleted value and onchange */}
+                        <select value={preferences.flatNoteShape} onChange={
+                            (e) => {setPreferences({type: 'set', val: {flatNoteShape: e.target.value as any}});}
+                        }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
                     </div>
+
+                    <div style={styles.line}>
+                        <div style={styles.name}>Notehead Color</div>
+                        <select value={preferences.noteSymbolColor} onChange={
+                            (e) => {setPreferences({type: 'set', val: {noteSymbolColor: e.target.value as any}});}
+                        }>{colorPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                    </div>
+
+                    <div style={styles.line}>
+                        <div style={styles.name}>Duration Color</div>
+                        <select value={preferences.noteDurationColor} onChange={
+                            (e) => {setPreferences({type: 'set', val: {noteDurationColor: e.target.value as any}});}
+                        }>{colorPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                    </div>
+                    
                 </Expandable>
-
-
 
             </div>
 

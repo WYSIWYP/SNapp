@@ -19,6 +19,18 @@ const Menu: React.FC<Props> = () => {
     };
 
     let [recentFiles, setRecentFiles] = useState<recentFile[]>(undefined!);
+    let [installHandle, setInstallHandle] = useState<{
+        prompt: ()=>void,
+        userChoice: Promise<{outcome: 'accepted'|'rejected'}>
+    } | undefined>(undefined);
+    useEffect(()=>{
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent Chrome 67 and earlier from automatically showing the prompt
+            e.preventDefault();
+            // Stash the event so it can be triggered later.
+            setInstallHandle(e as any);
+        });
+    },[]);
 
     let [, setDialogState] = useDialogState();
     let [, setCurrentFile] = useCurrentFileState();
@@ -30,18 +42,18 @@ const Menu: React.FC<Props> = () => {
     }
 
     let deleteAllPrompt = () => {
-        setDialogState(Dialog.showPrompt('Delete Confirmation', 'Are you sure you want to delete all files?', 'Cancel', () => {
+        setDialogState(Dialog.showPrompt('Delete Confirmation', 'Are you sure you want to delete all files?', 'Close', () => {
             setDialogState(Dialog.close());
-        }, 'Continue', () => {
+        }, 'Delete', () => {
             setRecentFiles([]);
             localStorage.setItem('recent_files', JSON.stringify([]));
             setDialogState(Dialog.close());
         }));
     }
     let deleteSinglePrompt = (x: recentFile) => {
-        setDialogState(Dialog.showPrompt('Delete Confirmation', 'Are you sure you want to delete this file?', 'Cancel', () => {
+        setDialogState(Dialog.showPrompt('Delete Confirmation', 'Are you sure you want to delete this file?', 'Close', () => {
             setDialogState(Dialog.close());
-        }, 'Continue', () => {
+        }, 'Delete', () => {
             let newRecentFiles = recentFiles.filter(y => y.id !== x.id);
             setRecentFiles(newRecentFiles);
             localStorage.setItem('recent_files', JSON.stringify(newRecentFiles));
@@ -110,7 +122,7 @@ const Menu: React.FC<Props> = () => {
     }
 
     const uploadFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-        let fileName = (e.target as any).files[0].name.replace(/\.(?:musicxml|mxl)$/i, '');
+        let fileName = (e.target as any).files[0].name.replace(/\.(?:musicxml|mxl|xml)$/i, '');
         let failedReads = 0;
         let fail = () => {
             failedReads++;
@@ -271,7 +283,7 @@ const Menu: React.FC<Props> = () => {
     }
 
     return (
-        <Frame header="SNapp&nbsp;-&nbsp;Simplified&nbsp;Notation&nbsp;App&nbsp;for&nbsp;Sheet&nbsp;Music">
+        <Frame header="SNapp -&nbsp;Simplified&nbsp;Notation&nbsp;App&nbsp;for&nbsp;Sheet&nbsp;Music">
             {recentFiles === undefined ? null : <div style={styles.container}>
                 <div style={{ ...styles.item, flex: '1 0 auto' }} />
                 <div style={{ ...styles.item, maxWidth: '720px' }}>
@@ -299,24 +311,43 @@ const Menu: React.FC<Props> = () => {
                                         <div onClick={() => { loadFile(x); }} style={{ ...styles.recentFilesItemInner, flex: '0 100000 auto', fontSize: '22px' }}>
                                             {(d => `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`)(new Date(x.date_created || (x as any).date /*migrate from x.date to x.date_created*/))}
                                         </div>
-                                        <div onClick={() => { deleteFile(x); }} style={{ ...styles.recentFilesItemInner, color: 'gray', width: '25px' }} >
+                                        <div onClick={() => { deleteFile(x); }} style={{ ...styles.recentFilesItemInner, color: 'gray', width: '35px' }} >
                                             <svg style={{ paddingTop: '9px' }} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                         </div>
                                     </div>
                                     <div style={styles.recentFilesSeparator}></div>
                                 </Fragment>)}
-                                <div onClick={() => { deleteAllFiles(); }} style={styles.deleteAll} >Delete All Files</div>
+                                <div onClick={() => { deleteAllFiles(); }} style={styles.deleteAll}>Delete All Files</div>
                             </div>
                         </div>
                         <div style={{ ...styles.item, flex: '.24 0 auto' }} />
                     </>}
                 <div style={styles.item}>
-                    <span id="button-upload" style={styles.link} onClick={() => { }}>
+                    <span id="button-upload" style={styles.link}>
                         <img src={svg} style={styles.icon} alt="" />
-                        Upload MusicXML File
-                        <input style={styles.fileInput} type="file" title="Click to upload" accept=".musicxml,.mxl" onChange={(e) => { uploadFile(e); }}></input>
+                        Open MusicXML File
+                        <input style={styles.fileInput} type="file" title="Click to upload" accept=".musicxml,.mxl,.xml" onChange={(e) => { uploadFile(e); }}></input>
                     </span>
                 </div>
+                {installHandle===undefined?null:<>
+                    <div style={{ ...styles.item, flex: '.5 0 auto' }} />
+                    <div style={{ ...styles.item, maxWidth: '720px' }}>
+                        Click the button below to add SNapp to your device's home screen.
+                    </div>
+                    <div style={{ ...styles.item, flex: '.07 0 auto' }} />
+                    <div style={styles.item}>
+                        <span id="button-upload" style={styles.link} onClick={() => {
+                            installHandle!.prompt();
+                            installHandle!.userChoice.then(result=>{
+                                if (result.outcome === 'accepted') {
+                                    setInstallHandle(undefined);
+                                }
+                            });
+                        }}>
+                            Add to Home Screen
+                        </span>
+                    </div>
+                </>}
                 <div style={{ ...styles.item, flex: '1 0 auto' }} />
             </div>}
         </Frame>
@@ -402,15 +433,14 @@ const styleMap = {
         fontWeight: 'bold',
     },
     deleteAll: {
-        height: 'fit-content',
-        width: 'fit-content',
-        marginTop: '5px',
-        top: 'auto',
+        position: 'relative',
+        height: '40px',
+        width: '200px',
+        fontSize: '22px',
+        lineHeight: '40px',
         left: '50%',
-        background: 'gainsboro',
         transform: 'translate(-50%, 0)',
         cursor: 'pointer',
-        padding: '5px 10px',
     },
     icon: {
         height: '1em',
