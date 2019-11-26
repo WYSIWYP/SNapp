@@ -32,35 +32,34 @@ const Frame: React.FC<Props> = ({
 
 const styleMap = {
     appContainer: {
-        overflow: "hidden"
+        overflow: "hidden",
     },
     header: {
-        paddingTop: "8px",
         fontStyle: "normal",
         fontWeight: "normal",
         fontSize: "42px",
-        alignItems: "center",
         textAlign: "center",
         letterSpacing: "0.05em",
         left: "50%",
-        top: "0px",
         height: "80px",
+        lineHeight: "80px",
         transform: "translate(-50%,0px)",
         backgroundColor: "#31B7D6",
         minWidth: "600px",
-        position: "absolute"
+        position: "absolute",
+        overflow: 'hidden',
     },
     page: {
         top: "80px",
         height: "calc(100% - 80px)",
-        overflow: "auto"
+        overflow: "auto",
     },
     sideBar: {
         backgroundColor: "rgba(0,0,0,0.7)",
         top: "80px",
         height: "calc(100% - 80px)",
         left: "auto",
-        right: "0px"
+        right: "0px",
     }
 } as const;
 const styles: Record<keyof typeof styleMap, CSSProperties> = styleMap;
