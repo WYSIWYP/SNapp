@@ -150,7 +150,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         let keyFifths = score.tracks[0].keySignatures[0].fifths;
 
         // let octaveGroups = [1, 1, 0, 0, 0, 1, 1]; //octaveGroups (C D E / F G A B)
-        let staffLabels = ['𝒯', 'ℬ']; //𝄢
+        let staffLabels = preferences.clefSymbols==='WYSIWYP'?['𝒯', 'ℬ']:['𝄞', '𝄢']; //𝄢
         let octaveLines = [
             {color: 'red', number: true}, undefined, undefined, /* C, D, E */
             {color: 'blue'}, undefined, undefined, undefined, /* F, G, A, B */
