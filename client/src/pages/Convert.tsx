@@ -7,7 +7,7 @@ import {saveAs} from 'file-saver';
 import {useCurrentFileState} from '../contexts/CurrentFile';
 import {
     usePreferencesState, colorPreferenceOptions, scalePreferenceOptions,
-    spacingPreferenceOptions, noteHeadPreferenceOptions, measuresPerRowOptions, accidentalTypeOptions
+    spacingPreferenceOptions, noteHeadPreferenceOptions, measuresPerRowOptions, accidentalTypeOptions, clefPreferenceOptions
 } from '../contexts/Preferences';
 import jsPDF from 'jspdf';
 import canvg from 'canvg';
@@ -150,7 +150,7 @@ const Convert: React.FC<Props> = () => {
                     Save
                 </div>
                 <div id="import" style={styles.sideBarTopOptions}>
-                    Load
+                    Open
                 <input style={styles.fileInput} type="file" title="Click to load your preferences" accept=".snapp" onChange={(e) => {importFile(e);}}></input>
                 </div>
                 <div id="close" style={styles.sideBarTopOptions} onClick={() => {setShow(false);}}>
@@ -167,6 +167,14 @@ const Convert: React.FC<Props> = () => {
                     <select value={preferences.measuresPerRow} onChange={
                         (e) => {setPreferences({type: 'set', val: {measuresPerRow: e.target.value as any}});}
                     }>{measuresPerRowOptions.map(x => <option key={x}>{x}</option>)}</select>
+                </div>
+
+                <div style={styles.line}>
+                    <div style={styles.name}>Clef Symbols</div>
+                    {/* deleted value and onchange */}
+                    <select value={preferences.clefSymbols} onChange={
+                        (e) => {setPreferences({type: 'set', val: {clefSymbols: e.target.value as any}});}
+                    }>{clefPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
                 </div>
 
                 <div style={styles.line}>
