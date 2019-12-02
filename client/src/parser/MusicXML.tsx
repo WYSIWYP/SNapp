@@ -15,14 +15,6 @@ const isScorePart = (part: MusicXML.PartGroup | MusicXML.ScorePart): part is Mus
 const getPianoPartID = (xml: MusicXML.ScoreTimewise): string | undefined => {
     const pianoPart = xml.partList.find(part => isScorePart(part) && part.partName.partName.toLowerCase() === 'piano');
     return pianoPart ? (pianoPart as MusicXML.ScorePart).id : undefined;
-    // if (!pianoPart) return undefined;
-    // const pianoPartId = (pianoPart as MusicXML.ScorePart).id;
-
-    // get the number of staves 
-    // let numStaves: number | undefined;
-    // xml.measures.some(measure => measure.parts[pianoPartId].some(entry => numStaves = entry.staves)); // loop until entry.staves is defined
-    // if (numStaves === undefined) numStaves = 1; // default is 1
-    // return {pianoPartId, numStaves};
 };
 
 const getLyricsPartID = (xml: MusicXML.ScoreTimewise): string | undefined => {
@@ -235,6 +227,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
             if (measureNumber === 0 && measureEnd < currentBeats) {
                 let offset = currentBeats - measureEnd;
                 part.measures[0].forEach(note => note.time += offset);
+                part.directions[0].forEach(direction => direction.time += offset);
             }
         });
     });
