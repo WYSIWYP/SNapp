@@ -24,6 +24,9 @@ export type spacingPreferenceOption = (typeof spacingPreferenceOptions)[number];
 export const noteHeadPreferenceOptions = ["●", "◼", "▲", "▼", "○", "☐", "△", "▽", "⊗", "⊠"] as const; // Previous symbols: ⨂, □
 export type noteHeadPreferenceOption = (typeof noteHeadPreferenceOptions)[number];
 
+export const clefPreferenceOptions = ["WYSIWYP","Traditional"] as const;
+export type clefPreferenceOptions = (typeof clefPreferenceOptions)[number];
+
 export const measuresPerRowOptions = [1, 2, 3, 4, 5, 6] as const; // TODO: Consider using a slider
 export type measuresPerRowOption = (typeof measuresPerRowOptions)[number];
 
@@ -40,6 +43,7 @@ export type state = {
     naturalNoteShape: noteHeadPreferenceOption,
     sharpNoteShape: noteHeadPreferenceOption;
     flatNoteShape: noteHeadPreferenceOption;
+    clefSymbols: clefPreferenceOptions;
     measuresPerRow: measuresPerRowOption;
     accidentalType: accidentalTypeOption
 };
@@ -58,6 +62,7 @@ let initialState: state = {
     naturalNoteShape: '●',
     sharpNoteShape: '▲',
     flatNoteShape: '▼',
+    clefSymbols: 'WYSIWYP',
     measuresPerRow: 4,
     accidentalType: 'auto'
 };
