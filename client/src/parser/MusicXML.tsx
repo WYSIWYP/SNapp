@@ -128,6 +128,8 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                 let entryTies = entry.ties as {type: number}[];
                                 let staffNumber = entry.staff ? entry.staff : 1;
                                 let entrySlur: Slur | undefined;
+                                let lyricsText: string | undefined;
+
                                 if (entry.notations && entry.notations.length > 0) {
                                     entry.notations.forEach((notation: any) => {
                                         if (notation.slurs) {
@@ -138,17 +140,21 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                         }
                                     });
                                 }
+                                if (entry.lyrics) {
+                                    let lyrics = entry.lyrics[0].lyricParts.find((lyrics: any) => lyrics._class === 'Text');
+                                    if (lyrics) lyricsText = lyrics.data;
+                                }
                                 notes.push({
                                     time, duration: divisionsToNoteLength(entry.duration),
                                     midi: pitchToMidi(entry.pitch),
                                     staff: staffNumber === 1 ? 'treble' : 'bass',
                                     attributes: {
                                         ties: entryTies ? entryTies.map(tie => tie.type === 0 ? Tie.Start : Tie.Stop) : [],
-                                        slur: entrySlur
+                                        slur: entrySlur,
+                                        lyrics: lyricsText
                                     }
                                 });
                             }
-                            part.measures[measureNumber] = notes; // TODO: Optimize this
                         }
                         break;
                     case 'Backup':
@@ -212,7 +218,6 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                 if (direction.pedal.type === 1) directions.push({time: part.progress, pedal: 'pedalEnd'});
                                 // we disregard other pedal types
                             }
-                            part.directions[measureNumber] = directions; // TODO: optimize this
                         });
                         break;
                     case 'Sound':
@@ -223,6 +228,9 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                         break;
                 }
             });
+            part.measures[measureNumber] = notes;
+            part.directions[measureNumber] = directions; 
+
             // check pick up measure
             if (measureNumber === 0 && measureEnd < currentBeats) {
                 let offset = currentBeats - measureEnd;

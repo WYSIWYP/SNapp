@@ -36,7 +36,8 @@ export type Note = {
     staff: StaffType,
     attributes: {
         ties: Tie[], 
-        slur?: Slur
+        slur?: Slur,
+        lyrics?: string
     }
 };
 export type Notes = Note[]; // note: each part should have 1 staff or 2 staves (for piano)

@@ -124,18 +124,6 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         let rowPadding = verticalSpacingMap[verticalSpacing]; //space between rows
         let measureLabelSpace = 15; //space for measure labels
 
-        // spacing between two clefs (aka grand staff distance)
-        let dynamicsSpace = 10;
-        let lyricsSpace = 10;
-        let staffPadding = 5;
-        let staffDistance = dynamicsSpace + lyricsSpace + 2 * staffPadding;
-
-        // annotation space for each clef
-        let fingeringSpace = 15;
-        let articulationSpace = 15;
-        let articulationPadding = 5;
-        let annotationSpace = fingeringSpace + articulationSpace + 2 * articulationPadding;
-
         //horizontal spacing
         let horizontalPadding = horizontalSpacingMap[horizontalSpacing]; //left/right padding
         let staffLabelSpace = staffScaleMap[staffScale]; //space for staff labels
@@ -214,8 +202,10 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         let staffTypes: StaffType[] = ['treble', 'bass'];
         //if there was an issue, abort
 
-        // if bass clef is empty, then we create an empty clef // TODO: consider not displaying bass if it is empty.
+        // if bass clef is empty, then we create an empty clef
+        let bassClefIsEmpty = false;
         if (minNote.bass === 128 && maxNote.bass === -1) {
+            bassClefIsEmpty = true;
             minNote.bass = 48;
             maxNote.bass = 60;
         }
@@ -289,6 +279,94 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             return {currentTime, currentKey};
         }
 
+        let grandStaff = (i: number): JSX.Element => {
+            return (
+                <div className={`snview-row snview-row-${i + 1}`} key={i} style={{position: 'relative', height: 'auto', paddingTop: `${rowPadding}px`}}>
+                    {staff(i, 'treble')}
+                    {staffBreak(i)} {/* information that goes between two staffs */}
+                    {staff(i, 'bass')}
+                    {pedal(i)}
+                </div>
+            );
+        }
+
+        let staff = (i: number, staff: StaffType): JSX.Element | null => {
+            if (bassClefIsEmpty && staff === 'bass') return null;
+            let staffHeight = staffHeights[staff];
+            let svgHeight = staffHeight + measureLabelSpace + noteSymbolSize;
+            let staffName = staff === 'treble' ? staffLabels[0] : staffLabels[1];
+
+            return <svg viewBox={`0 0 ${width} ${svgHeight}`} transform={`translate(${horizontalPadding}, 0)`}>
+                {devMode ? <rect y={measureLabelSpace} width={staffLabelSpace} height={staffHeight} fill="#ffdddd" /> : null}
+                {devMode ? <rect x={staffLabelSpace} y={measureLabelSpace} width={octaveLabelSpace} height={staffHeight} fill="#ffddff" /> : null}
+                <text x={staffLabelSpace} y={measureLabelSpace + staffHeight / 2} fontSize={staffLabelSpace * 1.5} textAnchor="end" dominantBaseline="middle">{staffName}</text>
+                <rect x={staffLabelSpace + octaveLabelSpace - strokeWidth / 2} y={measureLabelSpace - strokeWidth / 2} width={strokeWidth} height={staffHeight + strokeWidth} fill="#000000" />
+
+                {range(0, i < rowNumber - 1 ? measuresPerRow : measureNumber - (rowNumber - 1) * measuresPerRow).map(j =>
+                    measure(staffLabelSpace + octaveLabelSpace + j * measureWidth, 0, i * measuresPerRow + j, staff)
+                )}
+            </svg>
+        }
+
+        let staffBreak = (i: number): JSX.Element | null => {
+            // 1. lyrics
+            let lyrics: JSX.Element[] = [];
+            let lyricsTrack = score!.tracks.find(track => track.trackTypes.includes('Lyrics'));
+            if (lyricsTrack === undefined) return null;
+            let key = 0;
+
+            let notesAtRow = lyricsTrack.measures.slice(i * measuresPerRow, (i + 1) * measuresPerRow);
+            // let rowIsEmpty = notesAtRow.every(measure => measure.length === 0);
+            // if (rowIsEmpty) return null;
+
+            notesAtRow.forEach((notesAtMeasure, measureNumber) => {
+                notesAtMeasure.forEach(note => {
+                    if (!note.attributes.lyrics) return;
+                    let x = strokeWidth + horizontalPadding + staffLabelSpace + octaveLabelSpace + measureNumber * measureWidth + noteTimeToPos(note.time, 'treble').x;
+                    lyrics.push(
+                        <text x={`${x}`} y={noteSymbolSize} key={key++} fontSize={noteSymbolSize}>
+                            {note.attributes.lyrics}
+                        </text>
+                    )
+                })
+            });
+            return (
+                <svg viewBox={`0 0 ${width} ${noteSymbolSize * 2}`} style={{position: 'relative', height: 'auto'}}>
+                    {lyrics}
+                </svg>
+            );
+        }
+
+        let pedal = (i: number) => {
+            let pedals: JSX.Element[] = [];
+            let instrumentTrack = score!.tracks.find(track => track.trackTypes.includes('Instrument'));
+            if (!instrumentTrack) return null;
+            let key = 0;
+
+            let directionsAtRow = instrumentTrack.directions.slice(i * measuresPerRow, (i + 1) * measuresPerRow);
+            // let directionsAreEmpty = directionsAtRow.every(directions => directions.length === 0);
+            // if (directionsAreEmpty) return null;
+
+            directionsAtRow.forEach((directionsAtMeasure, measureNumber) => {
+                directionsAtMeasure.forEach(direction => {
+                    if (!direction.pedal) return;
+                    let pedalText = direction.pedal === 'pedalStart' ? '𝒫𝑒𝒹.' : '✻';
+                    let x = horizontalPadding + staffLabelSpace + octaveLabelSpace + measureNumber * measureWidth + noteTimeToPos(direction.time, 'treble').x;
+                    pedals.push(
+                        <text x={`${x}`} y={noteSymbolSize} key={key++} fontSize={noteSymbolSize} fontWeight='bold'>
+                            {pedalText}
+                        </text>
+                    )
+                })
+            });
+
+            return (
+                <svg viewBox={`0 0 ${width} 20`} style={{position: 'relative', height: 'auto'}}>
+                    {pedals}
+                </svg>
+            );
+        }
+
         let measure = (x: number, y: number, measureNumber: number, staff: StaffType) => {
             // Get time signature of current measure
             let {currentTime, currentKey} = getCurrentSignatures(measureNumber);
@@ -348,67 +426,6 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                 </g>
             );
         }
-
-        let pedal = (i: number) => {
-            let pedals: JSX.Element[] = [];
-            let instrumentTrack = score!.tracks.find(track => track.trackTypes.includes('Instrument'));
-            if (!instrumentTrack) return null;
-            let key = 0;
-
-            let directionsAtRow = instrumentTrack.directions.slice(i * measuresPerRow, (i + 1) * measuresPerRow);
-            directionsAtRow.forEach((directionsAtMeasure, measureNumber) => {
-                directionsAtMeasure.forEach(direction => {
-                    if (!direction.pedal) return;
-                    let pedalText = direction.pedal === 'pedalStart' ? '𝒫𝑒𝒹.' : '✻';
-                    let x = horizontalPadding + staffLabelSpace + octaveLabelSpace + measureNumber * measureWidth + noteTimeToPos(direction.time, 'treble').x;
-                    pedals.push(
-                        <text x={`${x}`} y='20' key={key++} fontSize = '20px' fontWeight='bold'>
-                            {pedalText}
-                        </text>
-                    )
-                })
-            });
-
-            return (
-                <svg viewBox={`0 0 ${width} 20`} key={i} style={{position: 'relative', height: 'auto', paddingBottom: `${rowPadding * 2}px`}}>
-                    {pedals}
-                </svg>
-            );
-        }
-
-        let grandStaff = (i: number): JSX.Element => {
-            let trebleSpaceHeight = staffHeights.treble + measureLabelSpace + noteSymbolSize / 2;
-            let bassStaffHeight = staffHeights.bass + measureLabelSpace + noteSymbolSize / 2;
-            let grandStaffHeight = trebleSpaceHeight + bassStaffHeight + staffDistance;
-
-            return (
-                <div className={`snview-row snview-row-${i + 1}`} key={i} style={{position: 'relative', height: 'auto'}}>
-                    <svg viewBox={`0 0 ${width} ${grandStaffHeight}`}>
-                        {staff(i, 'treble')}
-                        {staff(i, 'bass')}
-                    </svg>
-                    {pedal(i)}
-                </div>
-            );
-        }
-
-        let staff = (i: number, staff: StaffType): JSX.Element => {
-            let staffHeight = staffHeights[staff];
-            let trebleStaffHeight = staffHeights.treble + measureLabelSpace + noteSymbolSize / 2; 
-            let yOffset = staff === 'treble' ? 0 : trebleStaffHeight + staffDistance;
-            let staffName = staff === 'treble' ? staffLabels[0] : staffLabels[1];
-            return <g id={`row${i}${staff}`} key={staff + i} transform={`translate(${horizontalPadding}, ${yOffset})`}>
-                {devMode ? <rect y={measureLabelSpace} width={staffLabelSpace} height={staffHeight} fill="#ffdddd" /> : null}
-                {devMode ? <rect x={staffLabelSpace} y={measureLabelSpace} width={octaveLabelSpace} height={staffHeight} fill="#ffddff" /> : null}
-                <text x={staffLabelSpace} y={measureLabelSpace + staffHeight / 2} fontSize={staffLabelSpace * 1.5} textAnchor="end" dominantBaseline="middle">{staffName}</text>
-                <rect x={staffLabelSpace + octaveLabelSpace - strokeWidth / 2} y={measureLabelSpace - strokeWidth / 2} width={strokeWidth} height={staffHeight + strokeWidth} fill="#000000" />
-
-                {range(0, i < rowNumber - 1 ? measuresPerRow : measureNumber - (rowNumber - 1) * measuresPerRow).map(j =>
-                    measure(staffLabelSpace + octaveLabelSpace + j * measureWidth, 0, i * measuresPerRow + j, staff)
-                )}
-            </g>
-        }
-
 
         let noteTimeToPos = (noteTime: number, staff: StaffType) => ({
             x: beatWidth * noteTime,
