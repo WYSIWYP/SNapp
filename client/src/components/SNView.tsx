@@ -293,18 +293,18 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         let staff = (i: number, staff: StaffType): JSX.Element | null => {
             if (bassClefIsEmpty && staff === 'bass') return null;
             let staffHeight = staffHeights[staff];
-            let svgHeight = staffHeight + measureLabelSpace + noteSymbolSize;
+            let svgHeight = staffHeight + measureLabelSpace + noteSymbolSize / 2;
             let staffName = staff === 'treble' ? staffLabels[0] : staffLabels[1];
 
-            return <svg viewBox={`0 0 ${width} ${svgHeight}`} transform={`translate(${horizontalPadding}, 0)`}>
-                {devMode ? <rect y={measureLabelSpace} width={staffLabelSpace} height={staffHeight} fill="#ffdddd" /> : null}
-                {devMode ? <rect x={staffLabelSpace} y={measureLabelSpace} width={octaveLabelSpace} height={staffHeight} fill="#ffddff" /> : null}
-                <text x={staffLabelSpace} y={measureLabelSpace + staffHeight / 2} fontSize={staffLabelSpace * 1.5} textAnchor="end" dominantBaseline="middle">{staffName}</text>
-                <rect x={staffLabelSpace + octaveLabelSpace - strokeWidth / 2} y={measureLabelSpace - strokeWidth / 2} width={strokeWidth} height={staffHeight + strokeWidth} fill="#000000" />
+            return <svg viewBox={`0 0 ${width} ${svgHeight}`}>
+                <g transform={`translate(${horizontalPadding}, 0)`}>
+                    <text x={staffLabelSpace} y={measureLabelSpace + staffHeight / 2} fontSize={staffLabelSpace * 1.5} textAnchor="end" dominantBaseline="middle">{staffName}</text>
+                    <rect x={staffLabelSpace + octaveLabelSpace - strokeWidth / 2} y={measureLabelSpace - strokeWidth / 2} width={strokeWidth} height={staffHeight + strokeWidth} fill="#000000" />
 
-                {range(0, i < rowNumber - 1 ? measuresPerRow : measureNumber - (rowNumber - 1) * measuresPerRow).map(j =>
-                    measure(staffLabelSpace + octaveLabelSpace + j * measureWidth, 0, i * measuresPerRow + j, staff)
-                )}
+                    {range(0, i < rowNumber - 1 ? measuresPerRow : measureNumber - (rowNumber - 1) * measuresPerRow).map(j =>
+                        measure(staffLabelSpace + octaveLabelSpace + j * measureWidth, 0, i * measuresPerRow + j, staff)
+                    )}
+                </g>
             </svg>
         }
 
@@ -316,22 +316,23 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             let key = 0;
 
             let notesAtRow = lyricsTrack.measures.slice(i * measuresPerRow, (i + 1) * measuresPerRow);
-            // let rowIsEmpty = notesAtRow.every(measure => measure.length === 0);
-            // if (rowIsEmpty) return null;
+            let rowIsEmpty = notesAtRow.every(measure => measure.length === 0);
+            if (bassClefIsEmpty && rowIsEmpty) return null; // save whitespace
 
+            let textSize = noteSymbolSize * 6 / 7;
             notesAtRow.forEach((notesAtMeasure, measureNumber) => {
                 notesAtMeasure.forEach(note => {
                     if (!note.attributes.lyrics) return;
                     let x = strokeWidth + horizontalPadding + staffLabelSpace + octaveLabelSpace + measureNumber * measureWidth + noteTimeToPos(note.time, 'treble').x;
                     lyrics.push(
-                        <text x={`${x}`} y={noteSymbolSize} key={key++} fontSize={noteSymbolSize}>
+                        <text x={`${x}`} y={textSize} key={key++} fontSize={textSize}>
                             {note.attributes.lyrics}
                         </text>
                     )
                 })
             });
             return (
-                <svg viewBox={`0 0 ${width} ${noteSymbolSize * 2}`} style={{position: 'relative', height: 'auto'}}>
+                <svg viewBox={`0 0 ${width} ${textSize * 1.5}`} style={{position: 'relative', height: 'auto'}}>
                     {lyrics}
                 </svg>
             );
@@ -344,8 +345,8 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             let key = 0;
 
             let directionsAtRow = instrumentTrack.directions.slice(i * measuresPerRow, (i + 1) * measuresPerRow);
-            // let directionsAreEmpty = directionsAtRow.every(directions => directions.length === 0);
-            // if (directionsAreEmpty) return null;
+            let directionsAreEmpty = directionsAtRow.every(directions => directions.length === 0);
+            if (bassClefIsEmpty && directionsAreEmpty) return null;
 
             directionsAtRow.forEach((directionsAtMeasure, measureNumber) => {
                 directionsAtMeasure.forEach(direction => {
@@ -361,7 +362,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             });
 
             return (
-                <svg viewBox={`0 0 ${width} 20`} style={{position: 'relative', height: 'auto'}}>
+                <svg viewBox={`0 0 ${width} ${2 * noteSymbolSize}`} style={{position: 'relative', height: 'auto'}}>
                     {pedals}
                 </svg>
             );
@@ -441,16 +442,10 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             let {x: xEnd} = noteTimeToPos(note.time + note.duration, staff);
 
             let roundingSpace = Math.max(Math.min(noteSymbolSize, xEnd - xStart), 0);
-            let radiusStart = roundingSpace / 4;
-            let radiusEnd = roundingSpace / 2;
+            let radiusStart = tieStop ? 0 : roundingSpace / 4;
+            let radiusEnd =  tieStart ? 0 : roundingSpace / 2;
             let pointedEnd = noteSpansRow;
 
-            if (tieStart) {
-                radiusEnd = 0;
-            }
-            if (tieStop) {
-                radiusStart = 0;
-            }
             boxes.push(
                 <path
                     key={key++}
@@ -535,21 +530,9 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             }
         }
 
-        // let devSvg = devMode ? (
-        //     <g id="devMode">
-        //         {<rect x={0} y={0} width={width} height={height} fill="#ddddff" />}
-        //         {<circle cx={0} cy={0} r="40" stroke="black" strokeWidth="3" fill="red" />}
-        //         {<circle cx={width} cy={0} r="40" stroke="black" strokeWidth="3" fill="red" />}
-        //         {<circle cx={width} cy={`${height}`} r="40" stroke="black" strokeWidth="3" fill="red" />}
-        //         {<circle cx={0} cy={height} r="40" stroke="black" strokeWidth="3" fill="red" />}
-        //         {<rect x={horizontalPadding} y={verticalPadding} width={width - horizontalPadding * 2} height={height - verticalPadding * 2} fill="#ddffdd" />}
-        //     </g>
-        // ) : null;
-
         let svgRows: JSX.Element[] = range(0, rowNumber).map(i => grandStaff(i));
         return (
             <div id="snview" ref={ref} style={{width: '100%', height: 'auto', overflow: 'hidden', minWidth: '350px', userSelect: 'text', paddingTop: verticalPadding, paddingBottom: verticalPadding}}>
-                {/*devSvg*/}
                 <div className={`snview-row snview-row-0`} style={{position: 'relative', height: 'auto', paddingBottom: `${rowPadding}px`}}>
                     <svg viewBox={`0 0 ${width} ${180}`}>
                         <text x={width / 2} y={50} fontSize={40} textAnchor="middle" alignmentBaseline="hanging">{title}</text>
@@ -565,7 +548,6 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         if (!dialogState.shown) {
             showError('An issue was encountered while generating WYSIWYP output for the selected file.');
         }
-        //console.error(e);
         return <div ref={ref}></div>;
     }
 };
