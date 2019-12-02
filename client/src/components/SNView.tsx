@@ -176,8 +176,8 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                     if (Math.abs(words.words.length - 20) < Math.abs(author.length - 20)) {
                         author = words.words;
                     }
-                })
-            })
+                });
+            });
         } catch (e) {}
 
         let minNote: Record<StaffType, number> = {
@@ -196,7 +196,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             measure.forEach(note => {
                 minNote[note.staff] = Math.min(minNote[note.staff], note.midi);
                 maxNote[note.staff] = Math.max(maxNote[note.staff], note.midi);
-            })
+            });
         });
 
         let staffTypes: StaffType[] = ['treble', 'bass'];
@@ -248,23 +248,14 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
 
         //calculate tne number of measures per row
         let availableMeasureSpace = width - horizontalPadding * 2 - staffLabelSpace - octaveLabelSpace;
-        // let measuresPerRow = Math.floor(availableMeasureSpace / measureWidth);
-        // if (measuresPerRow <= 0) {
-        //     throw new Error('Could not place a measure in the allowed space');
-        // }
         horizontalPadding += (availableMeasureSpace - measuresPerRow * measureWidth) / 2; //update horizontal padding to center rows
 
         //calculate the number of rows
-        //let ticksPerMeasure = midi.header.ppq*beatsPerMeasure; //needs to take into account size of a beat
-        // let beatsPerRow = beatsPerMeasure * measuresPerRow;
         let measureNumber = score.tracks.reduce((accum, track) => Math.max(accum, track.measures.length), 0);
         if (measureNumber <= 0) {
             throw new Error('Failed to identify number of measures');
         }
         let rowNumber = Math.ceil(measureNumber / measuresPerRow);
-
-        //calculate required height (vert padding + row height + row padding)
-        // let height = verticalPadding * 2 + rowNumber * (staffHeight + measureLabelSpace) + (rowNumber - 1) * rowPadding;
 
         let getCurrentSignatures = (measureNumber: number): {currentTime: TimeSignature, currentKey: KeySignature} => {
             let timeSignatures = [...score!.tracks[0].timeSignatures].reverse(); // we reverse the array because we want to find the latest key signature.
@@ -308,6 +299,10 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             </svg>
         }
 
+        let measureNumberToPos = (measureNumber: number): number => {
+            return strokeWidth + horizontalPadding + staffLabelSpace + octaveLabelSpace + measureNumber * measureWidth;
+        }
+
         let staffBreak = (i: number): JSX.Element | null => {
             // 1. lyrics
             let lyrics: JSX.Element[] = [];
@@ -323,13 +318,13 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             notesAtRow.forEach((notesAtMeasure, measureNumber) => {
                 notesAtMeasure.forEach(note => {
                     if (!note.attributes.lyrics) return;
-                    let x = strokeWidth + horizontalPadding + staffLabelSpace + octaveLabelSpace + measureNumber * measureWidth + noteTimeToPos(note.time, 'treble').x;
+                    let x = measureNumberToPos(measureNumber) + noteTimeToPos(note.time, 'treble').x;
                     lyrics.push(
                         <text x={`${x}`} y={textSize} key={key++} fontSize={textSize}>
                             {note.attributes.lyrics}
                         </text>
                     )
-                })
+                });
             });
             return (
                 <svg viewBox={`0 0 ${width} ${textSize * 1.5}`} style={{position: 'relative', height: 'auto'}}>
@@ -352,13 +347,13 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                 directionsAtMeasure.forEach(direction => {
                     if (!direction.pedal) return;
                     let pedalText = direction.pedal === 'pedalStart' ? '𝒫𝑒𝒹.' : '✻';
-                    let x = horizontalPadding + staffLabelSpace + octaveLabelSpace + measureNumber * measureWidth + noteTimeToPos(direction.time, 'treble').x;
+                    let x = measureNumberToPos(measureNumber) + noteTimeToPos(direction.time, 'treble').x;
                     pedals.push(
                         <text x={`${x}`} y={noteSymbolSize} key={key++} fontSize={noteSymbolSize} fontWeight='bold'>
                             {pedalText}
                         </text>
                     )
-                })
+                });
             });
 
             return (
@@ -443,7 +438,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
 
             let roundingSpace = Math.max(Math.min(noteSymbolSize, xEnd - xStart), 0);
             let radiusStart = tieStop ? 0 : roundingSpace / 4;
-            let radiusEnd =  tieStart ? 0 : roundingSpace / 2;
+            let radiusEnd = tieStart ? 0 : roundingSpace / 2;
             let pointedEnd = noteSpansRow;
 
             boxes.push(
