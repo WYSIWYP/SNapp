@@ -287,16 +287,18 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             let svgHeight = staffHeight + measureLabelSpace + noteSymbolSize / 2;
             let staffName = staff === 'treble' ? staffLabels[0] : staffLabels[1];
 
-            return <svg viewBox={`0 0 ${width} ${svgHeight}`}>
-                <g transform={`translate(${horizontalPadding}, 0)`}>
-                    <text x={staffLabelSpace} y={measureLabelSpace + staffHeight / 2} fontSize={staffLabelSpace * 1.5} textAnchor="end" dominantBaseline="middle">{staffName}</text>
-                    <rect x={staffLabelSpace + octaveLabelSpace - strokeWidth / 2} y={measureLabelSpace - strokeWidth / 2} width={strokeWidth} height={staffHeight + strokeWidth} fill="#000000" />
+            return <div style={{position: 'relative', height: 'auto'}}>
+                <svg viewBox={`0 0 ${width} ${svgHeight}`}>
+                    <g transform={`translate(${horizontalPadding}, 0)`}>
+                        <text x={staffLabelSpace} y={measureLabelSpace + staffHeight / 2} fontSize={staffLabelSpace * 1.5} textAnchor="end" dominantBaseline="middle">{staffName}</text>
+                        <rect x={staffLabelSpace + octaveLabelSpace - strokeWidth / 2} y={measureLabelSpace - strokeWidth / 2} width={strokeWidth} height={staffHeight + strokeWidth} fill="#000000" />
 
-                    {range(0, i < rowNumber - 1 ? measuresPerRow : measureNumber - (rowNumber - 1) * measuresPerRow).map(j =>
-                        measure(staffLabelSpace + octaveLabelSpace + j * measureWidth, 0, i * measuresPerRow + j, staff)
-                    )}
-                </g>
-            </svg>
+                        {range(0, i < rowNumber - 1 ? measuresPerRow : measureNumber - (rowNumber - 1) * measuresPerRow).map(j =>
+                            measure(staffLabelSpace + octaveLabelSpace + j * measureWidth, 0, i * measuresPerRow + j, staff)
+                        )}
+                    </g>
+                </svg>
+            </div>;
         }
 
         let measureNumberToPos = (measureNumber: number): number => {
@@ -327,9 +329,11 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                 });
             });
             return (
-                <svg viewBox={`0 0 ${width} ${textSize * 1.5}`} style={{position: 'relative', height: 'auto'}}>
-                    {lyrics}
-                </svg>
+                <div style={{position: 'relative', height: 'auto'}}>
+                    <svg viewBox={`0 0 ${width} ${textSize * 1.5}`}>
+                        {lyrics}
+                    </svg>
+                </div>
             );
         }
 
@@ -357,9 +361,11 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             });
 
             return (
-                <svg viewBox={`0 0 ${width} ${2 * noteSymbolSize}`} style={{position: 'relative', height: 'auto'}}>
-                    {pedals}
-                </svg>
+                <div style={{position: 'relative', height: 'auto'}}>
+                    <svg viewBox={`0 0 ${width} ${2 * noteSymbolSize}`}>
+                        {pedals}
+                    </svg>
+                </div>
             );
         }
 
@@ -526,14 +532,17 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         }
 
         let svgRows: JSX.Element[] = range(0, rowNumber).map(i => grandStaff(i));
+        let titleRowHeight = 130;
         return (
             <div id="snview" ref={ref} style={{width: '100%', height: 'auto', overflow: 'hidden', minWidth: '350px', userSelect: 'text', paddingTop: verticalPadding, paddingBottom: verticalPadding}}>
-                <div className={`snview-row snview-row-0`} style={{position: 'relative', height: 'auto', paddingBottom: `${rowPadding}px`}}>
-                    <svg viewBox={`0 0 ${width} ${180}`}>
-                        <text x={width / 2} y={50} fontSize={40} textAnchor="middle" alignmentBaseline="hanging">{title}</text>
-                        <text x={70} y={170} fontSize={25} textAnchor="start">{score.tempo} bpm</text>
-                        <text x={width - 70} y={170} fontSize={25} textAnchor="end">{author}</text>
-                    </svg>
+                <div className={`snview-row snview-row-0`} style={{position: 'relative', height: 'auto'}}>
+                    <div style={{position: 'relative', height: 'auto'}}>
+                        <svg viewBox={`0 0 ${width} ${titleRowHeight}`}>
+                            <text x={width / 2} y={10} fontSize={40} textAnchor="middle" alignmentBaseline="hanging">{title}</text>
+                            <text x={70} y={titleRowHeight-10} fontSize={25} textAnchor="start">{score.tempo} bpm</text>
+                            <text x={width - 70} y={titleRowHeight-10} fontSize={25} textAnchor="end">{author}</text>
+                        </svg>
+                    </div>
                 </div>
                 {svgRows}
             </div>
