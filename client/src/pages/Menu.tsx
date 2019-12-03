@@ -45,6 +45,9 @@ const Menu: React.FC<Props> = () => {
         setDialogState(Dialog.showPrompt('Delete Confirmation', 'Are you sure you want to delete all files?', 'Close', () => {
             setDialogState(Dialog.close());
         }, 'Delete', () => {
+            recentFiles.forEach(x=>{
+                localStorage.removeItem(x.id);
+            });
             setRecentFiles([]);
             localStorage.setItem('recent_files', JSON.stringify([]));
             setDialogState(Dialog.close());
@@ -57,6 +60,7 @@ const Menu: React.FC<Props> = () => {
             let newRecentFiles = recentFiles.filter(y => y.id !== x.id);
             setRecentFiles(newRecentFiles);
             localStorage.setItem('recent_files', JSON.stringify(newRecentFiles));
+            localStorage.removeItem(x.id);
             setDialogState(Dialog.close());
         }));
     }
@@ -286,9 +290,9 @@ const Menu: React.FC<Props> = () => {
         <Frame header="SNapp -&nbsp;Simplified&nbsp;Notation&nbsp;App&nbsp;for&nbsp;Sheet&nbsp;Music">
             {recentFiles === undefined ? null : <div style={styles.container}>
                 <div style={{ ...styles.item, flex: '1 0 auto' }} />
-                <div style={{ ...styles.item, maxWidth: '720px' }}>
-                    SNapp implements a simpler and more intuitive music notation so that
-                    musicians can spend less time learning music and more time playing it!
+                <div style={{ ...styles.item, maxWidth: '750px' }}>
+                    SNapp implements a simple and intuitive music notation known as What You See Is What You Play,
+                    or WYSIWYP. With it, musicians can spend less time learning to read music and more time playing it!
                 </div>
                 {recentFiles.length === 0 ? <>
                     <div style={{ ...styles.item, flex: '.2 0 auto' }} />

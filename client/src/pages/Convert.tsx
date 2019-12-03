@@ -67,20 +67,20 @@ const Convert: React.FC<Props> = () => {
     let openPDF = () => {
         try {
 
+            // should change with preferences - as percent of page width
             let margin = 5;
-            let padding = 5;
+            let padding = 0; //between lines within each row
+            let paddingBetweenRows = 5; //between rows
 
             let hidden = document.getElementById('hidden-pdf-generation') as HTMLDivElement;
-            let canvas = hidden.getElementsByClassName('canvas')[0] as HTMLCanvasElement;
+            let canvas = document.getElementsByClassName('canvas')[0] as HTMLCanvasElement;
 
             let pdf = new jsPDF(); //210 x 297 mm (A4 paper dimensions)
             let width = 210;
             let height = 297;
-
-            // should change with preferences
+            
             margin = width * margin / 100;
             padding = width * padding / 100;
-
 
             let rows = hidden.getElementsByClassName('snview-row');
 
@@ -88,27 +88,64 @@ const Convert: React.FC<Props> = () => {
             for (let i = 0; i < rows.length; i++) {
                 let row = rows[i];
 
-                let [, , w, h] = row.getElementsByTagName('svg')[0].getAttribute('viewBox')!.split(' ').map(x => parseInt(x));
-                let canvasRowHeight = Math.ceil(1000 * h / w);
-                let pdfRowHeight = Math.ceil((width - margin * 2) * h / w);
+                let lines = Array.from(row.getElementsByTagName('div')).map(line=>{
+                    let svg = line.getElementsByTagName('svg')[0];
+                    let [, , w, h] = svg.getAttribute('viewBox')!.split(' ').map(x => Math.ceil(parseFloat(x)));
+                    
+                    
 
-                if (nextRowY + pdfRowHeight > height - margin) {
+                    //canvas is 1000 px wide, this determine the height required to render the row
+                    let canvasHeight = Math.ceil(1000 * h / w);
+
+                    //determines the row's height on the pdf in mm based upon the row's width
+                    let pdfHeight = Math.ceil((width - margin * 2) * h / w);
+
+                    return {
+                        w,
+                        h,
+                        canvasHeight,
+                        pdfHeight,
+                        html: line.innerHTML,
+                    }
+                });
+
+                console.log('Row');
+
+                // if the row is small enough to fit on one page but not small enough to fit on the current page, add a new page
+                let rowHeight = lines.reduce((a,b)=>a+b.pdfHeight+padding,-padding);
+                if (rowHeight < height - margin*2 && nextRowY + rowHeight > height - margin) {
+                    console.log('Fits on one page but not this page')
                     pdf.addPage();
                     nextRowY = margin;
+                } else {
+                    //console.log('Fits on this page or does not fit on any page')
                 }
-
-                canvas.height = canvasRowHeight;
-                let ctx = canvas.getContext("2d")!;
-                ctx.fillStyle = "white";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = "black";
-                canvg(canvas, row.innerHTML, {ignoreClear: true});
-                pdf.addImage(canvas, 'JPEG', margin, nextRowY, width - margin * 2, pdfRowHeight);
-
-                nextRowY += pdfRowHeight + padding;
+                
+                // add each line to the page, overflowing if needed
+                lines.forEach(line=>{
+                    if (nextRowY + line.pdfHeight > height - margin) {
+                        pdf.addPage();
+                        nextRowY = margin;
+                    }
+                    
+                    canvas.height = line.canvasHeight;
+                    let ctx = canvas.getContext("2d")!;
+                    ctx.fillStyle = "white";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = "black";
+                    canvg(canvas, line.html, {ignoreClear: true});
+                    try {
+                        pdf.addImage(canvas, 'JPEG', margin, nextRowY, width - margin * 2, line.pdfHeight);
+                    } catch(e){
+                        console.error(e);
+                    }
+    
+                    nextRowY += line.pdfHeight + padding;
+                });
+                
+                // add additional padding between each row
+                nextRowY += paddingBetweenRows - padding;
             }
-
-
 
             // pdf.rect(0,0,200,287,'F');
             // pdf.addPage();
@@ -287,6 +324,7 @@ const Convert: React.FC<Props> = () => {
             <div style={styles.SNView} onClick={() => {setShow(false);}}>
                 {currentFile.data === undefined ? null : <SNView xml={currentFile.data} />}
             </div>
+            
             <div id="hidden-pdf-generation" style={styles.hidden}>
                 <canvas className="canvas" width={1000} height={1000} />
                 {currentFile.data === undefined ? null : <SNView xml={currentFile.data} forcedWidth={1000} />}
