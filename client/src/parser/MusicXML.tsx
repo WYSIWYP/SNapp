@@ -1,5 +1,5 @@
 import MusicXML from 'musicxml-interfaces';
-import {Note, TimeSignature, KeySignature, Tracks, Score, Tie, Notes, Track, TrackType, isDynamics, Direction, Directions, Slur} from './Types'
+import {Note, TimeSignature, KeySignature, Tracks, Score, Tie, Notes, Track, TrackType, isDynamics, Direction, Directions, Slur} from './Types';
 
 const pitchToMidi = (pitch: {octave: number, step: string, alter?: number}) => {
     // we assume C4 = 60 as middle C. Note that typical 88-key piano contains notes from A0 (21) - C8 (108).
@@ -19,7 +19,7 @@ const getPianoPartID = (xml: MusicXML.ScoreTimewise): string | undefined => {
 
 const getLyricsPartID = (xml: MusicXML.ScoreTimewise): string | undefined => {
     let lyricsPartId: string | undefined;
-    // loop until we find a part with some lyrics defined. 
+    // loop until we find a part with some lyrics defined.
     xml.measures.some(measure => {
         return Object.keys(measure.parts).some(partName => {
             let part = measure.parts[partName];
@@ -51,9 +51,9 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
         }
     } = {};
 
-    /** 
+    /**
      * Multitrack Handling Logic
-     * 
+     *
      * We parse:
      *      1) just the instrument part from a two part work for instrument and vocal
      *      2) just the piano part from a work with multiple instrument parts
@@ -66,7 +66,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
     let instrumentId = pianoPartId !== undefined ? pianoPartId : 'P1';
     trackIDsToParse.push(instrumentId);
     if (lyricsPartId !== undefined && !trackIDsToParse.includes(lyricsPartId)) {
-        trackIDsToParse.push(lyricsPartId)
+        trackIDsToParse.push(lyricsPartId);
     }
 
     xml.measures.forEach((measure, measureNumber) => {
@@ -93,7 +93,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                     return divisions / 24;
                 }
                 return divisions / part.divisions * (currentBeatType / 4);
-            }
+            };
             part.progress = 0;
             let measureEnd = 0;
 
@@ -133,8 +133,8 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                     entry.notations.forEach((notation: any) => {
                                         if (notation.slurs) {
                                             notation.slurs.forEach((slur: any) => {
-                                                if (slur.type === 0) entrySlur = 'start'
-                                                if (slur.type === 1) entrySlur = 'end'
+                                                if (slur.type === 0) entrySlur = 'start';
+                                                if (slur.type === 1) entrySlur = 'end';
                                             });
                                         }
                                     });
@@ -208,7 +208,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                             // parse dynamics
                             if (direction.hasOwnProperty('dynamics')) {
                                 Object.keys(direction.dynamics).forEach(key => {
-                                    if (isDynamics(key)) directions.push({time: part.progress, dynamics: key})
+                                    if (isDynamics(key)) directions.push({time: part.progress, dynamics: key});
                                 });
                             }
                             // parse pedal
@@ -228,7 +228,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                 }
             });
             part.measures[measureNumber] = notes;
-            part.directions[measureNumber] = directions; 
+            part.directions[measureNumber] = directions;
 
             // check pick up measure
             if (measureNumber === 0 && measureEnd < currentBeats) {
@@ -239,7 +239,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
         });
     });
     let tracks: Tracks = Object.keys(parts).map(partId => {
-        let trackTypes: TrackType[] = []
+        let trackTypes: TrackType[] = [];
         if (partId === lyricsPartId) trackTypes.push('Lyrics');
         if (partId === instrumentId) trackTypes.push('Instrument');
 
@@ -248,7 +248,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
             directions: parts[partId].directions,
             timeSignatures: parts[partId].timeSignatures,
             keySignatures: parts[partId].keySignatures,
-            trackTypes: trackTypes
+            trackTypes
         } as Track;
     });
 
@@ -263,7 +263,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                 let measure = track.measures[0];
                 let newMeasures: Note[][] = Array(Math.ceil(measure.length / 4)).fill([]).map((_, index) => index * 4).map(start => measure.slice(start, start + 4)); // divide notes into chunks of four
                 newMeasures.forEach((measure, idx) => measure.forEach(note => note.time -= 4 * idx)); // shift note start time appropriately
-                track.timeSignatures.push({measure: newMeasures.length, beats: 4, beatTypes: 4})
+                track.timeSignatures.push({measure: newMeasures.length, beats: 4, beatTypes: 4});
                 track.measures = newMeasures;
             } else {
                 // case 2: time signature is not provided at all
@@ -280,5 +280,5 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
         }
     });
     if (!tempo) tempo = 60;
-    return {tracks, tempo}
+    return {tracks, tempo};
 };

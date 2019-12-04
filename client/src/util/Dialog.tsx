@@ -3,7 +3,7 @@ import {action as DialogAction} from '../contexts/Dialog';
 
 export const close = ()=>{
     return {type: 'close'} as DialogAction;
-}
+};
 
 export const showMessage = (title: string, body: any, buttonText: string, buttonAction: ()=>void): DialogAction =>{
     return {type: 'open', val: {title, width: 400, height: 275, contents: <div style={styles.body}>
@@ -18,7 +18,7 @@ export const showMessage = (title: string, body: any, buttonText: string, button
             </span>
         </div>
     </div>}};
-}
+};
 
 export const showPrompt = (title: string, body: any, buttonText1: string, buttonAction1: () => void, buttonText2: string, buttonAction2: () => void): DialogAction => {
     return {
@@ -38,7 +38,7 @@ export const showPrompt = (title: string, body: any, buttonText1: string, button
                     </span>
                 </div>
             </div>}};
-}
+};
 
 const styleMap = {
     body: {

@@ -17,6 +17,6 @@ const Router: React.FC = () => {
             <Global />
         </GlobalStateProvider>
     );
-}
+};
 
 export default Router;

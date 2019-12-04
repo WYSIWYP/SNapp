@@ -8,6 +8,6 @@ export function style(styles: RadiumStyleProp | RadiumStyleProp[]): CSSPropertie
 
 type StyleRules = {
     ':hover'?: React.CSSProperties;
-}
+};
 
 export type Style = CSSProperties & StyleRules;
