@@ -138,7 +138,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         let keyFifths = score.tracks[0].keySignatures[0].fifths;
 
         // let octaveGroups = [1, 1, 0, 0, 0, 1, 1]; //octaveGroups (C D E / F G A B)
-        let staffLabels = preferences.clefSymbols==='WYSIWYP'?['𝒯', 'ℬ']:['𝄞', '𝄢']; //𝄢
+        let staffLabels = preferences.clefSymbols === 'WYSIWYP' ? ['𝒯', 'ℬ'] : ['𝄞', '𝄢']; //𝄢
         let octaveLines = [
             {color: 'red', number: true}, undefined, undefined, /* C, D, E */
             {color: 'blue'}, undefined, undefined, undefined, /* F, G, A, B */
@@ -226,6 +226,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             treble: getNoteLine(maxNote.treble),
             bass: getNoteLine(maxNote.bass)
         }
+
         staffTypes.forEach(staff => {
             // find the closest note line
             while (minLine[staff] % 7 !== 0 && minLine[staff] % 7 !== 3) minLine[staff]--;
@@ -306,31 +307,63 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         }
 
         let staffBreak = (i: number): JSX.Element | null => {
-            // 1. lyrics
+            // general spacing
+            let textSize = noteSymbolSize * 6/7;
+
+            // vertical spacing
+            let lyricsSpace = noteSymbolSize * 1.5;
+            let dynamicsSpace = noteSymbolSize * 1;
+            let margin = 10;
+
+            let key = 0;
+
+            // 1. dynamics
+            let dynamics: JSX.Element[] = [];
+
+            let directionsAtRow = instrumentTrack.directions.slice(i * measuresPerRow, (i + 1) * measuresPerRow);
+            let directionsAreEmpty = directionsAtRow.every(directions => directions.length === 0);
+
+            directionsAtRow.forEach((directionsAtMeasure, measureNumber) => {
+                directionsAtMeasure.forEach(direction => {
+                    if (direction.dynamics === undefined) return;
+                    let x = measureNumberToPos(measureNumber) + noteTimeToPos(direction.time, 'treble').x;
+                    let y = dynamicsSpace;
+                    dynamics.push(
+                        <text x={x} y={y} fontWeight='bold' fontFamily='monospace' fontStyle='italic' key={key++} fontSize={textSize}>
+                            {direction.dynamics}
+                        </text>
+                    );
+                });
+            });
+
+            // 2. lyrics
             let lyrics: JSX.Element[] = [];
             let lyricsTrack = score!.tracks.find(track => track.trackTypes.includes('Lyrics'));
             if (lyricsTrack === undefined) return null;
-            let key = 0;
 
             let notesAtRow = lyricsTrack.measures.slice(i * measuresPerRow, (i + 1) * measuresPerRow);
             let rowIsEmpty = notesAtRow.every(measure => measure.length === 0);
-            if (bassClefIsEmpty && rowIsEmpty) return null; // save whitespace
 
-            let textSize = noteSymbolSize * 6 / 7;
+            if (bassClefIsEmpty && directionsAreEmpty && rowIsEmpty) return null; // save whitespace
+
             notesAtRow.forEach((notesAtMeasure, measureNumber) => {
                 notesAtMeasure.forEach(note => {
                     if (!note.attributes.lyrics) return;
                     let x = measureNumberToPos(measureNumber) + noteTimeToPos(note.time, 'treble').x;
+                    let y = textSize + dynamicsSpace + margin;
                     lyrics.push(
-                        <text x={`${x}`} y={textSize} key={key++} fontSize={textSize}>
+                        <text x={x} y={y} key={key++} fontSize={textSize}>
                             {note.attributes.lyrics}
                         </text>
                     )
                 });
             });
+
+            let svgHeight = dynamicsSpace + lyricsSpace + margin;
             return (
                 <div style={{position: 'relative', height: 'auto'}}>
-                    <svg viewBox={`0 0 ${width} ${textSize * 1.5}`}>
+                    <svg viewBox={`0 0 ${width} ${svgHeight}`}>
+                        {dynamics}
                         {lyrics}
                     </svg>
                 </div>
@@ -356,7 +389,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                         <text x={`${x}`} y={noteSymbolSize} key={key++} fontSize={noteSymbolSize} fontWeight='bold'>
                             {pedalText}
                         </text>
-                    )
+                    );
                 });
             });
 
@@ -539,8 +572,8 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                     <div style={{position: 'relative', height: 'auto'}}>
                         <svg viewBox={`0 0 ${width} ${titleRowHeight}`}>
                             <text x={width / 2} y={10} fontSize={40} textAnchor="middle" alignmentBaseline="hanging">{title}</text>
-                            <text x={70} y={titleRowHeight-10} fontSize={25} textAnchor="start">{score.tempo} bpm</text>
-                            <text x={width - 70} y={titleRowHeight-10} fontSize={25} textAnchor="end">{author}</text>
+                            <text x={70} y={titleRowHeight - 10} fontSize={25} textAnchor="start">{score.tempo} bpm</text>
+                            <text x={width - 70} y={titleRowHeight - 10} fontSize={25} textAnchor="end">{author}</text>
                         </svg>
                     </div>
                 </div>
