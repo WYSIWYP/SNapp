@@ -279,6 +279,5 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
             }
         }
     });
-    if (!tempo) tempo = 60;
     return {tracks, tempo};
 };

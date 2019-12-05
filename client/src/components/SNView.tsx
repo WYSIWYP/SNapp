@@ -572,7 +572,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                     <div style={{position: 'relative', height: 'auto'}}>
                         <svg viewBox={`0 0 ${width} ${titleRowHeight}`}>
                             <text x={width / 2} y={10} fontSize={40} textAnchor="middle" alignmentBaseline="hanging">{title}</text>
-                            <text x={70} y={titleRowHeight - 10} fontSize={25} textAnchor="start">{score.tempo} bpm</text>
+                            <text x={70} y={titleRowHeight - 10} fontSize={25} textAnchor="start">{score.tempo ? `${score.tempo} bpm` : null}</text>
                             <text x={width - 70} y={titleRowHeight - 10} fontSize={25} textAnchor="end">{author}</text>
                         </svg>
                     </div>
