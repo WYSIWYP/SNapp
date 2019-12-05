@@ -16,7 +16,7 @@ Browser storage.
 
 ## Deployment
 
-The project is currently deployed using both [GitHub Pages](https://pages.github.com/) and [this site](https://pages.github.com/). The deployment can be updated by modifying the contents of this branch in GitHub. This is where the live app lives. The app is generally available. 
+The project is currently deployed using [this site](https://pages.github.com/). The deployment can be updated by modifying the contents of this branch in GitHub. This is where the live app lives. The app is generally available. 
 (the second link needs to be changed to the new site)
 
 ## Cost 
