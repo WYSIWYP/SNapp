@@ -39,7 +39,7 @@ const Menu: React.FC<Props> = () => {
         setDialogState(Dialog.showMessage('An Error Occurred', error, 'Close', () => {
             setDialogState(Dialog.close());
         }));
-    };
+     };
 
     let deleteAllPrompt = () => {
         setDialogState(Dialog.showPrompt('Delete Confirmation', 'Are you sure you want to delete all files?', 'Close', () => {
@@ -316,7 +316,7 @@ const Menu: React.FC<Props> = () => {
                                             {(d => `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`)(new Date(x.date_created || (x as any).date /*migrate from x.date to x.date_created*/))}
                                         </div>
                                         <div onClick={() => { deleteFile(x); }} style={{ ...styles.recentFilesItemInner, color: 'gray', width: '35px' }} >
-                                            <svg style={{ paddingTop: '9px' }} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                            <svg style={{ paddingTop: '9px' }} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                         </div>
                                     </div>
                                     <div style={styles.recentFilesSeparator}></div>
