@@ -6,7 +6,7 @@
 export type TrackType = 'Instrument' | 'Lyrics'; // part types that app currently handles
 export type StaffType = 'treble' | 'bass';
 
-// Directions 
+// Directions
 const dynamicsArray = ['f', 'ff', 'fff', 'ffff', 'ffff', 'ffffff', 'fp', 'fz', 'mf', 'mp', 'p', 'pp', 'ppp', 'pppp', 'ppppp', 'pppppp', 'rf', 'rfz', 'sf', 'sffz', 'sfp', 'sfpp', 'sfz'] as const;
 export type Dynamics = (typeof dynamicsArray)[number];
 export let isDynamics = ((str: string): str is Dynamics => dynamicsArray.some(dynamic => dynamic === str));
@@ -24,7 +24,7 @@ export type Directions = Direction[];
 export enum Tie {
     Start = "START",
     Stop = "STOP",
-};
+}
 
 export type Slur = 'start' | 'end';
 
@@ -35,7 +35,7 @@ export type Note = {
     midi: number,
     staff: StaffType,
     attributes: {
-        ties: Tie[], 
+        ties: Tie[],
         slur?: Slur,
         lyrics?: string
     }
@@ -52,7 +52,7 @@ export type TimeSignature = {
 export type KeySignature = {
     measure: number,
     fifths: number
-}
+};
 
 export type Track = {
     measures: Notes[],
@@ -66,5 +66,5 @@ export type Tracks = Track[];
 
 export type Score = {
     tracks: Tracks,
-    tempo: number
+    tempo?: number
 };

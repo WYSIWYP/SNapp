@@ -5,7 +5,7 @@ import {useDialogState} from '../../contexts/Dialog';
 type Props = {};
 
 const Dialog: React.FC<Props> = () => {
-    
+
     let [dialog,] = useDialogState();
     let data = dialog.data!;
 

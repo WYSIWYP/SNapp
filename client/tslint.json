@@ -1,0 +1,23 @@
+{
+    "defaultSeverity": "error",
+    "extends": [
+    ],
+    "jsRules": {},
+    "rules": {
+        "semicolon": true,
+        "no-var-keyword": true,
+        "no-var-requires": true,
+        "no-trailing-whitespace": true,
+        "no-unsafe-finally": true,
+        "no-unused-expression": true,
+        "object-literal-shorthand": true,
+        "one-variable-per-declaration": {
+            "options": ["ignore-for-loop"] 
+        },
+        "triple-equals": {"options": ["allow-null-check"] },
+        "variable-name": {
+            "options": ["allow-leading-underscore", "ban-keywords", "check-format", "allow-pascal-case"]
+        }
+    },
+    "rulesDirectory": []
+}

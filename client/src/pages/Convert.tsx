@@ -42,9 +42,9 @@ const Convert: React.FC<Props> = () => {
             }, 1000);
             return () => {
                 clearTimeout(timeout);
-            }
+            };
         }
-    }, [show])
+    }, [show]);
 
     useEffect(() => {
         (async () => {
@@ -57,7 +57,7 @@ const Convert: React.FC<Props> = () => {
                     let data = JSON.parse(localStorage.getItem(id)!);
                     setCurrentFile({type: 'set', val: {id, file_name, data}});
                 } catch (e) {
-                    console.log(e);
+                    console.error(e);
                     navigate('..');
                 }
             }
@@ -78,7 +78,7 @@ const Convert: React.FC<Props> = () => {
             let pdf = new jsPDF(); //210 x 297 mm (A4 paper dimensions)
             let width = 210;
             let height = 297;
-            
+
             margin = width * margin / 100;
             padding = width * padding / 100;
 
@@ -91,8 +91,8 @@ const Convert: React.FC<Props> = () => {
                 let lines = Array.from(row.getElementsByTagName('div')).map(line=>{
                     let svg = line.getElementsByTagName('svg')[0];
                     let [, , w, h] = svg.getAttribute('viewBox')!.split(' ').map(x => Math.ceil(parseFloat(x)));
-                    
-                    
+
+
 
                     //canvas is 1000 px wide, this determine the height required to render the row
                     let canvasHeight = Math.ceil(1000 * h / w);
@@ -106,7 +106,7 @@ const Convert: React.FC<Props> = () => {
                         canvasHeight,
                         pdfHeight,
                         html: line.innerHTML,
-                    }
+                    };
                 });
 
                 console.log('Row');
@@ -114,20 +114,20 @@ const Convert: React.FC<Props> = () => {
                 // if the row is small enough to fit on one page but not small enough to fit on the current page, add a new page
                 let rowHeight = lines.reduce((a,b)=>a+b.pdfHeight+padding,-padding);
                 if (rowHeight < height - margin*2 && nextRowY + rowHeight > height - margin) {
-                    console.log('Fits on one page but not this page')
+                    console.log('Fits on one page but not this page');
                     pdf.addPage();
                     nextRowY = margin;
                 } else {
                     //console.log('Fits on this page or does not fit on any page')
                 }
-                
+
                 // add each line to the page, overflowing if needed
                 lines.forEach(line=>{
                     if (nextRowY + line.pdfHeight > height - margin) {
                         pdf.addPage();
                         nextRowY = margin;
                     }
-                    
+
                     canvas.height = line.canvasHeight;
                     let ctx = canvas.getContext("2d")!;
                     ctx.fillStyle = "white";
@@ -139,10 +139,10 @@ const Convert: React.FC<Props> = () => {
                     } catch(e){
                         console.error(e);
                     }
-    
+
                     nextRowY += line.pdfHeight + padding;
                 });
-                
+
                 // add additional padding between each row
                 nextRowY += paddingBetweenRows - padding;
             }
@@ -158,7 +158,7 @@ const Convert: React.FC<Props> = () => {
         }
     };
     let exportFile = () => {
-        var file = new Blob([JSON.stringify(preferences, null, 4)], {type: 'text/plain'});
+        let file = new Blob([JSON.stringify(preferences, null, 4)], {type: 'text/plain'});
         saveAs(file, 'preferences.snapp', {
             autoBom: false,
         });
@@ -256,7 +256,7 @@ const Convert: React.FC<Props> = () => {
                             (e) => {setPreferences({type: 'set', val: {noteScale: e.target.value as any}});}
                         }>{scalePreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
                     </div>
-                    
+
                     <div style={styles.line}>
                         <div style={styles.name}>Natural Notehead</div>
                         {/* deleted value and onchange */}
@@ -294,12 +294,12 @@ const Convert: React.FC<Props> = () => {
                             (e) => {setPreferences({type: 'set', val: {noteDurationColor: e.target.value as any}});}
                         }>{colorPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
                     </div>
-                    
+
                 </Expandable>
 
             </div>
 
-        </div>)
+        </div>);
 
     return (
         <Frame showSideMenu={show} sideMenu={sidebar}>
@@ -324,7 +324,7 @@ const Convert: React.FC<Props> = () => {
             <div style={styles.SNView} onClick={() => {setShow(false);}}>
                 {currentFile.data === undefined ? null : <SNView xml={currentFile.data} />}
             </div>
-            
+
             <div id="hidden-pdf-generation" style={styles.hidden}>
                 <canvas className="canvas" width={1000} height={1000} />
                 {currentFile.data === undefined ? null : <SNView xml={currentFile.data} forcedWidth={1000} />}
