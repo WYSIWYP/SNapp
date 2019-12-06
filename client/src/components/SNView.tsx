@@ -308,26 +308,39 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
 
         let staffBreak = (i: number): JSX.Element | null => {
             // general spacing
-            let textSize = noteSymbolSize * 6/7;
+            let textSize = noteSymbolSize * 6 / 7;
 
             // vertical spacing
             let lyricsSpace = noteSymbolSize * 1.5;
             let dynamicsSpace = noteSymbolSize * 1;
             let margin = 10;
 
+            // get respective directions and notes
+            let directionsAtRow = instrumentTrack.directions.slice(i * measuresPerRow, (i + 1) * measuresPerRow);
+            let dynamicsAreEmpty = directionsAtRow.every(directions => {
+                if (directions.length === 0)
+                    return true;
+                else
+                    return directions.every(direction => direction.dynamics === undefined);
+            });
+
+            let lyrics: JSX.Element[] = [];
+            let lyricsTrack = score!.tracks.find(track => track.trackTypes.includes('Lyrics'));
+            if (lyricsTrack === undefined) return null;
+
+            let notesAtRow = lyricsTrack.measures.slice(i * measuresPerRow, (i + 1) * measuresPerRow);
+            let lyricsAreEmpty = notesAtRow.every(measure => measure.length === 0);
+
             let key = 0;
 
-            // 1. dynamics
+            // 1. render dynamics
             let dynamics: JSX.Element[] = [];
-
-            let directionsAtRow = instrumentTrack.directions.slice(i * measuresPerRow, (i + 1) * measuresPerRow);
-            let directionsAreEmpty = directionsAtRow.every(directions => directions.length === 0);
 
             directionsAtRow.forEach((directionsAtMeasure, measureNumber) => {
                 directionsAtMeasure.forEach(direction => {
                     if (direction.dynamics === undefined) return;
                     let x = measureNumberToPos(measureNumber) + noteTimeToPos(direction.time, 'treble').x;
-                    let y = dynamicsSpace;
+                    let y = dynamicsSpace * 6 / 7;
                     dynamics.push(
                         <text x={x} y={y} fontWeight='bold' fontFamily='monospace' fontStyle='italic' key={key++} fontSize={textSize}>
                             {direction.dynamics}
@@ -336,36 +349,38 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                 });
             });
 
-            // 2. lyrics
-            let lyrics: JSX.Element[] = [];
-            let lyricsTrack = score!.tracks.find(track => track.trackTypes.includes('Lyrics'));
-            if (lyricsTrack === undefined) return null;
-
-            let notesAtRow = lyricsTrack.measures.slice(i * measuresPerRow, (i + 1) * measuresPerRow);
-            let rowIsEmpty = notesAtRow.every(measure => measure.length === 0);
-
-            if (bassClefIsEmpty && directionsAreEmpty && rowIsEmpty) return null; // save whitespace
-
+            // 2. render lyrics
             notesAtRow.forEach((notesAtMeasure, measureNumber) => {
                 notesAtMeasure.forEach(note => {
                     if (!note.attributes.lyrics) return;
                     let x = measureNumberToPos(measureNumber) + noteTimeToPos(note.time, 'treble').x;
-                    let y = textSize + dynamicsSpace + margin;
+
+                    let y = lyricsSpace * 6 / 7; // multiply by 6 / 7 so that text render in the middle and not the bottom
+                    if (!dynamicsAreEmpty) y += margin + dynamicsSpace; // if there are dynamics, then we render lyrics below dynamics
+
                     lyrics.push(
                         <text x={x} y={y} key={key++} fontSize={textSize}>
                             {note.attributes.lyrics}
                         </text>
-                    )
+                    );
                 });
             });
 
-            let svgHeight = dynamicsSpace + lyricsSpace + margin;
+            let svgHeight = 0;
+            // shrink height if dynamics or lyrics do not exist
+            if (!dynamicsAreEmpty) svgHeight += dynamicsSpace;
+            if (!lyricsAreEmpty) svgHeight += lyricsSpace + margin;
+
+            let contentSVG = dynamicsAreEmpty && lyricsAreEmpty ? (
+                <svg viewBox={`0 0 ${width} ${svgHeight}`}>
+                    {dynamics}
+                    {lyrics}
+                </svg>
+            ) : null; // don't render svg if it is empty
+
             return (
-                <div style={{position: 'relative', height: 'auto'}}>
-                    <svg viewBox={`0 0 ${width} ${svgHeight}`}>
-                        {dynamics}
-                        {lyrics}
-                    </svg>
+                <div style={{position: 'relative', height: 'auto', marginBottom: '10px'}}>
+                    {contentSVG}
                 </div>
             );
         }
