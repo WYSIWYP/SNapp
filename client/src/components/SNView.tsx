@@ -2,8 +2,8 @@ import React, {useEffect, useState, useRef} from 'react';
 import {range} from '../util/Util';
 // import {Note} from '@tonejs/midi/dist/Note';
 import MusicXML from 'musicxml-interfaces';
-import {parse} from '../parser/MusicXML'
-import {Note, Score, Tie, TimeSignature, KeySignature, StaffType} from '../parser/Types'
+import {parse} from '../parser/MusicXML';
+import {Note, Score, Tie, TimeSignature, KeySignature, StaffType} from '../parser/Types';
 import {colorPreferenceStyles, usePreferencesState, spacingPreferenceOption, scalePreferenceOption} from '../contexts/Preferences';
 import {useDialogState} from '../contexts/Dialog';
 import * as Dialog from '../util/Dialog';
@@ -18,10 +18,10 @@ enum Accidental {
     Flat = -1,
     Natural = 0,
     Sharp = 1
-};
+}
 
 const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
-    console.log(xml)
+    console.log(xml);
     const ref = useRef(null! as HTMLDivElement);
     let [width, setWidth] = useState<number | undefined>(undefined);
     let [score, setScore] = useState<Score | undefined>(undefined);
@@ -34,7 +34,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             navigate('/');
             setImmediate(() => setDialogState(Dialog.close()));
         }));
-    }
+    };
     let showErrorRef = useRef(showError);
 
     console.log('Score:', score);
@@ -54,7 +54,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             return () => {
                 window.removeEventListener("resize", callback);
                 // clearInterval(interval);
-            }
+            };
         } else {
             setWidth(forcedWidth);
         }
@@ -92,12 +92,12 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             accidentalType
         } = preferences;
 
-        // Map preference strings to numeric values 
+        // Map preference strings to numeric values
         let noteScaleMap: Record<scalePreferenceOption, number> = {
             small: 15,
             medium: 20,
             large: 25
-        }
+        };
         let staffScaleMap: Record<scalePreferenceOption, number> = {
             small: 18,
             medium: 25,
@@ -221,11 +221,11 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         let minLine: Record<StaffType, number> = {
             treble: getNoteLine(minNote.treble),
             bass: getNoteLine(minNote.bass)
-        }
+        };
         let maxLine: Record<StaffType, number> = {
             treble: getNoteLine(maxNote.treble),
             bass: getNoteLine(maxNote.bass)
-        }
+        };
 
         staffTypes.forEach(staff => {
             // find the closest note line
@@ -241,7 +241,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         let staffHeights: Record<StaffType, number> = {
             treble: (maxLine.treble - minLine.treble) * noteSymbolSize / 2,
             bass: (maxLine.bass - minLine.bass) * noteSymbolSize / 2
-        }
+        };
 
         //calculate the number of beats per measure
         let beatsPerMeasure = score.tracks[0].timeSignatures[0].beats;
@@ -269,7 +269,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             if (!currentTime) currentTime = score!.tracks[0].timeSignatures[0];
             if (!currentKey) currentKey = score!.tracks[0].keySignatures[0];
             return {currentTime, currentKey};
-        }
+        };
 
         let grandStaff = (i: number): JSX.Element => {
             return (
@@ -280,7 +280,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                     {pedal(i)}
                 </div>
             );
-        }
+        };
 
         let staff = (i: number, staff: StaffType): JSX.Element | null => {
             if (bassClefIsEmpty && staff === 'bass') return null;
@@ -300,11 +300,11 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                     </g>
                 </svg>
             </div>;
-        }
+        };
 
         let measureNumberToPos = (measureNumber: number): number => {
             return strokeWidth + horizontalPadding + staffLabelSpace + octaveLabelSpace + measureNumber * measureWidth;
-        }
+        };
 
         let staffBreak = (i: number): JSX.Element | null => {
             // general spacing
@@ -383,7 +383,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                     {contentSVG}
                 </div>
             );
-        }
+        };
 
         let pedal = (i: number) => {
             let pedals: JSX.Element[] = [];
@@ -415,7 +415,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                     </svg>
                 </div>
             );
-        }
+        };
 
         let measure = (x: number, y: number, measureNumber: number, staff: StaffType) => {
             // Get time signature of current measure
@@ -475,7 +475,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                     </g>
                 </g>
             );
-        }
+        };
 
         let noteTimeToPos = (noteTime: number, staff: StaffType) => ({
             x: beatWidth * noteTime,
@@ -523,7 +523,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                     {boxes}
                 </React.Fragment>
             );
-        }
+        };
 
         let noteHead = (note: Note, i: number, staff: StaffType) => {
             if (note.attributes.ties.includes(Tie.Stop))
@@ -577,7 +577,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                         <line x1={x - noteSymbolSize / 2 + strokeWidth / 2} y1={y + noteSymbolSize / 2 - strokeWidth / 2} x2={x + noteSymbolSize / 2 - strokeWidth / 2} y2={y - noteSymbolSize / 2 + strokeWidth / 2} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} />
                     </g>);
             }
-        }
+        };
 
         let svgRows: JSX.Element[] = range(0, rowNumber).map(i => grandStaff(i));
         let titleRowHeight = 130;
