@@ -369,7 +369,8 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             let svgHeight = 0;
             // shrink height if dynamics or lyrics do not exist
             if (!dynamicsAreEmpty) svgHeight += dynamicsSpace;
-            if (!lyricsAreEmpty) svgHeight += lyricsSpace + margin;
+            if (!lyricsAreEmpty) svgHeight += lyricsSpace;
+            if (!lyricsAreEmpty && !dynamicsAreEmpty) svgHeight += margin;
 
             let contentSVG = dynamicsAreEmpty && lyricsAreEmpty ? null : (
                 <svg viewBox={`0 0 ${width} ${svgHeight}`}>
