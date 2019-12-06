@@ -371,12 +371,12 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             if (!dynamicsAreEmpty) svgHeight += dynamicsSpace;
             if (!lyricsAreEmpty) svgHeight += lyricsSpace + margin;
 
-            let contentSVG = dynamicsAreEmpty && lyricsAreEmpty ? (
+            let contentSVG = dynamicsAreEmpty && lyricsAreEmpty ? null : (
                 <svg viewBox={`0 0 ${width} ${svgHeight}`}>
                     {dynamics}
                     {lyrics}
                 </svg>
-            ) : null; // don't render svg if it is empty
+            ); // don't render svg if it is empty
 
             return (
                 <div style={{position: 'relative', height: 'auto', marginBottom: '10px'}}>
