@@ -168,17 +168,32 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             title = xml.work.workTitle;
         } catch (e) {}
 
-        let author = '';
-        try {
-            let credits = xml.credits.filter(x => x.creditWords !== undefined && x.creditWords.length > 0).map(x => x.creditWords);
-            credits.forEach(credit => {
-                credit.forEach(words => {
-                    if (Math.abs(words.words.length - 20) < Math.abs(author.length - 20)) {
-                        author = words.words;
+        let findAuthor = (): string => {
+            // 1. check identification
+            if (xml.identification !== undefined && xml.identification.creators !== undefined) {
+                for (let creator of xml.identification.creators) {
+                    if (creator.type === 'composer') {
+                        return creator.creator;
                     }
+                }
+            }
+
+            // 2. check credits
+            let author = '';
+            if (xml.credits !== undefined) {
+                let credits = xml.credits.filter(x => x.creditWords !== undefined && x.creditWords.length > 0).map(x => x.creditWords);
+                credits.forEach(credit => {
+                    credit.forEach(words => {
+                        if (Math.abs(words.words.length - 20) < Math.abs(author.length - 20)) {
+                            author = words.words;
+                        }
+                    });
                 });
-            });
-        } catch (e) {}
+            }
+            return author;
+        };
+
+        let author = findAuthor();
 
         let minNote: Record<StaffType, number> = {
             treble: 128,
@@ -200,7 +215,6 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         });
 
         let staffTypes: StaffType[] = ['treble', 'bass'];
-        //if there was an issue, abort
 
         // if bass clef is empty, then we create an empty clef
         let bassClefIsEmpty = false;
