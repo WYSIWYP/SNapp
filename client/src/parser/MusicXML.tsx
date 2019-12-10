@@ -211,10 +211,19 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                     if (isDynamics(key)) directions.push({time: part.progress, dynamics: key});
                                 });
                             }
+
+                            // parse wedge (crescendo / diminuendo)
+                            if (direction.hasOwnProperty('wedge')) {
+                                if (direction.wedge.type === 0) directions.push({time: part.progress, wedge: 'crescendo'});
+                                else if (direction.wedge.type === 1) directions.push({time: part.progress, wedge: 'diminuendo'});
+                                else if (direction.wedge.type === 2) directions.push({time: part.progress, wedge: 'stop'});
+                                else if (direction.wedge.type === 3) directions.push({time: part.progress, wedge: 'continue'});
+                            }
+
                             // parse pedal
                             if (direction.hasOwnProperty('pedal')) {
                                 if (direction.pedal.type === 0) directions.push({time: part.progress, pedal: 'pedalStart'});
-                                if (direction.pedal.type === 1) directions.push({time: part.progress, pedal: 'pedalEnd'});
+                                else if (direction.pedal.type === 1) directions.push({time: part.progress, pedal: 'pedalEnd'});
                                 // we disregard other pedal types
                             }
                         });

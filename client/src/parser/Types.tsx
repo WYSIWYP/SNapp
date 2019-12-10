@@ -13,11 +13,15 @@ export let isDynamics = ((str: string): str is Dynamics => dynamicsArray.some(dy
 
 export type Pedal = 'pedalStart' | 'pedalEnd';
 
+export type Wedge = 'crescendo' | 'diminuendo' | 'stop' | 'continue';
+
 export type Direction = {
     dynamics?: Dynamics,
     pedal?: Pedal,
+    wedge?: Wedge,
     time: number
 }; // Directions are used for expression marks that are not clearly tied to a particular note.
+
 export type Directions = Direction[];
 
 // Note attributes
@@ -28,7 +32,7 @@ export enum Tie {
 
 export type Slur = 'start' | 'end';
 
-// Note
+// Notes
 export type Note = {
     time: number,
     duration: number,
