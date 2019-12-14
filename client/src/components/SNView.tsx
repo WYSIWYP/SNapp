@@ -329,6 +329,24 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             return strokeWidth + horizontalPadding + staffLabelSpace + octaveLabelSpace + measureNumber * measureWidth;
         };
 
+        let drawWedge = (key: number, height: number, endTime: number, measureNumber: number): JSX.Element[] => {
+            let {startMeasure, startTime, type} = currentWedge!;
+            let startX = measureNumberToPos(startMeasure) + noteTimeToPos(startTime, 'treble').x;
+            let endX = measureNumberToPos(measureNumber) + noteTimeToPos(endTime, 'treble').x;
+            return [
+                <line key={key++}
+                    x1={startX} x2={endX}
+                    y1={type === 'crescendo' ? height / 2 : strokeWidth} y2={type === 'crescendo' ? strokeWidth : height / 2}
+                    strokeWidth={strokeWidth} stroke='black'
+                />,
+                <line key={key++}
+                    x1={startX} x2={endX}
+                    y1={type === 'crescendo' ? height / 2 : height - strokeWidth} y2={type === 'crescendo' ? height - strokeWidth : height / 2}
+                    strokeWidth={strokeWidth} stroke='black'
+                />
+            ];
+        };
+
         let staffBreak = (i: number): JSX.Element | null => {
             // general spacing
             let textSize = noteSymbolSize * 6 / 7;
@@ -340,12 +358,9 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
 
             // get respective directions and notes
             let directionsAtRow = instrumentTrack.directions.slice(i * measuresPerRow, (i + 1) * measuresPerRow);
-            let dynamicsAreEmpty = directionsAtRow.every(directions => {
-                if (directions.length === 0)
-                    return true;
-                else
-                    return directions.every(direction => direction.dynamics === undefined && direction.wedge === undefined);
-            });
+            let dynamicsAreEmpty = currentWedge === undefined && directionsAtRow.every(directions =>
+                directions.length === 0 || directions.every(direction => direction.dynamics === undefined && direction.wedge === undefined)
+            );
 
             let lyrics: JSX.Element[] = [];
             let lyricsTrack = score!.tracks.find(track => track.trackTypes.includes('Lyrics'));
@@ -384,22 +399,20 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                         };
                     } else if (direction.wedge === 'stop') {
                         // draw wedge
-                        let {startMeasure, startTime, type} = currentWedge!;
-                        let startX = measureNumberToPos(startMeasure) + noteTimeToPos(startTime, 'treble').x;
-                        let endX = measureNumberToPos(measureNumber) + noteTimeToPos(direction.time, 'treble').x;
-                        let wedgeLines = type === 'crescendo' ?
-                            [
-                                <line key={key++} x1={startX} y1={dynamicsSpace / 2} x2={endX} y2={strokeWidth} strokeWidth={strokeWidth} stroke='black' />,
-                                <line key={key++} x1={startX} y1={dynamicsSpace / 2} x2={endX} y2={dynamicsSpace - strokeWidth} strokeWidth={strokeWidth} stroke='black' />
-                            ] :
-                            [
-                                <line key={key++} x1={startX} y1={strokeWidth} x2={endX} y2={dynamicsSpace / 2} strokeWidth={strokeWidth} stroke='black' />,
-                                <line key={key++} x1={startX} y1={dynamicsSpace - strokeWidth} x2={endX} y2={dynamicsSpace / 2} strokeWidth={strokeWidth} stroke='black' />
-                            ];
-                        dynamics.push(...wedgeLines);
+                        dynamics.push(...drawWedge(key++, dynamicsSpace, direction.time, measureNumber));
+                        currentWedge = undefined; // finish this wedge
                     }
                 });
             });
+
+            // check if current wedge spans then next row
+            if (currentWedge !== undefined) {
+                // draw wedge for this row (ending at the last measure)
+                dynamics.push(...drawWedge(key++, dynamicsSpace, beatsPerMeasure, measuresPerRow - 1));
+                // split off the remaining wedge
+                currentWedge.startMeasure = currentWedge.startTime = 0;
+            }
+
 
             // 3. render lyrics
             notesAtRow.forEach((notesAtMeasure, measureNumber) => {
