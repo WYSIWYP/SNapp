@@ -334,14 +334,16 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             let {startMeasure, startTime, type} = currentWedge!;
             let startX = measureNumberToPos(startMeasure) + noteTimeToPos(startTime, 'treble').x;
             let endX = measureNumberToPos(measureNumber) + noteTimeToPos(endTime, 'treble').x;
+            if (startX === endX) endX += noteSymbolSize;
+
             return [
                 <line key={key++}
-                    x1={startX} x2={endX}
+                    x1={startX + strokeWidth} x2={endX - strokeWidth}
                     y1={type === 'crescendo' ? height / 2 : strokeWidth} y2={type === 'crescendo' ? strokeWidth : height / 2}
                     strokeWidth={strokeWidth} stroke='black'
                 />,
                 <line key={key++}
-                    x1={startX} x2={endX}
+                    x1={startX + strokeWidth} x2={endX - strokeWidth}
                     y1={type === 'crescendo' ? height / 2 : height - strokeWidth} y2={type === 'crescendo' ? height - strokeWidth : height / 2}
                     strokeWidth={strokeWidth} stroke='black'
                 />
