@@ -280,6 +280,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
 
         // set up wedge (crescendo / diminuendo) tracking
         let currentWedge: Wedge;
+        let key = 0; // keys for JSX elements
 
         let getCurrentSignatures = (measureNumber: number): {currentTime: TimeSignature, currentKey: KeySignature} => {
             let timeSignatures = [...score!.tracks[0].timeSignatures].reverse(); // we reverse the array because we want to find the latest key signature.
@@ -329,7 +330,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             return strokeWidth + horizontalPadding + staffLabelSpace + octaveLabelSpace + measureNumber * measureWidth;
         };
 
-        let drawWedge = (key: number, height: number, endTime: number, measureNumber: number): JSX.Element[] => {
+        let drawWedge = (height: number, endTime: number, measureNumber: number): JSX.Element[] => {
             let {startMeasure, startTime, type} = currentWedge!;
             let startX = measureNumberToPos(startMeasure) + noteTimeToPos(startTime, 'treble').x;
             let endX = measureNumberToPos(measureNumber) + noteTimeToPos(endTime, 'treble').x;
@@ -369,8 +370,6 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             let notesAtRow = lyricsTrack.measures.slice(i * measuresPerRow, (i + 1) * measuresPerRow);
             let lyricsAreEmpty = notesAtRow.every(measure => measure.length === 0);
 
-            let key = 0;
-
             // 1. render dynamics
             let dynamics: JSX.Element[] = [];
 
@@ -399,7 +398,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                         };
                     } else if (direction.wedge === 'stop') {
                         // draw wedge
-                        dynamics.push(...drawWedge(key++, dynamicsSpace, direction.time, measureNumber));
+                        dynamics.push(...drawWedge(dynamicsSpace, direction.time, measureNumber));
                         currentWedge = undefined; // finish this wedge
                     }
                 });
@@ -408,7 +407,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             // check if current wedge spans then next row
             if (currentWedge !== undefined) {
                 // draw wedge for this row (ending at the last measure)
-                dynamics.push(...drawWedge(key++, dynamicsSpace, beatsPerMeasure, measuresPerRow - 1));
+                dynamics.push(...drawWedge(dynamicsSpace, beatsPerMeasure, measuresPerRow - 1));
                 // split off the remaining wedge
                 currentWedge.startMeasure = currentWedge.startTime = 0;
             }
@@ -455,7 +454,6 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             let pedals: JSX.Element[] = [];
             let instrumentTrack = score!.tracks.find(track => track.trackTypes.includes('Instrument'));
             if (!instrumentTrack) return null;
-            let key = 0;
 
             let directionsAtRow = instrumentTrack.directions.slice(i * measuresPerRow, (i + 1) * measuresPerRow);
             let directionsAreEmpty = directionsAtRow.every(directions => directions.length === 0);
@@ -491,7 +489,6 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             keyFifths = currentKey!.fifths;
 
             // Draw measure
-            let key = 0;
             let measureSVG: JSX.Element[] = [];
             measureSVG.push(<rect key={key++} x={measureWidth - strokeWidth / 2} y={measureLabelSpace - strokeWidth / 2} width={strokeWidth} height={staffHeights[staff] + strokeWidth} fill="#000000" />);
             for (let j = minLine[staff]; j <= maxLine[staff]; j++) {
@@ -549,7 +546,6 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         });
 
         let noteTail = (note: Note, i: number, tieStart: boolean, tieStop: boolean, noteSpansRow: boolean, staff: StaffType) => {
-            let key = 0;
             let boxes: JSX.Element[] = [];
 
             let line = getNoteLine(note.midi) - minLine[staff];
