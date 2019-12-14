@@ -1,5 +1,5 @@
 import MusicXML from 'musicxml-interfaces';
-import {Note, TimeSignature, KeySignature, Tracks, Score, Tie, Notes, Track, TrackType, isDynamics, Direction, Directions, Slur} from './Types';
+import {Note, TimeSignature, KeySignature, Tracks, Score, Notes, Track, TrackType, isDynamics, Direction, Directions, Slur} from './Types';
 
 const pitchToMidi = (pitch: {octave: number, step: string, alter?: number}) => {
     // we assume C4 = 60 as middle C. Note that typical 88-key piano contains notes from A0 (21) - C8 (108).
@@ -148,7 +148,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                     midi: pitchToMidi(entry.pitch),
                                     staff: staffNumber === 1 ? 'treble' : 'bass',
                                     attributes: {
-                                        ties: entryTies ? entryTies.map(tie => tie.type === 0 ? Tie.Start : Tie.Stop) : [],
+                                        tie: entryTies ? (entryTies.some(tie => tie.type === 0) ? 'start' : 'end') : undefined,
                                         slur: entrySlur,
                                         lyrics: lyricsText
                                     }
@@ -217,13 +217,12 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                 if (direction.wedge.type === 0) directions.push({time: part.progress, wedge: 'crescendo'});
                                 else if (direction.wedge.type === 1) directions.push({time: part.progress, wedge: 'diminuendo'});
                                 else if (direction.wedge.type === 2) directions.push({time: part.progress, wedge: 'stop'});
-                                else if (direction.wedge.type === 3) directions.push({time: part.progress, wedge: 'continue'});
                             }
 
                             // parse pedal
                             if (direction.hasOwnProperty('pedal')) {
-                                if (direction.pedal.type === 0) directions.push({time: part.progress, pedal: 'pedalStart'});
-                                else if (direction.pedal.type === 1) directions.push({time: part.progress, pedal: 'pedalEnd'});
+                                if (direction.pedal.type === 0) directions.push({time: part.progress, pedal: 'start'});
+                                else if (direction.pedal.type === 1) directions.push({time: part.progress, pedal: 'end'});
                                 // we disregard other pedal types
                             }
                         });

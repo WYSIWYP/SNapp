@@ -3,7 +3,7 @@ import {range} from '../util/Util';
 // import {Note} from '@tonejs/midi/dist/Note';
 import MusicXML from 'musicxml-interfaces';
 import {parse} from '../parser/MusicXML';
-import {Note, Score, Tie, TimeSignature, KeySignature, StaffType} from '../parser/Types';
+import {Note, Score, TimeSignature, KeySignature, StaffType} from '../parser/Types';
 import {colorPreferenceStyles, usePreferencesState, spacingPreferenceOption, scalePreferenceOption} from '../contexts/Preferences';
 import {useDialogState} from '../contexts/Dialog';
 import * as Dialog from '../util/Dialog';
@@ -464,7 +464,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             directionsAtRow.forEach((directionsAtMeasure, measureNumber) => {
                 directionsAtMeasure.forEach(direction => {
                     if (!direction.pedal) return;
-                    let pedalText = direction.pedal === 'pedalStart' ? '𝒫𝑒𝒹.' : '✻';
+                    let pedalText = direction.pedal === 'start' ? '𝒫𝑒𝒹.' : '✻';
                     let x = measureNumberToPos(measureNumber) + noteTimeToPos(direction.time, 'treble').x;
                     pedals.push(
                         <text x={`${x}`} y={noteSymbolSize} key={key++} fontSize={noteSymbolSize} fontWeight='bold'>
@@ -518,11 +518,13 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                 let notes = track.measures[measureNumber].filter(note => note.staff === staff);
                 notes.forEach((note, _idx) => {
                     noteHeadSVG.push(noteHead(note, key++, staff));
-                    let tieStart = note.attributes.ties.includes(Tie.Start);
-                    let tieStop = note.attributes.ties.includes(Tie.Stop);
+                    let tieStart = note.attributes.tie !== undefined && note.attributes.tie === 'start';
+                    let tieStop = note.attributes.tie !== undefined && note.attributes.tie === 'end';
+
                     let isLastMeasure = ((measureNumber + 1) % measuresPerRow === 0); // whether current measure is the last measure of the row
                     let isLastNote = note.time + note.duration >= currentTime.beats; // whether the note reaches the end of the measure
                     let noteSpansRow = tieStart && isLastMeasure && isLastNote; // whether tied note spans next row
+
                     noteTailSVG.push(noteTail(note, key++, tieStart, tieStop, noteSpansRow, staff));
                 });
             });
@@ -590,7 +592,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         };
 
         let noteHead = (note: Note, i: number, staff: StaffType) => {
-            if (note.attributes.ties.includes(Tie.Stop))
+            if (note.attributes.tie !== undefined && note.attributes.tie === 'end')
                 return null!;
             let accidental: Accidental = getNoteAccidental(note.midi);
             let line = getNoteLine(note.midi) - minLine[staff];
