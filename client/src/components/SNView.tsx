@@ -14,6 +14,12 @@ type Props = {
     forcedWidth?: number,
 };
 
+type Wedge = {
+    startMeasure: number,
+    startTime: number,
+    type: 'crescendo' | 'diminuendo'
+} | undefined;
+
 enum Accidental {
     Flat = -1,
     Natural = 0,
@@ -272,6 +278,9 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         }
         let rowNumber = Math.ceil(measureNumber / measuresPerRow);
 
+        // set up wedge (crescendo / diminuendo) tracking
+        let currentWedge: Wedge;
+
         let getCurrentSignatures = (measureNumber: number): {currentTime: TimeSignature, currentKey: KeySignature} => {
             let timeSignatures = [...score!.tracks[0].timeSignatures].reverse(); // we reverse the array because we want to find the latest key signature.
             let keySignatures = [...score!.tracks[0].keySignatures].reverse();
@@ -335,7 +344,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                 if (directions.length === 0)
                     return true;
                 else
-                    return directions.every(direction => direction.dynamics === undefined);
+                    return directions.every(direction => direction.dynamics === undefined && direction.wedge === undefined);
             });
 
             let lyrics: JSX.Element[] = [];
@@ -363,7 +372,36 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                 });
             });
 
-            // 2. render lyrics
+            // 2. render wedges
+            directionsAtRow.forEach((directionsAtMeasure, measureNumber) => {
+                directionsAtMeasure.forEach(direction => {
+                    if (direction.wedge === undefined) return;
+                    if (direction.wedge === 'crescendo' || direction.wedge === 'diminuendo') {
+                        currentWedge = {
+                            startMeasure: /* i * measuresPerRow */ + measureNumber,
+                            startTime: direction.time,
+                            type: direction.wedge,
+                        };
+                    } else if (direction.wedge === 'stop') {
+                        // draw wedge
+                        let {startMeasure, startTime, type} = currentWedge!;
+                        let startX = measureNumberToPos(startMeasure) + noteTimeToPos(startTime, 'treble').x;
+                        let endX = measureNumberToPos(measureNumber) + noteTimeToPos(direction.time, 'treble').x;
+                        let wedgeLines = type === 'crescendo' ?
+                            [
+                                <line key={key++} x1={startX} y1={dynamicsSpace / 2} x2={endX} y2={strokeWidth} strokeWidth={strokeWidth} stroke='black' />,
+                                <line key={key++} x1={startX} y1={dynamicsSpace / 2} x2={endX} y2={dynamicsSpace - strokeWidth} strokeWidth={strokeWidth} stroke='black' />
+                            ] :
+                            [
+                                <line key={key++} x1={startX} y1={strokeWidth} x2={endX} y2={dynamicsSpace / 2} strokeWidth={strokeWidth} stroke='black' />,
+                                <line key={key++} x1={startX} y1={dynamicsSpace - strokeWidth} x2={endX} y2={dynamicsSpace / 2} strokeWidth={strokeWidth} stroke='black' />
+                            ];
+                        dynamics.push(...wedgeLines);
+                    }
+                });
+            });
+
+            // 3. render lyrics
             notesAtRow.forEach((notesAtMeasure, measureNumber) => {
                 notesAtMeasure.forEach(note => {
                     if (!note.attributes.lyrics) return;
