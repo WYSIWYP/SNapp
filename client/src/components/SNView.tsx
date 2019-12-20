@@ -12,6 +12,8 @@ import {navigate} from '@reach/router';
 type Props = {
     xml: MusicXML.ScoreTimewise,
     forcedWidth?: number,
+    editMode?: '' | 'fingerings',
+    editCallback?: ()=>void, //called when the xml is edited
 };
 
 enum Accidental {
@@ -20,7 +22,7 @@ enum Accidental {
     Sharp = 1
 }
 
-const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
+const SNView: React.FC<Props> = ({xml, forcedWidth, editMode='', editCallback=()=>{}}) => {
     console.log(xml);
     const ref = useRef(null! as HTMLDivElement);
     let [width, setWidth] = useState<number | undefined>(undefined);
@@ -61,14 +63,17 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
     }, [setWidth, forcedWidth]);
 
     useEffect(() => {
-        // parse only when page loads or xml changes
+        // parse only when page loads, xml changes, or an edit occurs
         try {
             setScore(parse(xml));
         } catch (e) {
             showErrorRef.current('An issue was encountered while processing this file.');
             console.error(e);
         }
-    }, [xml]);
+        // notify parent that xml has been modified so that it can be saved
+        editCallback();
+
+    }, [xml,(xml as any).revision]);
 
     if (score === undefined || width === undefined) { //skip first render when width is unknown or parsing is incomplete
         return <div ref={ref}></div>;
@@ -562,36 +567,66 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                 [Accidental.Sharp]: accidentalType === 'auto' ? sharpNoteShape : autoNoteShape,
             }[accidental];
 
+            let callback = ()=>{
+                if(editMode === 'fingerings'){
+                    setDialogState(Dialog.showMessage('Edit Fingering', <>
+                        Value:&emsp;<select style={{backgroundColor: 'rgb(221,221,221)'}} defaultValue={`${note.fingering}`} onChange={
+                            (e) => {
+                                note.setFingering(parseFloat(e.target.value));
+                            }
+                        }>{['','1','2','3','4','5'].map(x => <option key={x}>{x}</option>)}</select>
+                    </>, 'Done', () => {
+                        setDialogState(Dialog.close());
+                    }));
+                }
+            };
+
+            let notehead: any;
             switch (shape) {
                 case '●':
-                    return <circle key={i} cx={x} cy={y} r={noteSymbolSize / 2} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                    notehead = <circle cx={x} cy={y} r={noteSymbolSize / 2} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                    break;
                 case '◼':
-                    return <rect key={i} x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                    notehead = <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                    break;
                 case '▲':
-                    return <polygon key={i} points={`${x},${y - triHeight / 2} ${x + noteSymbolSize / 2},${y + triHeight / 2} ${x - noteSymbolSize / 2},${y + triHeight / 2}`} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                    notehead = <polygon points={`${x},${y - triHeight / 2} ${x + noteSymbolSize / 2},${y + triHeight / 2} ${x - noteSymbolSize / 2},${y + triHeight / 2}`} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                    break;
                 case '▼':
-                    return <polygon key={i} points={`${x},${y + triHeight / 2} ${x + noteSymbolSize / 2},${y - triHeight / 2} ${x - noteSymbolSize / 2},${y - triHeight / 2}`} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                    notehead = <polygon points={`${x},${y + triHeight / 2} ${x + noteSymbolSize / 2},${y - triHeight / 2} ${x - noteSymbolSize / 2},${y - triHeight / 2}`} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                    break;
                 case '○':
-                    return <circle key={i} cx={x} cy={y} r={(noteSymbolSize - strokeWidth) / 2} strokeWidth={strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} fill='none' />;
+                    notehead = <circle cx={x} cy={y} r={(noteSymbolSize - strokeWidth) / 2} strokeWidth={strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} fill='none' />;
+                    break;
                 case '☐':
-                    return <rect key={i} x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />;
+                    notehead = <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />;
+                    break;
                 case '△':
-                    return <polygon key={i} points={`${x},${y - triHeight / 2 + strokeWidth} ${x + noteSymbolSize / 2 - Math.sqrt(3) * strokeWidth / 2},${y + triHeight / 2 - strokeWidth / 2} ${x - noteSymbolSize / 2 + Math.sqrt(3) * strokeWidth / 2},${y + triHeight / 2 - strokeWidth / 2}`} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />;
+                    notehead = <polygon points={`${x},${y - triHeight / 2 + strokeWidth} ${x + noteSymbolSize / 2 - Math.sqrt(3) * strokeWidth / 2},${y + triHeight / 2 - strokeWidth / 2} ${x - noteSymbolSize / 2 + Math.sqrt(3) * strokeWidth / 2},${y + triHeight / 2 - strokeWidth / 2}`} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />;
+                    break;
                 case '▽':
-                    return <polygon key={i} points={`${x},${y + triHeight / 2 - strokeWidth} ${x + noteSymbolSize / 2 - Math.sqrt(3) * strokeWidth / 2},${y - triHeight / 2 + strokeWidth / 2} ${x - noteSymbolSize / 2 + Math.sqrt(3) * strokeWidth / 2},${y - triHeight / 2 + strokeWidth / 2}`} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />;
+                    notehead = <polygon points={`${x},${y + triHeight / 2 - strokeWidth} ${x + noteSymbolSize / 2 - Math.sqrt(3) * strokeWidth / 2},${y - triHeight / 2 + strokeWidth / 2} ${x - noteSymbolSize / 2 + Math.sqrt(3) * strokeWidth / 2},${y - triHeight / 2 + strokeWidth / 2}`} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />;
+                    break;
                 case '⊗':
-                    return (<g key={i}>
+                    notehead = (<g>
                         <circle cx={x} cy={y} r={(noteSymbolSize - 2) / 2} strokeWidth={strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} fill='none' />;
                         <line x1={x - crossCircleWidth} y1={y - crossCircleWidth} x2={x + crossCircleWidth} y2={y + crossCircleWidth} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} />
                         <line x1={x - crossCircleWidth} y1={y + crossCircleWidth} x2={x + crossCircleWidth} y2={y - crossCircleWidth} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} />
                     </g>);
+                    break;
                 case '⊠':
-                    return (<g key={i}>
+                    notehead = (<g>
                         <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />
                         <line x1={x - noteSymbolSize / 2 + strokeWidth / 2} y1={y - noteSymbolSize / 2 + strokeWidth / 2} x2={x + noteSymbolSize / 2 - strokeWidth / 2} y2={y + noteSymbolSize / 2 - strokeWidth / 2} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} />
                         <line x1={x - noteSymbolSize / 2 + strokeWidth / 2} y1={y + noteSymbolSize / 2 - strokeWidth / 2} x2={x + noteSymbolSize / 2 - strokeWidth / 2} y2={y - noteSymbolSize / 2 + strokeWidth / 2} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} />
                     </g>);
+                    break;
             }
+
+            return <g onClick={callback} key={i}>
+                <text x={x} y={y - noteSymbolSize/2 - strokeWidth/2} fontSize={10} textAnchor="middle" alignmentBaseline="baseline">{note.fingering}</text>
+                {notehead}
+            </g>;
         };
 
         let svgRows: JSX.Element[] = range(0, rowNumber).map(i => grandStaff(i));
