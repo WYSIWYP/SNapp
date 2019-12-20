@@ -60,7 +60,8 @@ export type Track = {
     directions: Directions[]
     timeSignatures: TimeSignature[],
     keySignatures: KeySignature[],
-    trackTypes: TrackType[] // we use an array here because a track might contain both lyrics and piano part.
+    trackTypes: TrackType[], // we use an array here because a track might contain both lyrics and piano part.
+    bassStaffOnly?: boolean // whether the piece only has a bass staff
 };
 
 export type Tracks = Track[];

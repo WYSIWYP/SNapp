@@ -310,7 +310,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             if (bassClefIsEmpty && staff === 'bass') return null;
             let staffHeight = staffHeights[staff];
             let svgHeight = staffHeight + measureLabelSpace + noteSymbolSize / 2;
-            let staffName = staff === 'treble' ? staffLabels[0] : staffLabels[1];
+            let staffName = (staff === 'treble' && !instrumentTrack.bassStaffOnly) ? staffLabels[0] : staffLabels[1];
 
             return <div style={{position: 'relative', height: 'auto'}}>
                 <svg viewBox={`0 0 ${width} ${svgHeight}`}>

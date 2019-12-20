@@ -251,12 +251,30 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
         if (partId === lyricsPartId) trackTypes.push('Lyrics');
         if (partId === instrumentId) trackTypes.push('Instrument');
 
+        let trackHasBassStaffOnly = (xml: MusicXML.ScoreTimewise, partId: string) => {
+            // TODO: optiomize this
+            let trackHasBassStaff = xml.measures.some(measure => {
+                return measure.parts[partId].some(entry => {
+                    return entry.clefs && entry.clefs.some((clef: any) => {
+                        return clef.sign === 'F' && clef.line === 4;
+                    });
+                });
+            });
+            let trackHasOneStaff = xml.measures.every(measure => {
+                return measure.parts[partId].every(entry => {
+                    return entry.staff === undefined;
+                });
+            });
+            return trackHasBassStaff && trackHasOneStaff;
+        };
+
         return {
             measures: parts[partId].measures,
             directions: parts[partId].directions,
             timeSignatures: parts[partId].timeSignatures,
             keySignatures: parts[partId].keySignatures,
-            trackTypes
+            trackTypes,
+            bassStaffOnly: trackHasBassStaffOnly(xml, partId)
         } as Track;
     });
 
