@@ -37,7 +37,9 @@ export const showPrompt = (title: string, body: any, buttonText1: string, button
                         {buttonText2}
                     </span>
                 </div>
-            </div>}};
+            </div>
+        }
+    };
 };
 
 const styleMap = {

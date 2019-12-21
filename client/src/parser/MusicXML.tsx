@@ -127,6 +127,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                 let entryTies = entry.ties as {type: number}[];
                                 let staffNumber = entry.staff ? entry.staff : 1;
                                 let entrySlur: Slur | undefined;
+                                let entryFingering = '';
                                 let lyricsText: string | undefined;
 
                                 if (entry.notations && entry.notations.length > 0) {
@@ -137,15 +138,48 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                                 if (slur.type === 1) entrySlur = 'end';
                                             });
                                         }
+                                        if (notation.technicals) {
+                                            notation.technicals.forEach((technical: any) => {
+                                                console.log(technical.fingering);
+                                                if (technical.fingering) {
+                                                    if (technical.fingering.finger > -1) {
+                                                        entryFingering = `${technical.fingering.finger}`;
+                                                    }
+                                                }
+                                            });
+                                        }
                                     });
                                 }
                                 if (entry.lyrics) {
                                     let lyrics = entry.lyrics[0].lyricParts.find((lyrics: any) => lyrics._class === 'Text');
                                     if (lyrics) lyricsText = lyrics.data;
                                 }
+                                let setFingering = (value: number)=>{
+                                    if(!entry.notations){
+                                        entry.notations = [];
+                                    }
+                                    if((entry.notations as any[]).every(x=>x.technicals===undefined)){
+                                        entry.notations.push({technicals: []});
+                                    }
+                                    let technicals = (entry.notations as any[]).filter(x=>x.technicals!==undefined)[0].technicals as any[];
+                                    if(technicals.every(x=>x.fingering===undefined)){
+                                        technicals.push({fingering: {
+                                            substitution: false,
+                                            fontWeight: 0,
+                                            fontStyle: 0,
+                                            color: "#000000",
+                                            placement: 0,
+                                            alternate: false,
+                                        }});
+                                    }
+                                    technicals.filter(x=>x.fingering!==undefined)[0].fingering.finger = value;
+                                    (xml as any).revision = Math.random();
+                                }
                                 notes.push({
                                     time, duration: divisionsToNoteLength(entry.duration),
                                     midi: pitchToMidi(entry.pitch),
+                                    fingering: entryFingering,
+                                    setFingering,
                                     staff: staffNumber === 1 ? 'treble' : 'bass',
                                     attributes: {
                                         tie: entryTies ? (entryTies.some(tie => tie.type === 0) ? 'start' : 'end') : undefined,
