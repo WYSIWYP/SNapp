@@ -33,6 +33,8 @@ export type Note = {
     time: number,
     duration: number,
     midi: number,
+    fingering: string,
+    setFingering: (x: number)=>void,
     staff: StaffType,
     attributes: {
         ties: Tie[],

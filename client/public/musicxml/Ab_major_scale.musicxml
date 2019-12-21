@@ -94,6 +94,11 @@
         <voice>1</voice>
         <type>quarter</type>
         <stem>up</stem>
+        <notations>
+          <technical>
+            <fingering>1</fingering>
+          </technical>
+        </notations>
         </note>
       <note default-x="241.62" default-y="-55.00">
         <pitch>
@@ -105,6 +110,11 @@
         <voice>1</voice>
         <type>quarter</type>
         <stem>up</stem>
+        <notations>
+          <technical>
+            <fingering>2</fingering>
+          </technical>
+        </notations>
         </note>
       <note default-x="361.07" default-y="-50.00">
         <pitch>
@@ -115,6 +125,11 @@
         <voice>1</voice>
         <type>quarter</type>
         <stem>up</stem>
+        <notations>
+          <technical>
+            <fingering>3</fingering>
+          </technical>
+        </notations>
         </note>
       <note default-x="480.52" default-y="-45.00">
         <pitch>
@@ -126,6 +141,11 @@
         <voice>1</voice>
         <type>quarter</type>
         <stem>up</stem>
+        <notations>
+          <technical>
+            <fingering>4</fingering>
+          </technical>
+        </notations>
         </note>
       </measure>
     <measure number="2" width="475.60">
@@ -139,6 +159,11 @@
         <voice>1</voice>
         <type>quarter</type>
         <stem>up</stem>
+        <notations>
+          <technical>
+            <fingering>5</fingering>
+          </technical>
+        </notations>
         </note>
       <note default-x="123.75" default-y="-35.00">
         <pitch>
@@ -149,6 +174,10 @@
         <voice>1</voice>
         <type>quarter</type>
         <stem>up</stem>
+        <notations>
+          <technical>
+          </technical>
+        </notations>
         </note>
       <note default-x="237.50" default-y="-30.00">
         <pitch>
@@ -159,6 +188,8 @@
         <voice>1</voice>
         <type>quarter</type>
         <stem>up</stem>
+        <notations>
+        </notations>
         </note>
       <note default-x="351.25" default-y="-25.00">
         <pitch>
