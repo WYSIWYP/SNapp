@@ -282,11 +282,11 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
     });
     let tracks: Tracks = Object.keys(parts).map(partId => {
         let trackTypes: TrackType[] = [];
-        if (partId === lyricsPartId) trackTypes.push('Lyrics');
-        if (partId === instrumentId) trackTypes.push('Instrument');
+        if (partId === lyricsPartId) trackTypes.push('lyrics');
+        if (partId === instrumentId) trackTypes.push('instrument');
 
         let trackHasBassStaffOnly = (xml: MusicXML.ScoreTimewise, partId: string) => {
-            // TODO: optiomize this
+            // TODO: optimize this
             let trackHasBassStaff = xml.measures.some(measure => {
                 return measure.parts[partId].some(entry => {
                     return entry.clefs && entry.clefs.some((clef: any) => {

@@ -1,9 +1,9 @@
 /**
- * This file contains types shared across all parsers.
+ * This file contains types used for the MusicXML parser.
  */
 
 // Track and staff types
-export type TrackType = 'Instrument' | 'Lyrics'; // part types that app currently handles
+export type TrackType = 'instrument' | 'lyrics'; // part types that app currently handles
 export type StaffType = 'treble' | 'bass';
 
 // Directions
@@ -20,7 +20,7 @@ export type Direction = {
     pedal?: Pedal,
     wedge?: Wedge,
     time: number
-}; // Directions are used for expression marks that are not clearly tied to a particular note.
+}; // Directions are used for expression marks that are not tied to a particular note.
 
 export type Directions = Direction[];
 
@@ -35,7 +35,7 @@ export type Note = {
     duration: number,
     midi: number,
     fingering: string,
-    setFingering: (x: number)=>void,
+    setFingering: (x: number) => void,
     staff: StaffType,
     attributes: {
         tie?: Tie,
@@ -43,7 +43,7 @@ export type Note = {
         lyrics?: string
     }
 };
-export type Notes = Note[]; // note: each part should have 1 staff or 2 staves (for piano)
+export type Notes = Note[];
 
 // Signatures
 export type TimeSignature = {
@@ -57,6 +57,7 @@ export type KeySignature = {
     fifths: number
 };
 
+// Tracks and scores
 export type Track = {
     measures: Notes[],
     directions: Directions[]

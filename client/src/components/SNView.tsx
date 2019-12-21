@@ -217,7 +217,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth, editMode='', editCallback=()
         };
 
         //calculate lowest and highest note
-        let instrumentTrack = score.tracks.filter(track => track.trackTypes.includes('Instrument'))[0];
+        let instrumentTrack = score.tracks.filter(track => track.trackTypes.includes('instrument'))[0];
         instrumentTrack.measures.forEach(measure => {
             measure.forEach(note => {
                 minNote[note.staff] = Math.min(minNote[note.staff], note.midi);
@@ -371,7 +371,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth, editMode='', editCallback=()
             );
 
             let lyrics: JSX.Element[] = [];
-            let lyricsTrack = score!.tracks.find(track => track.trackTypes.includes('Lyrics'));
+            let lyricsTrack = score!.tracks.find(track => track.trackTypes.includes('lyrics'));
             if (lyricsTrack === undefined) return null;
 
             let notesAtRow = lyricsTrack.measures.slice(i * measuresPerRow, (i + 1) * measuresPerRow);
@@ -459,7 +459,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth, editMode='', editCallback=()
 
         let pedal = (i: number) => {
             let pedals: JSX.Element[] = [];
-            let instrumentTrack = score!.tracks.find(track => track.trackTypes.includes('Instrument'));
+            let instrumentTrack = score!.tracks.find(track => track.trackTypes.includes('instrument'));
             if (!instrumentTrack) return null;
 
             let directionsAtRow = instrumentTrack.directions.slice(i * measuresPerRow, (i + 1) * measuresPerRow);
@@ -519,7 +519,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth, editMode='', editCallback=()
             const noteHeadSVG: JSX.Element[] = [];
             const noteTailSVG: JSX.Element[] = [];
             score!.tracks.forEach(track => {
-                if (!track.trackTypes.includes('Instrument')) return; // we do not render notes for lyrics only track.
+                if (!track.trackTypes.includes('instrument')) return; // we do not render notes for lyrics only track.
                 let notes = track.measures[measureNumber].filter(note => note.staff === staff);
                 notes.forEach((note, _idx) => {
                     noteHeadSVG.push(noteHead(note, key++, staff));
