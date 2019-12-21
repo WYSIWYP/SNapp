@@ -12,6 +12,7 @@ import {
 } from '../contexts/Preferences';
 import jsPDF from 'jspdf';
 import canvg from 'canvg';
+import {range} from '../util/Util';
 // import {useDialogState} from '../contexts/Dialog';
 // import * as Dialog from '../util/Dialog';
 
@@ -90,7 +91,7 @@ const Convert: React.FC<Props> = () => {
             let rows = hidden.getElementsByClassName('snview-row');
 
             let nextRowY = margin;
-            for (let i = 0; i < rows.length; i++) {
+            range(0, rows.length).forEach(i => {
                 let row = rows[i];
 
                 let lines = Array.from(row.getElementsByTagName('div')).map(line=>{
@@ -150,7 +151,7 @@ const Convert: React.FC<Props> = () => {
 
                 // add additional padding between each row
                 nextRowY += paddingBetweenRows - padding;
-            }
+            });
 
             // pdf.rect(0,0,200,287,'F');
             // pdf.addPage();

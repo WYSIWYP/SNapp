@@ -1,5 +1,5 @@
 import MusicXML from 'musicxml-interfaces';
-import {Note, TimeSignature, KeySignature, Tracks, Score, Tie, Notes, Track, TrackType, isDynamics, Direction, Directions, Slur} from './Types';
+import {Note, TimeSignature, KeySignature, Tracks, Score, Notes, Track, TrackType, isDynamics, Direction, Directions, Slur} from './Types';
 
 const pitchToMidi = (pitch: {octave: number, step: string, alter?: number}) => {
     // we assume C4 = 60 as middle C. Note that typical 88-key piano contains notes from A0 (21) - C8 (108).
@@ -182,7 +182,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                     setFingering,
                                     staff: staffNumber === 1 ? 'treble' : 'bass',
                                     attributes: {
-                                        ties: entryTies ? entryTies.map(tie => tie.type === 0 ? Tie.Start : Tie.Stop) : [],
+                                        tie: entryTies ? (entryTies.some(tie => tie.type === 0) ? 'start' : 'end') : undefined,
                                         slur: entrySlur,
                                         lyrics: lyricsText
                                     }
@@ -245,10 +245,18 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                     if (isDynamics(key)) directions.push({time: part.progress, dynamics: key});
                                 });
                             }
+
+                            // parse wedge (crescendo / diminuendo)
+                            if (direction.hasOwnProperty('wedge')) {
+                                if (direction.wedge.type === 0) directions.push({time: part.progress, wedge: 'crescendo'});
+                                else if (direction.wedge.type === 1) directions.push({time: part.progress, wedge: 'diminuendo'});
+                                else if (direction.wedge.type === 2) directions.push({time: part.progress, wedge: 'stop'});
+                            }
+
                             // parse pedal
                             if (direction.hasOwnProperty('pedal')) {
-                                if (direction.pedal.type === 0) directions.push({time: part.progress, pedal: 'pedalStart'});
-                                if (direction.pedal.type === 1) directions.push({time: part.progress, pedal: 'pedalEnd'});
+                                if (direction.pedal.type === 0) directions.push({time: part.progress, pedal: 'start'});
+                                else if (direction.pedal.type === 1) directions.push({time: part.progress, pedal: 'end'});
                                 // we disregard other pedal types
                             }
                         });
@@ -274,15 +282,33 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
     });
     let tracks: Tracks = Object.keys(parts).map(partId => {
         let trackTypes: TrackType[] = [];
-        if (partId === lyricsPartId) trackTypes.push('Lyrics');
-        if (partId === instrumentId) trackTypes.push('Instrument');
+        if (partId === lyricsPartId) trackTypes.push('lyrics');
+        if (partId === instrumentId) trackTypes.push('instrument');
+
+        let trackHasBassStaffOnly = (xml: MusicXML.ScoreTimewise, partId: string) => {
+            // TODO: optimize this
+            let trackHasBassStaff = xml.measures.some(measure => {
+                return measure.parts[partId].some(entry => {
+                    return entry.clefs && entry.clefs.some((clef: any) => {
+                        return clef.sign === 'F' && clef.line === 4;
+                    });
+                });
+            });
+            let trackHasOneStaff = xml.measures.every(measure => {
+                return measure.parts[partId].every(entry => {
+                    return entry.staff === undefined;
+                });
+            });
+            return trackHasBassStaff && trackHasOneStaff;
+        };
 
         return {
             measures: parts[partId].measures,
             directions: parts[partId].directions,
             timeSignatures: parts[partId].timeSignatures,
             keySignatures: parts[partId].keySignatures,
-            trackTypes
+            trackTypes,
+            bassStaffOnly: trackHasBassStaffOnly(xml, partId)
         } as Track;
     });
 
