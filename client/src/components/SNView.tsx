@@ -343,7 +343,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth, editMode = '', editCallback 
             let endX = measureNumberToPos(measureNumber) + noteTimeToPos(endTime, 'treble').x;
             if (startX === endX) endX += noteSymbolSize;
 
-            // TODO: consider comining the below logic
+            // TODO: consider combining the below logic
             if (type === 'crescendo' && continuesFromLastRow) {
                 return [
                     <line key={key++}
@@ -555,7 +555,6 @@ const SNView: React.FC<Props> = ({xml, forcedWidth, editMode = '', editCallback 
                 let notes = track.measures[measureNumber].filter(note => note.staff === staff);
                 notes.forEach((note, _idx) => {
                     noteHeadSVG.push(noteHead(note, key++, staff));
-
                     let tieStart = note.attributes.tie !== undefined && note.attributes.tie === 'start';
                     let tieStop = note.attributes.tie !== undefined && note.attributes.tie === 'end';
 
