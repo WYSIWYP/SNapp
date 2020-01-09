@@ -13,12 +13,13 @@ type Props = {
     xml: MusicXML.ScoreTimewise,
     forcedWidth?: number,
     editMode?: '' | 'fingerings',
-    editCallback?: ()=>void, //called when the xml is edited
+    editCallback?: () => void, //called when the xml is edited
 };
 
 type Wedge = {
     startMeasure: number,
     startTime: number,
+    continuesFromLastRow: boolean,
     type: 'crescendo' | 'diminuendo'
 } | undefined;
 
@@ -28,7 +29,7 @@ enum Accidental {
     Sharp = 1
 }
 
-const SNView: React.FC<Props> = ({xml, forcedWidth, editMode='', editCallback=()=>{}}) => {
+const SNView: React.FC<Props> = ({xml, forcedWidth, editMode = '', editCallback = () => {}}) => {
     console.log(xml);
     const ref = useRef(null! as HTMLDivElement);
     let [width, setWidth] = useState<number | undefined>(undefined);
@@ -79,7 +80,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth, editMode='', editCallback=()
         // notify parent that xml has been modified so that it can be saved
         editCallback();
 
-    }, [xml,(xml as any).revision]);
+    }, [xml, (xml as any).revision]);
 
     if (score === undefined || width === undefined) { //skip first render when width is unknown or parsing is incomplete
         return <div ref={ref}></div>;
@@ -172,7 +173,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth, editMode='', editCallback=()
             return line;
         };
 
-        //find the title and author
+        // find the title and author
         let title = '';
         try {
             title = xml.movementTitle;
@@ -313,6 +314,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth, editMode='', editCallback=()
 
         let staff = (i: number, staff: StaffType): JSX.Element | null => {
             if (bassClefIsEmpty && staff === 'bass') return null;
+
             let staffHeight = staffHeights[staff];
             let svgHeight = staffHeight + measureLabelSpace + noteSymbolSize / 2;
             let staffName = (staff === 'treble' && !instrumentTrack.bassStaffOnly) ? staffLabels[0] : staffLabels[1];
@@ -335,24 +337,53 @@ const SNView: React.FC<Props> = ({xml, forcedWidth, editMode='', editCallback=()
             return strokeWidth + horizontalPadding + staffLabelSpace + octaveLabelSpace + measureNumber * measureWidth;
         };
 
-        let drawWedge = (height: number, endTime: number, measureNumber: number): JSX.Element[] => {
-            let {startMeasure, startTime, type} = currentWedge!;
+        let drawWedge = (height: number, endTime: number, measureNumber: number, continuesToNextRow: boolean): JSX.Element[] => {
+            let {startMeasure, startTime, continuesFromLastRow, type} = currentWedge!;
             let startX = measureNumberToPos(startMeasure) + noteTimeToPos(startTime, 'treble').x;
             let endX = measureNumberToPos(measureNumber) + noteTimeToPos(endTime, 'treble').x;
             if (startX === endX) endX += noteSymbolSize;
 
-            return [
-                <line key={key++}
-                    x1={startX + strokeWidth} x2={endX - strokeWidth}
-                    y1={type === 'crescendo' ? height / 2 : strokeWidth} y2={type === 'crescendo' ? strokeWidth : height / 2}
-                    strokeWidth={strokeWidth} stroke='black'
-                />,
-                <line key={key++}
-                    x1={startX + strokeWidth} x2={endX - strokeWidth}
-                    y1={type === 'crescendo' ? height / 2 : height - strokeWidth} y2={type === 'crescendo' ? height - strokeWidth : height / 2}
-                    strokeWidth={strokeWidth} stroke='black'
-                />
-            ];
+            // TODO: consider combining the below logic
+            if (type === 'crescendo' && continuesFromLastRow) {
+                return [
+                    <line key={key++}
+                        x1={startX + strokeWidth} x2={endX - strokeWidth}
+                        y1={height / 3} y2={strokeWidth}
+                        strokeWidth={strokeWidth} stroke='black'
+                    />,
+                    <line key={key++}
+                        x1={startX + strokeWidth} x2={endX - strokeWidth}
+                        y1={height * 2 / 3} y2={height - strokeWidth}
+                        strokeWidth={strokeWidth} stroke='black'
+                    />
+                ];
+            } else if (type === 'diminuendo' && continuesToNextRow) {
+                return [
+                    <line key={key++}
+                        x1={startX + strokeWidth} x2={endX - strokeWidth}
+                        y1={strokeWidth} y2={height / 3}
+                        strokeWidth={strokeWidth} stroke='black'
+                    />,
+                    <line key={key++}
+                        x1={startX + strokeWidth} x2={endX - strokeWidth}
+                        y1={height - strokeWidth} y2={height * 2 / 3}
+                        strokeWidth={strokeWidth} stroke='black'
+                    />
+                ];
+            } else {
+                return [
+                    <line key={key++}
+                        x1={startX + strokeWidth} x2={endX - strokeWidth}
+                        y1={type === 'crescendo' ? height / 2 : strokeWidth} y2={type === 'crescendo' ? strokeWidth : height / 2}
+                        strokeWidth={strokeWidth} stroke='black'
+                    />,
+                    <line key={key++}
+                        x1={startX + strokeWidth} x2={endX - strokeWidth}
+                        y1={type === 'crescendo' ? height / 2 : height - strokeWidth} y2={type === 'crescendo' ? height - strokeWidth : height / 2}
+                        strokeWidth={strokeWidth} stroke='black'
+                    />
+                ];
+            }
         };
 
         let staffBreak = (i: number): JSX.Element | null => {
@@ -401,11 +432,12 @@ const SNView: React.FC<Props> = ({xml, forcedWidth, editMode='', editCallback=()
                         currentWedge = {
                             startMeasure: /* i * measuresPerRow */ + measureNumber,
                             startTime: direction.time,
+                            continuesFromLastRow: false,
                             type: direction.wedge,
                         };
                     } else if (direction.wedge === 'stop') {
                         // draw wedge
-                        dynamics.push(...drawWedge(dynamicsSpace, direction.time, measureNumber));
+                        dynamics.push(...drawWedge(dynamicsSpace, direction.time, measureNumber, false));
                         currentWedge = undefined; // finish this wedge
                     }
                 });
@@ -414,11 +446,11 @@ const SNView: React.FC<Props> = ({xml, forcedWidth, editMode='', editCallback=()
             // check if current wedge spans then next row
             if (currentWedge !== undefined) {
                 // draw wedge for this row (ending at the last measure)
-                dynamics.push(...drawWedge(dynamicsSpace, beatsPerMeasure, measuresPerRow - 1));
+                dynamics.push(...drawWedge(dynamicsSpace, beatsPerMeasure, measuresPerRow - 1, true));
                 // split off the remaining wedge
                 currentWedge.startMeasure = currentWedge.startTime = 0;
+                currentWedge.continuesFromLastRow = true;
             }
-
 
             // 3. render lyrics
             notesAtRow.forEach((notesAtMeasure, measureNumber) => {
@@ -438,7 +470,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth, editMode='', editCallback=()
             });
 
             let svgHeight = 0;
-            // shrink height if dynamics or lyrics do not exist
+            // fit svg height to contents
             if (!dynamicsAreEmpty) svgHeight += dynamicsSpace;
             if (!lyricsAreEmpty) svgHeight += lyricsSpace;
             if (!lyricsAreEmpty && !dynamicsAreEmpty) svgHeight += margin;
@@ -448,7 +480,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth, editMode='', editCallback=()
                     {dynamics}
                     {lyrics}
                 </svg>
-            ); // don't render svg if it is empty
+            ); // don't render svg if empty
 
             return (
                 <div style={{position: 'relative', height: 'auto', marginBottom: '10px'}}>
@@ -618,14 +650,14 @@ const SNView: React.FC<Props> = ({xml, forcedWidth, editMode='', editCallback=()
                 [Accidental.Sharp]: accidentalType === 'auto' ? sharpNoteShape : autoNoteShape,
             }[accidental];
 
-            let callback = ()=>{
-                if(editMode === 'fingerings'){
+            let callback = () => {
+                if (editMode === 'fingerings') {
                     setDialogState(Dialog.showMessage('Edit Fingering', <>
                         Value:&emsp;<select style={{backgroundColor: 'rgb(221,221,221)'}} defaultValue={`${note.fingering}`} onChange={
                             (e) => {
                                 note.setFingering(parseFloat(e.target.value));
                             }
-                        }>{['','1','2','3','4','5'].map(x => <option key={x}>{x}</option>)}</select>
+                        }>{['', '1', '2', '3', '4', '5'].map(x => <option key={x}>{x}</option>)}</select>
                     </>, 'Done', () => {
                         setDialogState(Dialog.close());
                     }));
@@ -675,7 +707,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth, editMode='', editCallback=()
             }
 
             return <g onClick={callback} key={i}>
-                <text x={x} y={y - noteSymbolSize/2 - strokeWidth/2} fontSize={10} textAnchor="middle" alignmentBaseline="baseline">{note.fingering}</text>
+                <text x={x} y={y - noteSymbolSize / 2 - strokeWidth / 2} fontSize={10} textAnchor="middle" alignmentBaseline="baseline">{note.fingering}</text>
                 {notehead}
             </g>;
         };
