@@ -1,5 +1,5 @@
 import MusicXML from 'musicxml-interfaces';
-import {Note, TimeSignature, KeySignature, Tracks, Score, Tie, Notes, Track, TrackType, isDynamics, Direction, Directions, Slur} from './Types';
+import {Note, TimeSignature, KeySignature, Tracks, Score, Notes, Track, TrackType, isDynamics, Direction, Directions, Slur} from './Types';
 
 const pitchToMidi = (pitch: {octave: number, step: string, alter?: number}) => {
     // we assume C4 = 60 as middle C. Note that typical 88-key piano contains notes from A0 (21) - C8 (108).
@@ -127,6 +127,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                 let entryTies = entry.ties as {type: number}[];
                                 let staffNumber = entry.staff ? entry.staff : 1;
                                 let entrySlur: Slur | undefined;
+                                let entryFingering = '';
                                 let lyricsText: string | undefined;
 
                                 if (entry.notations && entry.notations.length > 0) {
@@ -137,18 +138,51 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                                 if (slur.type === 1) entrySlur = 'end';
                                             });
                                         }
+                                        if (notation.technicals) {
+                                            notation.technicals.forEach((technical: any) => {
+                                                console.log(technical.fingering);
+                                                if (technical.fingering) {
+                                                    if (technical.fingering.finger > -1) {
+                                                        entryFingering = `${technical.fingering.finger}`;
+                                                    }
+                                                }
+                                            });
+                                        }
                                     });
                                 }
                                 if (entry.lyrics) {
                                     let lyrics = entry.lyrics[0].lyricParts.find((lyrics: any) => lyrics._class === 'Text');
                                     if (lyrics) lyricsText = lyrics.data;
                                 }
+                                let setFingering = (value: number)=>{
+                                    if(!entry.notations){
+                                        entry.notations = [];
+                                    }
+                                    if((entry.notations as any[]).every(x=>x.technicals===undefined)){
+                                        entry.notations.push({technicals: []});
+                                    }
+                                    let technicals = (entry.notations as any[]).filter(x=>x.technicals!==undefined)[0].technicals as any[];
+                                    if(technicals.every(x=>x.fingering===undefined)){
+                                        technicals.push({fingering: {
+                                            substitution: false,
+                                            fontWeight: 0,
+                                            fontStyle: 0,
+                                            color: "#000000",
+                                            placement: 0,
+                                            alternate: false,
+                                        }});
+                                    }
+                                    technicals.filter(x=>x.fingering!==undefined)[0].fingering.finger = value;
+                                    (xml as any).revision = Math.random();
+                                }
                                 notes.push({
                                     time, duration: divisionsToNoteLength(entry.duration),
                                     midi: pitchToMidi(entry.pitch),
+                                    fingering: entryFingering,
+                                    setFingering,
                                     staff: staffNumber === 1 ? 'treble' : 'bass',
                                     attributes: {
-                                        ties: entryTies ? entryTies.map(tie => tie.type === 0 ? Tie.Start : Tie.Stop) : [],
+                                        tie: entryTies ? (entryTies.some(tie => tie.type === 0) ? 'start' : 'end') : undefined,
                                         slur: entrySlur,
                                         lyrics: lyricsText
                                     }
@@ -217,13 +251,12 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                 if (direction.wedge.type === 0) directions.push({time: part.progress, wedge: 'crescendo'});
                                 else if (direction.wedge.type === 1) directions.push({time: part.progress, wedge: 'diminuendo'});
                                 else if (direction.wedge.type === 2) directions.push({time: part.progress, wedge: 'stop'});
-                                else if (direction.wedge.type === 3) directions.push({time: part.progress, wedge: 'continue'});
                             }
 
                             // parse pedal
                             if (direction.hasOwnProperty('pedal')) {
-                                if (direction.pedal.type === 0) directions.push({time: part.progress, pedal: 'pedalStart'});
-                                else if (direction.pedal.type === 1) directions.push({time: part.progress, pedal: 'pedalEnd'});
+                                if (direction.pedal.type === 0) directions.push({time: part.progress, pedal: 'start'});
+                                else if (direction.pedal.type === 1) directions.push({time: part.progress, pedal: 'end'});
                                 // we disregard other pedal types
                             }
                         });
@@ -249,15 +282,33 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
     });
     let tracks: Tracks = Object.keys(parts).map(partId => {
         let trackTypes: TrackType[] = [];
-        if (partId === lyricsPartId) trackTypes.push('Lyrics');
-        if (partId === instrumentId) trackTypes.push('Instrument');
+        if (partId === lyricsPartId) trackTypes.push('lyrics');
+        if (partId === instrumentId) trackTypes.push('instrument');
+
+        let trackHasBassStaffOnly = (xml: MusicXML.ScoreTimewise, partId: string) => {
+            // TODO: optimize this
+            let trackHasBassStaff = xml.measures.some(measure => {
+                return measure.parts[partId].some(entry => {
+                    return entry.clefs && entry.clefs.some((clef: any) => {
+                        return clef.sign === 'F' && clef.line === 4;
+                    });
+                });
+            });
+            let trackHasOneStaff = xml.measures.every(measure => {
+                return measure.parts[partId].every(entry => {
+                    return entry.staff === undefined;
+                });
+            });
+            return trackHasBassStaff && trackHasOneStaff;
+        };
 
         return {
             measures: parts[partId].measures,
             directions: parts[partId].directions,
             timeSignatures: parts[partId].timeSignatures,
             keySignatures: parts[partId].keySignatures,
-            trackTypes
+            trackTypes,
+            bassStaffOnly: trackHasBassStaffOnly(xml, partId)
         } as Track;
     });
 

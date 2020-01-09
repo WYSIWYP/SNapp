@@ -3,7 +3,7 @@ import {range} from '../util/Util';
 // import {Note} from '@tonejs/midi/dist/Note';
 import MusicXML from 'musicxml-interfaces';
 import {parse} from '../parser/MusicXML';
-import {Note, Score, Tie, TimeSignature, KeySignature, StaffType} from '../parser/Types';
+import {Note, Score, TimeSignature, KeySignature, StaffType} from '../parser/Types';
 import {colorPreferenceStyles, usePreferencesState, spacingPreferenceOption, scalePreferenceOption} from '../contexts/Preferences';
 import {useDialogState} from '../contexts/Dialog';
 import * as Dialog from '../util/Dialog';
@@ -12,7 +12,16 @@ import {navigate} from '@reach/router';
 type Props = {
     xml: MusicXML.ScoreTimewise,
     forcedWidth?: number,
+    editMode?: '' | 'fingerings',
+    editCallback?: () => void, //called when the xml is edited
 };
+
+type Wedge = {
+    startMeasure: number,
+    startTime: number,
+    continuesFromLastRow: boolean,
+    type: 'crescendo' | 'diminuendo'
+} | undefined;
 
 enum Accidental {
     Flat = -1,
@@ -20,7 +29,7 @@ enum Accidental {
     Sharp = 1
 }
 
-const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
+const SNView: React.FC<Props> = ({xml, forcedWidth, editMode = '', editCallback = () => {}}) => {
     console.log(xml);
     const ref = useRef(null! as HTMLDivElement);
     let [width, setWidth] = useState<number | undefined>(undefined);
@@ -61,14 +70,17 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
     }, [setWidth, forcedWidth]);
 
     useEffect(() => {
-        // parse only when page loads or xml changes
+        // parse only when page loads, xml changes, or an edit occurs
         try {
             setScore(parse(xml));
         } catch (e) {
             showErrorRef.current('An issue was encountered while processing this file.');
             console.error(e);
         }
-    }, [xml]);
+        // notify parent that xml has been modified so that it can be saved
+        editCallback();
+
+    }, [xml, (xml as any).revision]);
 
     if (score === undefined || width === undefined) { //skip first render when width is unknown or parsing is incomplete
         return <div ref={ref}></div>;
@@ -161,7 +173,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             return line;
         };
 
-        //find the title and author
+        // find the title and author
         let title = '';
         try {
             title = xml.movementTitle;
@@ -206,7 +218,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         };
 
         //calculate lowest and highest note
-        let instrumentTrack = score.tracks.filter(track => track.trackTypes.includes('Instrument'))[0];
+        let instrumentTrack = score.tracks.filter(track => track.trackTypes.includes('instrument'))[0];
         instrumentTrack.measures.forEach(measure => {
             measure.forEach(note => {
                 minNote[note.staff] = Math.min(minNote[note.staff], note.midi);
@@ -272,6 +284,10 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         }
         let rowNumber = Math.ceil(measureNumber / measuresPerRow);
 
+        // set up wedge (crescendo / diminuendo) tracking
+        let currentWedge: Wedge;
+        let key = 0; // keys for JSX elements
+
         let getCurrentSignatures = (measureNumber: number): {currentTime: TimeSignature, currentKey: KeySignature} => {
             let timeSignatures = [...score!.tracks[0].timeSignatures].reverse(); // we reverse the array because we want to find the latest key signature.
             let keySignatures = [...score!.tracks[0].keySignatures].reverse();
@@ -298,9 +314,10 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
 
         let staff = (i: number, staff: StaffType): JSX.Element | null => {
             if (bassClefIsEmpty && staff === 'bass') return null;
+
             let staffHeight = staffHeights[staff];
             let svgHeight = staffHeight + measureLabelSpace + noteSymbolSize / 2;
-            let staffName = staff === 'treble' ? staffLabels[0] : staffLabels[1];
+            let staffName = (staff === 'treble' && !instrumentTrack.bassStaffOnly) ? staffLabels[0] : staffLabels[1];
 
             return <div style={{position: 'relative', height: 'auto'}}>
                 <svg viewBox={`0 0 ${width} ${svgHeight}`}>
@@ -320,6 +337,55 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             return strokeWidth + horizontalPadding + staffLabelSpace + octaveLabelSpace + measureNumber * measureWidth;
         };
 
+        let drawWedge = (height: number, endTime: number, measureNumber: number, continuesToNextRow: boolean): JSX.Element[] => {
+            let {startMeasure, startTime, continuesFromLastRow, type} = currentWedge!;
+            let startX = measureNumberToPos(startMeasure) + noteTimeToPos(startTime, 'treble').x;
+            let endX = measureNumberToPos(measureNumber) + noteTimeToPos(endTime, 'treble').x;
+            if (startX === endX) endX += noteSymbolSize;
+
+            // TODO: consider comining the below logic
+            if (type === 'crescendo' && continuesFromLastRow) {
+                return [
+                    <line key={key++}
+                        x1={startX + strokeWidth} x2={endX - strokeWidth}
+                        y1={height / 3} y2={strokeWidth}
+                        strokeWidth={strokeWidth} stroke='black'
+                    />,
+                    <line key={key++}
+                        x1={startX + strokeWidth} x2={endX - strokeWidth}
+                        y1={height * 2 / 3} y2={height - strokeWidth}
+                        strokeWidth={strokeWidth} stroke='black'
+                    />
+                ];
+            } else if (type === 'diminuendo' && continuesToNextRow) {
+                return [
+                    <line key={key++}
+                        x1={startX + strokeWidth} x2={endX - strokeWidth}
+                        y1={strokeWidth} y2={height / 3}
+                        strokeWidth={strokeWidth} stroke='black'
+                    />,
+                    <line key={key++}
+                        x1={startX + strokeWidth} x2={endX - strokeWidth}
+                        y1={height - strokeWidth} y2={height * 2 / 3}
+                        strokeWidth={strokeWidth} stroke='black'
+                    />
+                ];
+            } else {
+                return [
+                    <line key={key++}
+                        x1={startX + strokeWidth} x2={endX - strokeWidth}
+                        y1={type === 'crescendo' ? height / 2 : strokeWidth} y2={type === 'crescendo' ? strokeWidth : height / 2}
+                        strokeWidth={strokeWidth} stroke='black'
+                    />,
+                    <line key={key++}
+                        x1={startX + strokeWidth} x2={endX - strokeWidth}
+                        y1={type === 'crescendo' ? height / 2 : height - strokeWidth} y2={type === 'crescendo' ? height - strokeWidth : height / 2}
+                        strokeWidth={strokeWidth} stroke='black'
+                    />
+                ];
+            }
+        };
+
         let staffBreak = (i: number): JSX.Element | null => {
             // general spacing
             let textSize = noteSymbolSize * 6 / 7;
@@ -331,21 +397,16 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
 
             // get respective directions and notes
             let directionsAtRow = instrumentTrack.directions.slice(i * measuresPerRow, (i + 1) * measuresPerRow);
-            let dynamicsAreEmpty = directionsAtRow.every(directions => {
-                if (directions.length === 0)
-                    return true;
-                else
-                    return directions.every(direction => direction.dynamics === undefined);
-            });
+            let dynamicsAreEmpty = currentWedge === undefined && directionsAtRow.every(directions =>
+                directions.length === 0 || directions.every(direction => direction.dynamics === undefined && direction.wedge === undefined)
+            );
 
             let lyrics: JSX.Element[] = [];
-            let lyricsTrack = score!.tracks.find(track => track.trackTypes.includes('Lyrics'));
+            let lyricsTrack = score!.tracks.find(track => track.trackTypes.includes('lyrics'));
             if (lyricsTrack === undefined) return null;
 
             let notesAtRow = lyricsTrack.measures.slice(i * measuresPerRow, (i + 1) * measuresPerRow);
             let lyricsAreEmpty = notesAtRow.every(measure => measure.length === 0);
-
-            let key = 0;
 
             // 1. render dynamics
             let dynamics: JSX.Element[] = [];
@@ -363,7 +424,35 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                 });
             });
 
-            // 2. render lyrics
+            // 2. render wedges
+            directionsAtRow.forEach((directionsAtMeasure, measureNumber) => {
+                directionsAtMeasure.forEach(direction => {
+                    if (direction.wedge === undefined) return;
+                    if (direction.wedge === 'crescendo' || direction.wedge === 'diminuendo') {
+                        currentWedge = {
+                            startMeasure: /* i * measuresPerRow */ + measureNumber,
+                            startTime: direction.time,
+                            continuesFromLastRow: false,
+                            type: direction.wedge,
+                        };
+                    } else if (direction.wedge === 'stop') {
+                        // draw wedge
+                        dynamics.push(...drawWedge(dynamicsSpace, direction.time, measureNumber, false));
+                        currentWedge = undefined; // finish this wedge
+                    }
+                });
+            });
+
+            // check if current wedge spans then next row
+            if (currentWedge !== undefined) {
+                // draw wedge for this row (ending at the last measure)
+                dynamics.push(...drawWedge(dynamicsSpace, beatsPerMeasure, measuresPerRow - 1, true));
+                // split off the remaining wedge
+                currentWedge.startMeasure = currentWedge.startTime = 0;
+                currentWedge.continuesFromLastRow = true;
+            }
+
+            // 3. render lyrics
             notesAtRow.forEach((notesAtMeasure, measureNumber) => {
                 notesAtMeasure.forEach(note => {
                     if (!note.attributes.lyrics) return;
@@ -381,7 +470,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             });
 
             let svgHeight = 0;
-            // shrink height if dynamics or lyrics do not exist
+            // fit svg height to contents
             if (!dynamicsAreEmpty) svgHeight += dynamicsSpace;
             if (!lyricsAreEmpty) svgHeight += lyricsSpace;
             if (!lyricsAreEmpty && !dynamicsAreEmpty) svgHeight += margin;
@@ -391,7 +480,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                     {dynamics}
                     {lyrics}
                 </svg>
-            ); // don't render svg if it is empty
+            ); // don't render svg if empty
 
             return (
                 <div style={{position: 'relative', height: 'auto', marginBottom: '10px'}}>
@@ -402,9 +491,8 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
 
         let pedal = (i: number) => {
             let pedals: JSX.Element[] = [];
-            let instrumentTrack = score!.tracks.find(track => track.trackTypes.includes('Instrument'));
+            let instrumentTrack = score!.tracks.find(track => track.trackTypes.includes('instrument'));
             if (!instrumentTrack) return null;
-            let key = 0;
 
             let directionsAtRow = instrumentTrack.directions.slice(i * measuresPerRow, (i + 1) * measuresPerRow);
             let directionsAreEmpty = directionsAtRow.every(directions => directions.length === 0);
@@ -413,7 +501,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             directionsAtRow.forEach((directionsAtMeasure, measureNumber) => {
                 directionsAtMeasure.forEach(direction => {
                     if (!direction.pedal) return;
-                    let pedalText = direction.pedal === 'pedalStart' ? '𝒫𝑒𝒹.' : '✻';
+                    let pedalText = direction.pedal === 'start' ? '𝒫𝑒𝒹.' : '✻';
                     let x = measureNumberToPos(measureNumber) + noteTimeToPos(direction.time, 'treble').x;
                     pedals.push(
                         <text x={`${x}`} y={noteSymbolSize} key={key++} fontSize={noteSymbolSize} fontWeight='bold'>
@@ -440,7 +528,6 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             keyFifths = currentKey!.fifths;
 
             // Draw measure
-            let key = 0;
             let measureSVG: JSX.Element[] = [];
             measureSVG.push(<rect key={key++} x={measureWidth - strokeWidth / 2} y={measureLabelSpace - strokeWidth / 2} width={strokeWidth} height={staffHeights[staff] + strokeWidth} fill="#000000" />);
             for (let j = minLine[staff]; j <= maxLine[staff]; j++) {
@@ -464,15 +551,18 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
             const noteHeadSVG: JSX.Element[] = [];
             const noteTailSVG: JSX.Element[] = [];
             score!.tracks.forEach(track => {
-                if (!track.trackTypes.includes('Instrument')) return; // we do not render notes for lyrics only track.
+                if (!track.trackTypes.includes('instrument')) return; // we do not render notes for lyrics only track.
                 let notes = track.measures[measureNumber].filter(note => note.staff === staff);
                 notes.forEach((note, _idx) => {
                     noteHeadSVG.push(noteHead(note, key++, staff));
-                    let tieStart = note.attributes.ties.includes(Tie.Start);
-                    let tieStop = note.attributes.ties.includes(Tie.Stop);
+
+                    let tieStart = note.attributes.tie !== undefined && note.attributes.tie === 'start';
+                    let tieStop = note.attributes.tie !== undefined && note.attributes.tie === 'end';
+
                     let isLastMeasure = ((measureNumber + 1) % measuresPerRow === 0); // whether current measure is the last measure of the row
                     let isLastNote = note.time + note.duration >= currentTime.beats; // whether the note reaches the end of the measure
                     let noteSpansRow = tieStart && isLastMeasure && isLastNote; // whether tied note spans next row
+
                     noteTailSVG.push(noteTail(note, key++, tieStart, tieStop, noteSpansRow, staff));
                 });
             });
@@ -498,7 +588,6 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         });
 
         let noteTail = (note: Note, i: number, tieStart: boolean, tieStop: boolean, noteSpansRow: boolean, staff: StaffType) => {
-            let key = 0;
             let boxes: JSX.Element[] = [];
 
             let line = getNoteLine(note.midi) - minLine[staff];
@@ -541,7 +630,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
         };
 
         let noteHead = (note: Note, i: number, staff: StaffType) => {
-            if (note.attributes.ties.includes(Tie.Stop))
+            if (note.attributes.tie !== undefined && note.attributes.tie === 'end')
                 return null!;
             let accidental: Accidental = getNoteAccidental(note.midi);
             let line = getNoteLine(note.midi) - minLine[staff];
@@ -562,36 +651,66 @@ const SNView: React.FC<Props> = ({xml, forcedWidth}) => {
                 [Accidental.Sharp]: accidentalType === 'auto' ? sharpNoteShape : autoNoteShape,
             }[accidental];
 
+            let callback = () => {
+                if (editMode === 'fingerings') {
+                    setDialogState(Dialog.showMessage('Edit Fingering', <>
+                        Value:&emsp;<select style={{backgroundColor: 'rgb(221,221,221)'}} defaultValue={`${note.fingering}`} onChange={
+                            (e) => {
+                                note.setFingering(parseFloat(e.target.value));
+                            }
+                        }>{['', '1', '2', '3', '4', '5'].map(x => <option key={x}>{x}</option>)}</select>
+                    </>, 'Done', () => {
+                        setDialogState(Dialog.close());
+                    }));
+                }
+            };
+
+            let notehead: any;
             switch (shape) {
                 case '●':
-                    return <circle key={i} cx={x} cy={y} r={noteSymbolSize / 2} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                    notehead = <circle cx={x} cy={y} r={noteSymbolSize / 2} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                    break;
                 case '◼':
-                    return <rect key={i} x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                    notehead = <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                    break;
                 case '▲':
-                    return <polygon key={i} points={`${x},${y - triHeight / 2} ${x + noteSymbolSize / 2},${y + triHeight / 2} ${x - noteSymbolSize / 2},${y + triHeight / 2}`} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                    notehead = <polygon points={`${x},${y - triHeight / 2} ${x + noteSymbolSize / 2},${y + triHeight / 2} ${x - noteSymbolSize / 2},${y + triHeight / 2}`} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                    break;
                 case '▼':
-                    return <polygon key={i} points={`${x},${y + triHeight / 2} ${x + noteSymbolSize / 2},${y - triHeight / 2} ${x - noteSymbolSize / 2},${y - triHeight / 2}`} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                    notehead = <polygon points={`${x},${y + triHeight / 2} ${x + noteSymbolSize / 2},${y - triHeight / 2} ${x - noteSymbolSize / 2},${y - triHeight / 2}`} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                    break;
                 case '○':
-                    return <circle key={i} cx={x} cy={y} r={(noteSymbolSize - strokeWidth) / 2} strokeWidth={strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} fill='none' />;
+                    notehead = <circle cx={x} cy={y} r={(noteSymbolSize - strokeWidth) / 2} strokeWidth={strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} fill='none' />;
+                    break;
                 case '☐':
-                    return <rect key={i} x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />;
+                    notehead = <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />;
+                    break;
                 case '△':
-                    return <polygon key={i} points={`${x},${y - triHeight / 2 + strokeWidth} ${x + noteSymbolSize / 2 - Math.sqrt(3) * strokeWidth / 2},${y + triHeight / 2 - strokeWidth / 2} ${x - noteSymbolSize / 2 + Math.sqrt(3) * strokeWidth / 2},${y + triHeight / 2 - strokeWidth / 2}`} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />;
+                    notehead = <polygon points={`${x},${y - triHeight / 2 + strokeWidth} ${x + noteSymbolSize / 2 - Math.sqrt(3) * strokeWidth / 2},${y + triHeight / 2 - strokeWidth / 2} ${x - noteSymbolSize / 2 + Math.sqrt(3) * strokeWidth / 2},${y + triHeight / 2 - strokeWidth / 2}`} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />;
+                    break;
                 case '▽':
-                    return <polygon key={i} points={`${x},${y + triHeight / 2 - strokeWidth} ${x + noteSymbolSize / 2 - Math.sqrt(3) * strokeWidth / 2},${y - triHeight / 2 + strokeWidth / 2} ${x - noteSymbolSize / 2 + Math.sqrt(3) * strokeWidth / 2},${y - triHeight / 2 + strokeWidth / 2}`} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />;
+                    notehead = <polygon points={`${x},${y + triHeight / 2 - strokeWidth} ${x + noteSymbolSize / 2 - Math.sqrt(3) * strokeWidth / 2},${y - triHeight / 2 + strokeWidth / 2} ${x - noteSymbolSize / 2 + Math.sqrt(3) * strokeWidth / 2},${y - triHeight / 2 + strokeWidth / 2}`} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />;
+                    break;
                 case '⊗':
-                    return (<g key={i}>
+                    notehead = (<g>
                         <circle cx={x} cy={y} r={(noteSymbolSize - 2) / 2} strokeWidth={strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} fill='none' />;
                         <line x1={x - crossCircleWidth} y1={y - crossCircleWidth} x2={x + crossCircleWidth} y2={y + crossCircleWidth} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} />
                         <line x1={x - crossCircleWidth} y1={y + crossCircleWidth} x2={x + crossCircleWidth} y2={y - crossCircleWidth} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} />
                     </g>);
+                    break;
                 case '⊠':
-                    return (<g key={i}>
+                    notehead = (<g>
                         <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - strokeWidth} height={noteSymbolSize - strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />
                         <line x1={x - noteSymbolSize / 2 + strokeWidth / 2} y1={y - noteSymbolSize / 2 + strokeWidth / 2} x2={x + noteSymbolSize / 2 - strokeWidth / 2} y2={y + noteSymbolSize / 2 - strokeWidth / 2} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} />
                         <line x1={x - noteSymbolSize / 2 + strokeWidth / 2} y1={y + noteSymbolSize / 2 - strokeWidth / 2} x2={x + noteSymbolSize / 2 - strokeWidth / 2} y2={y - noteSymbolSize / 2 + strokeWidth / 2} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} />
                     </g>);
+                    break;
             }
+
+            return <g onClick={callback} key={i}>
+                <text x={x} y={y - noteSymbolSize / 2 - strokeWidth / 2} fontSize={10} textAnchor="middle" alignmentBaseline="baseline">{note.fingering}</text>
+                {notehead}
+            </g>;
         };
 
         let svgRows: JSX.Element[] = range(0, rowNumber).map(i => grandStaff(i));
