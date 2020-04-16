@@ -54,7 +54,8 @@ export type TimeSignature = {
 
 export type KeySignature = {
     measure: number,
-    fifths: number
+    fifths: number,
+    mode: any
 };
 
 // Tracks and scores

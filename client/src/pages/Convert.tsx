@@ -7,8 +7,9 @@ import {saveAs} from 'file-saver';
 import {useCurrentFileState} from '../contexts/CurrentFile';
 import MusicXML from 'musicxml-interfaces';
 import {
-    usePreferencesState, colorPreferenceOptions, scalePreferenceOptions,
-    spacingPreferenceOptions, noteHeadPreferenceOptions, measuresPerRowOptions, accidentalTypeOptions, clefPreferenceOptions
+    usePreferencesState, scalePreferenceOptions,
+    spacingPreferenceOptions, naturalNoteHeadPreferenceOptions, sharpNoteHeadPreferenceOptions, flatNoteHeadPreferenceOptions, measuresPerRowOptions,
+    accidentalTypeOptions, clefPreferenceOptions, lyricsFontSizeOptions
 } from '../contexts/Preferences';
 import jsPDF from 'jspdf';
 import canvg from 'canvg';
@@ -207,7 +208,7 @@ const Convert: React.FC<Props> = () => {
                     </div>
                 </>}
                 <div id="close" style={styles.sideBarTopOptions} onClick={() => {setShow(false);}}>
-                    Close ✕
+                    ✕
                 </div>
             </div>
 
@@ -220,6 +221,13 @@ const Convert: React.FC<Props> = () => {
                         </div>
 
                     </Expandable>
+                                      
+                    
+                        
+                        _________________________________________________
+                      Changes are made to the converted music file. To save in MusicXML format, select Export after editing. 
+                    
+
                 </Fragment>:<Fragment key="preferences">
 
                     <Expandable title="Staff Appearance">
@@ -261,14 +269,22 @@ const Convert: React.FC<Props> = () => {
                             <select value={preferences.verticalSpacing} onChange={
                                 (e) => {setPreferences({type: 'set', val: {verticalSpacing: e.target.value as any}});}
                             }>{spacingPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                        </div>
+                         </div>
+
+                         <div style={styles.line}>
+                             <div style={styles.name}>Lyrics Font Size</div>
+                             {/* deleted value and onchange */}
+                             <select value={preferences.lyricsFontSize} onChange={
+                                 (e) => { setPreferences({ type: 'set', val: { lyricsFontSize: e.target.value as any } }); }
+                             }>{lyricsFontSizeOptions.map(x => <option key={x}>{x}</option>)}</select>
+                         </div>
 
                     </Expandable>
 
                     <Expandable title="Note Appearance">
 
                         <div style={styles.line}>
-                            <div style={styles.name}>Accidental Type</div>
+                            <div style={styles.name}>Accidental Display</div>
                             <select value={preferences.accidentalType} onChange={
                                 (e) => {setPreferences({type: 'set', val: {accidentalType: e.target.value as any}});}
                             }>{accidentalTypeOptions.map(x => <option key={x}>{x}</option>)}</select>
@@ -287,7 +303,7 @@ const Convert: React.FC<Props> = () => {
                             {/* deleted value and onchange */}
                             <select value={preferences.naturalNoteShape} onChange={
                                 (e) => {setPreferences({type: 'set', val: {naturalNoteShape: e.target.value as any}});}
-                            }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                            }>{naturalNoteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
                         </div>
 
                         <div style={styles.line}>
@@ -295,7 +311,7 @@ const Convert: React.FC<Props> = () => {
                             {/* deleted value and onchange */}
                             <select value={preferences.sharpNoteShape} onChange={
                                 (e) => {setPreferences({type: 'set', val: {sharpNoteShape: e.target.value as any}});}
-                            }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                            }>{sharpNoteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
                         </div>
 
                         <div style={styles.line}>
@@ -303,21 +319,7 @@ const Convert: React.FC<Props> = () => {
                             {/* deleted value and onchange */}
                             <select value={preferences.flatNoteShape} onChange={
                                 (e) => {setPreferences({type: 'set', val: {flatNoteShape: e.target.value as any}});}
-                            }>{noteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                        </div>
-
-                        <div style={styles.line}>
-                            <div style={styles.name}>Notehead Color</div>
-                            <select value={preferences.noteSymbolColor} onChange={
-                                (e) => {setPreferences({type: 'set', val: {noteSymbolColor: e.target.value as any}});}
-                            }>{colorPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
-                        </div>
-
-                        <div style={styles.line}>
-                            <div style={styles.name}>Duration Color</div>
-                            <select value={preferences.noteDurationColor} onChange={
-                                (e) => {setPreferences({type: 'set', val: {noteDurationColor: e.target.value as any}});}
-                            }>{colorPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                            }>{flatNoteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
                         </div>
 
                     </Expandable>

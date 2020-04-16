@@ -36,13 +36,13 @@ const Menu: React.FC<Props> = () => {
     let [, setCurrentFile] = useCurrentFileState();
 
     let showError = (error: string) => {
-        setDialogState(Dialog.showMessage('An Error Occurred', error, 'Close', () => {
+        setDialogState(Dialog.showMessage('An Error Occurred', error, 'Cancel', () => {
             setDialogState(Dialog.close());
         }));
      };
 
     let deleteAllPrompt = () => {
-        setDialogState(Dialog.showPrompt('Delete Confirmation', 'Are you sure you want to delete all files?', 'Close', () => {
+        setDialogState(Dialog.showPrompt('Delete Confirmation', 'Are you sure you want to delete all converted files?', 'Cancel', () => {
             setDialogState(Dialog.close());
         }, 'Delete', () => {
             recentFiles.forEach(x=>{
@@ -54,7 +54,7 @@ const Menu: React.FC<Props> = () => {
         }));
     };
     let deleteSinglePrompt = (x: recentFile) => {
-        setDialogState(Dialog.showPrompt('Delete Confirmation', 'Are you sure you want to delete this file?', 'Close', () => {
+        setDialogState(Dialog.showPrompt('Delete Confirmation', 'Are you sure you want to delete this converted file?', 'Cancel', () => {
             setDialogState(Dialog.close());
         }, 'Delete', () => {
             let newRecentFiles = recentFiles.filter(y => y.id !== x.id);
@@ -289,8 +289,8 @@ const Menu: React.FC<Props> = () => {
     return (
         <Frame header="SNapp -&nbsp;Simplified&nbsp;Notation&nbsp;App&nbsp;for&nbsp;Sheet&nbsp;Music">
             {recentFiles === undefined ? null : <div style={styles.container}>
-                <div style={{ ...styles.item, flex: '1 0 auto' }} />
-                <div style={{ ...styles.item, maxWidth: '750px' }}>
+                <div style={{ ...styles.item, flex: '.37 0 auto' }} />
+                <div style={{ ...styles.item, maxWidth: '1200px' }}>
                     SNapp implements a simple and intuitive music notation known as What You See Is What You Play,
                     or WYSIWYP. With it, musicians can spend less time learning to read music and more time playing it!
                 </div>
@@ -302,7 +302,7 @@ const Menu: React.FC<Props> = () => {
                     <div style={{ ...styles.item, flex: '.35 0 auto' }} />
                 </> : <>
                         <div style={{ ...styles.item, flex: '.36 0 auto' }} />
-                        <div style={{ ...styles.item, fontSize: '28px', fontWeight: 'bolder' }}>Recent Files</div>
+                        <div style={{ ...styles.item, fontSize: '28px', fontWeight: 'bolder' }}>files already converted from MusicXML</div>
                         <div style={{ ...styles.item, flex: '.08 0 auto' }} />
                         <div style={{ ...styles.item, ...styles.recentFiles }}>
                             <div style={{ ...styles.recentFilesInner }}>
@@ -327,10 +327,8 @@ const Menu: React.FC<Props> = () => {
                         <div style={{ ...styles.item, flex: '.24 0 auto' }} />
                     </>}
                 <div style={styles.item}>
-                    <span id="button-upload" style={styles.link}>
-                        <img src={svg} style={styles.icon} alt="" />
-                        Open MusicXML File
-                        <input style={styles.fileInput} type="file" title="Click to upload" accept=".musicxml,.mxl,.xml" onChange={(e) => { uploadFile(e); }}></input>
+                    <span id="button-upload" style={styles.link}>                        Convert another MusicXML File
+                        <input style={styles.fileInput} type="file" title="Convert another MusicXML file" accept=".musicxml,.mxl,.xml" onChange={(e) => { uploadFile(e); }}></input>
                     </span>
                 </div>
                 {installHandle===undefined?null:<>
@@ -370,7 +368,7 @@ const styleMap = {
         left: 'auto',
         height: 'auto',
         marginLeft: '50%',
-        width: '70%',
+        width: '80%',
         transform: 'translate(-50%,0px)',
         textAlign: 'center',
         fontSize: '21px',
@@ -383,12 +381,12 @@ const styleMap = {
         width: '340px',
         height: '100%',
         cursor: 'pointer',
-        opacity: 0,
+        opacity: 0
     },
     recentFiles: {
         color: '#31B7D6',
-        maxWidth: '750px',
-        height: '250px',
+        maxWidth: '1200px',
+        height: '400px',
         borderRadius: '10px',
         border: '2px solid #BBBBBB',
         padding: '5px',
@@ -404,11 +402,11 @@ const styleMap = {
     recentFilesItem: {
         display: 'flex',
         width: 'calc(100% - 10px)',
-        marginTop: '20px',
+        marginTop: '1px',
         marginLeft: '5px',
         marginRight: '5px',
         lineHeight: '40px',
-        fontSize: '24px',
+        fontSize: '22px',
         position: 'relative',
         height: '40px',
         whiteSpace: 'nowrap',
