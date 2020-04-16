@@ -219,7 +219,8 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                             try {
                                 part.keySignatures.push({
                                     measure: measureNumber,
-                                    fifths: entry.keySignatures[0].fifths
+                                    fifths: entry.keySignatures[0].fifths,
+                                    mode: entry.keySignatures[0].mode
                                 });
                             } catch (e) {
                                 console.error('Failed to parse key signature', entry.keySignatures[0]);
@@ -315,7 +316,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
     // handle unprovided signatures
     tracks.forEach(track => {
         // add default values for key signatures if it is not provided.
-        if (track.keySignatures.length === 0) track.keySignatures.push({measure: 0, fifths: 0});
+        if (track.keySignatures.length === 0) track.keySignatures.push({measure: 0, fifths: 0, mode: ''});
 
         if (track.timeSignatures.length === 0) {
             if (track.measures.length === 1) {
