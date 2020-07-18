@@ -328,7 +328,7 @@ const Menu: React.FC<Props> = () => {
                     </>}
                 <div style={styles.item}>
                     <span id="button-upload" style={styles.link}>                        Convert another MusicXML File
-                        <input style={styles.fileInput} type="file" title="Convert another MusicXML file" accept=".musicxml,.mxl,.xml" onChange={(e) => { uploadFile(e); }}></input>
+                        <input style={styles.fileInput} type="file" title="Convert another MusicXML file" accept=".musicxml,.mxl,.xml,application/octet-stream" onChange={(e) => { uploadFile(e); }}></input>
                     </span>
                 </div>
                 {installHandle===undefined?null:<>
