@@ -147,7 +147,8 @@ const Menu: React.FC<Props> = () => {
                     (async () => {
                         try {
                             let zip = await JSZip.loadAsync(data);
-                            let details = await zip.file('META-INF/container.xml').async("text");
+                            // 2020 09 02 Added exclamation mark to following
+                            let details = await zip.file('META-INF/container.xml')!.async("text");
                             let parser = new DOMParser();
                             let detailsDOM = parser.parseFromString(details, "application/xml");
                             let nodes = detailsDOM.getElementsByTagName('rootfile');
@@ -157,7 +158,8 @@ const Menu: React.FC<Props> = () => {
                                     musicXMLPath = nodes[i].getAttribute('full-path')!;
                                 }
                             }
-                            let musicXMLData = await zip.file(musicXMLPath).async("text");
+                            // 2020 09 02 Added exclamation mark to following
+                            let musicXMLData = await zip.file(musicXMLPath)!.async("text");
                             let parsed = MusicXML.parseScore(musicXMLData);
                             if (parsed.measures === undefined) {
                                 throw new Error('Invalid MusicXML format');
