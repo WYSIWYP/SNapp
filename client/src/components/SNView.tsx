@@ -156,10 +156,11 @@ const SNView: React.FC<Props> = ({ xml, forcedWidth, editMode = '', editCallback
             moderate: 30,
             wide: 50
         };
+        // 2020 08 31: changed values from 20, 40, 60
         let horizontalSpacingMap: Record<spacingPreferenceOption, number> = {
             narrow: 20,
-            moderate: 40,
-            wide: 60
+            moderate: 60,
+            wide: 100
         };
 
         //general spacing
