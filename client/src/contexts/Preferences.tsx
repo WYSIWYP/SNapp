@@ -33,7 +33,7 @@ export type flatNoteHeadPreferenceOption = (typeof flatNoteHeadPreferenceOptions
 export const clefPreferenceOptions = ["WYSIWYP","Traditional"] as const;
 export type clefPreferenceOptions = (typeof clefPreferenceOptions)[number];
 
-export const measuresPerRowOptions = [1, 2, 3, 4, 5, 6] as const; // TODO: Consider using a slider
+export const measuresPerRowOptions = [1, 2, 3, 4, 5, 6, 7, 8] as const; // TODO: Consider using a slider  // 21 June 2021 increase to 8
 export type measuresPerRowOption = (typeof measuresPerRowOptions)[number];
 
 export const accidentalTypeOptions = ['auto', 'sharps', 'flats'] as const;
@@ -66,8 +66,8 @@ let initialState: state = {
     noteDurationColor: "grey",
     noteSymbolColor: "black",
     staffScale: 'medium',
-    horizontalSpacing: 'moderate',
-    verticalSpacing: 'moderate',
+    horizontalSpacing: 'narrow',  // 21 June 2021  changed from medium
+    verticalSpacing: 'narrow',    // 21 June 2021  changed from medium
     noteScale: 'medium',
     naturalNoteShape: '●',
     sharpNoteShape: '▲',
