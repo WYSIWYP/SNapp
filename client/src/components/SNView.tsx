@@ -140,11 +140,11 @@ const SNView: React.FC<Props> = ({ xml, forcedWidth, editMode = '', editCallback
             accidentalType
         } = preferences;
 
-        // Map preference strings to numeric values
+        // Map preference strings to numeric values     21 June 2021 made all smaller
         let noteScaleMap: Record<scalePreferenceOption, number> = {
-            small: 15,
-            medium: 20,
-            large: 25
+            small: 9,
+            medium: 15,
+            large: 22
         };
         let staffScaleMap: Record<scalePreferenceOption, number> = {
             small: 18,
@@ -253,16 +253,15 @@ const SNView: React.FC<Props> = ({ xml, forcedWidth, editMode = '', editCallback
         let numberOfCredits = findCredits();
         console.log(creditsDisplay, numberOfCredits);
 
-        // get key signature
+        // get key signature     21 June 2021  modified logic (don't examine title for "minor" anymore; display both Major/minor if mode parm not specified)
         let keyFifths = score.tracks[0].keySignatures[0].fifths;
         // The values for fifths range from -7 for Cb Major to +7 for C# Major.  So adjust index to names array by 7 to start at array offset 0
-        let keySignatureDisplayed = keySignatureNamesArrayMajor[keyFifths + 7] + "*";  // if no mode, default to major and indicate that with an asterisk
+        let keySignatureDisplayed = keySignatureNamesArrayMajor[keyFifths + 7] + " / " + keySignatureNamesArrayMinor[keyFifths + 7];  // if no mode, default to major and indicate that with an asterisk
         let scoreMode: any = score.tracks[0].keySignatures[0].mode;
+        // According to MusicXML website, the modes are all lowercase
         if (scoreMode === 'major') keySignatureDisplayed = keySignatureNamesArrayMajor[keyFifths + 7];
         else if (scoreMode === 'minor') keySignatureDisplayed = keySignatureNamesArrayMinor[keyFifths + 7];
-        else if (title !== 'no title specified')
-            if (title.includes(' minor') || title.includes(' Minor') || title.includes(' MINOR'))
-                keySignatureDisplayed = keySignatureNamesArrayMinor[keyFifths + 7] + "*";  // if no mode specified and "minor" is in the title, assume minor mode
+        
 
         let minNote: Record<StaffType, number> = {
             treble: 128,
