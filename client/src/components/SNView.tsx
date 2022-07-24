@@ -769,7 +769,7 @@ const SNView: React.FC<Props> = ({ xml, forcedWidth, editMode = '', editCallback
 
             return <g onClick={callback} key={i}>
                 // stuart-change 3/13/2020  5pm
-                <text x={x} y={y} fontSize={14} textAnchor="middle" alignmentBaseline="middle">{note.fingering}</text>
+                <text x={x} y={y} fontSize={14} textAnchor="middle" dominantBaseline="middle">{note.fingering}</text>
                 {notehead}
             </g>;
         };
@@ -783,7 +783,7 @@ const SNView: React.FC<Props> = ({ xml, forcedWidth, editMode = '', editCallback
                     <div style={{ position: 'relative', height: 'auto' }}>
 
                         <svg viewBox={`0 0 ${width} ${titleRowHeight}`}>
-                            <text x={width / 2} y={0} fontSize={40} textAnchor="middle" alignmentBaseline="hanging">{title}</text>
+                            <text x={width / 2} y={0} fontSize={40} textAnchor="middle" dominantBaseline="hanging">{title}</text>
                             <text x={70} y={20} fontSize={25} textAnchor="start">{score.tempo ? `${score.tempo} bpm` : null}</text>
                             <text x={width - 70} y={20} fontSize={25} textAnchor="end">{keySignatureDisplayed}</text>
 
