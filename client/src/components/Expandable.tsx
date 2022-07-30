@@ -1,12 +1,13 @@
 import React, {CSSProperties, useState, useRef} from "react";
 
 type Props = {
-    title: string;
+    title: string,
+    children?: any,
 };
 
 const Frame: React.FC<Props> = ({
     title,
-    children
+    children,
 }) => {
     let [expanded, setExpanded] = useState(false);
     let ref = useRef(undefined! as HTMLDivElement);

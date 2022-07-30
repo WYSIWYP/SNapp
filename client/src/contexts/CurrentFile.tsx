@@ -12,8 +12,12 @@ export type action = {
 
 let initialState: state = {};
 
+type Props = {
+    children?: any,
+};
+
 export const CurrentFileContext = createContext(undefined! as [state, React.Dispatch<action>]);
-export const CurrentFileStateProvider: React.FC<{}> = ({children}) => {
+export const CurrentFileStateProvider: React.FC<Props> = ({children}) => {
     //we need to use a ref here to ensure that the same reducer is always used
     let reducer = useRef((state: state, action: action): state => {
         switch (action.type) {

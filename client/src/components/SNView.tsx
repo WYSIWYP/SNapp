@@ -105,6 +105,7 @@ const SNView: React.FC<Props> = ({ xml, forcedWidth, editMode = '', editCallback
         }
     }, [setWidth, forcedWidth]);
 
+    const xmlRevision = (xml as any).revision;
     useEffect(() => {
         // parse only when page loads, xml changes, or an edit occurs
         try {
@@ -116,7 +117,7 @@ const SNView: React.FC<Props> = ({ xml, forcedWidth, editMode = '', editCallback
         // notify parent that xml has been modified so that it can be saved
         editCallback();
 
-    }, [xml, (xml as any).revision]);
+    }, [xml, xmlRevision, editCallback]);
 
     if (score === undefined || width === undefined) { //skip first render when width is unknown or parsing is incomplete
         return <div ref={ref}></div>;
@@ -768,7 +769,7 @@ const SNView: React.FC<Props> = ({ xml, forcedWidth, editMode = '', editCallback
             }
 
             return <g onClick={callback} key={i}>
-                // stuart-change 3/13/2020  5pm
+                {/* stuart-change 3/13/2020  5pm */}
                 <text x={x} y={y} fontSize={14} textAnchor="middle" dominantBaseline="middle">{note.fingering}</text>
                 {notehead}
             </g>;

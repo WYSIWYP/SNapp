@@ -12,8 +12,7 @@ import {
     accidentalTypeOptions, clefPreferenceOptions, lyricsFontSizeOptions
 } from '../contexts/Preferences';
 import jsPDF from 'jspdf';
-import canvg from 'canvg';
-import {range} from '../util/Util';
+import Canvg from 'canvg';
 // import {useDialogState} from '../contexts/Dialog';
 // import * as Dialog from '../util/Dialog';
 
@@ -71,7 +70,7 @@ const Convert: React.FC<Props> = () => {
         })();
     }, [currentFile.id, setCurrentFile]);
 
-    let openPDF = () => {
+    let openPDF = async () => {
         try {
 
             // should change with preferences - as percent of page width
@@ -92,7 +91,7 @@ const Convert: React.FC<Props> = () => {
             let rows = hidden.getElementsByClassName('snview-row');
 
             let nextRowY = margin;
-            range(0, rows.length).forEach(i => {
+            for(let i = 0; i < rows.length; i++){
                 let row = rows[i];
 
                 let lines = Array.from(row.getElementsByTagName('div')).map(line=>{
@@ -129,7 +128,9 @@ const Convert: React.FC<Props> = () => {
                 }
 
                 // add each line to the page, overflowing if needed
-                lines.forEach(line=>{
+                for(let j = 0; j < lines.length; j++){
+                    const line = lines[j];
+                
                     if (nextRowY + line.pdfHeight > height - margin) {
                         pdf.addPage();
                         nextRowY = margin;
@@ -140,7 +141,7 @@ const Convert: React.FC<Props> = () => {
                     ctx.fillStyle = "white";
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                     ctx.fillStyle = "black";
-                    canvg(canvas, line.html, {ignoreClear: true});
+                    await (await Canvg.from(ctx, line.html, {ignoreClear: true})).render();
                     try {
                         pdf.addImage(canvas, 'JPEG', margin, nextRowY, width - margin * 2, line.pdfHeight);
                     } catch(e){
@@ -148,11 +149,11 @@ const Convert: React.FC<Props> = () => {
                     }
 
                     nextRowY += line.pdfHeight + padding;
-                });
+                }
 
                 // add additional padding between each row
                 nextRowY += paddingBetweenRows - padding;
-            });
+            }
 
             // pdf.rect(0,0,200,287,'F');
             // pdf.addPage();
@@ -222,12 +223,9 @@ const Convert: React.FC<Props> = () => {
                         </div>
 
                     </Expandable>
-                                      
-                    
-                        
-                        _________________________________________________
-                      Changes are made to the converted music file. To save in MusicXML format, select Export after editing. 
-                    
+                    <div style={{position: 'relative', height: 'auto', width: '100%', borderTop: '1px solid #bbb', padding: 20}}>
+                        Changes are made to the converted music file. To save in MusicXML format, select Export after editing. 
+                    </div>
 
                 </Fragment>:<Fragment key="preferences">
 
@@ -444,7 +442,7 @@ const styleMap = {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        borderBottom: 'solid 1px #bbb',
+        borderBottom: '1px solid #bbb',
         height: '65px',
         color: '#31B7D6',
         fontSize: '23px',

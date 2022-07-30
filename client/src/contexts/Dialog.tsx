@@ -19,8 +19,12 @@ let initialState: state = {
     shown: false,
 };
 
+type Props = {
+    children?: any,
+};
+
 export const DialogContext = createContext(undefined! as [state, React.Dispatch<action>]);
-export const DialogStateProvider: React.FC<{}> = ({children}) => {
+export const DialogStateProvider: React.FC<Props> = ({children}) => {
     //we need to use a ref here to ensure that the same reducer is always used
     let reducer = useRef((state: state, action: action): state => {
         switch (action.type) {

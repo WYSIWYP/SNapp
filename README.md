@@ -20,11 +20,6 @@ npm start
 
 These instructions have last been tested on commit `0de542e` using Node.js version 12.13.0 on Windows and MacOS machines.
 
-## Testing
-Users can use the command `npm run test` from the project's client directory to run the project's automated test suite. This will launch Jest in [watch mode](https://create-react-app.dev/docs/running-tests/#command-line-interface).
-
-To create a coverage report for the project, you can run the command `npm run test-coverage` from the project's client directory. This will display coverage information to the console and will also generate HTML and JSON files describing the results in the project's `client/coverage` folder. 
-
 ## Deployment
 The project is currently deployed using [GitHub Pages](https://pages.github.com/) and the project's `gh-pages` branch. The deployment can be updated by modifying the contents of this branch in GitHub. New developers can gain access to the GitHub project by being added as a collaborator by an existing member.
 
@@ -33,7 +28,7 @@ SNapp can be built for deployment by running `npm run build` from the project's 
 Routing in SNapp is currently implemented using the full path portion of page URLs. As a result, when hosting a deployment, all paths under the deployment subdomain should be configured to serve the project's main `index.html` document. This also means that SNapp must be hosted at your domain or subdomain's root path. When using GitHub pages, this can be achieved by renaming `index.html` to `404.html` and by setting up a custom domain name for the project.
 
 ## Technologies used
-The client for this project was developed using [React](https://reactjs.org/) and [Typescript](https://www.typescriptlang.org/). Test cases were implemented using [jest](https://jestjs.io/) with [enzyme](https://airbnb.io/enzyme/) and snapshotting. The project is designed to work with the [musicxml](https://www.musicxml.com/) and [mxl](https://www.musicxml.com/tutorial/compressed-mxl-files/) file formats and uses the `localStorage` API and SVGs in the browser to render WYSIWYP content. A basic architecture diagram is included below for reference. A set of architecture decision records related to the app are available from the [project wiki]() on GitHub.
+The client for this project was developed using [React](https://reactjs.org/) and [Typescript](https://www.typescriptlang.org/). The project is designed to work with the [musicxml](https://www.musicxml.com/) and [mxl](https://www.musicxml.com/tutorial/compressed-mxl-files/) file formats and uses the `localStorage` API and SVGs in the browser to render WYSIWYP content. A basic architecture diagram is included below for reference. A set of architecture decision records related to the app are available from the [project wiki]() on GitHub.
 
 <img src="http://comp523k.web.unc.edu/files/2019/10/Architecture-Diagram.png" width="350"></img>
 

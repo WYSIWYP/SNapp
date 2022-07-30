@@ -1,7 +1,11 @@
 import React from 'react';
 import Dialog from './Dialog';
 
-const Global: React.FC<{}> = ({children}) => {
+type Props = {
+    children?: any,
+};
+
+const Global: React.FC<Props> = ({children}) => {
     //we need to use a ref here to ensure that the same reducer is always used
     let components = [Dialog] as React.FunctionComponent[];
     components.forEach(x=>{

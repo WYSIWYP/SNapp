@@ -1,10 +1,11 @@
 import React, {CSSProperties} from "react";
 
 type Props = {
-    header?: string;
-    fontSize?: number;
-    sideMenu?: React.ReactNode;
-    showSideMenu?: boolean;
+    header?: string,
+    fontSize?: number,
+    sideMenu?: React.ReactNode,
+    showSideMenu?: boolean,
+    children?: any,
 };
 
 const Frame: React.FC<Props> = ({
@@ -12,7 +13,7 @@ const Frame: React.FC<Props> = ({
     fontSize,
     sideMenu,
     showSideMenu,
-    children
+    children,
 }) => {
     return (
         <div style={styles.appContainer}>

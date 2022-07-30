@@ -31,7 +31,7 @@ export const flatNoteHeadPreferenceOptions = ["▼", "▽", "b"] as const;
 export type flatNoteHeadPreferenceOption = (typeof flatNoteHeadPreferenceOptions)[number];
 
 export const clefPreferenceOptions = ["WYSIWYP","Traditional"] as const;
-export type clefPreferenceOptions = (typeof clefPreferenceOptions)[number];
+export type clefPreferenceOption = (typeof clefPreferenceOptions)[number];
 
 export const measuresPerRowOptions = [1, 2, 3, 4, 5, 6, 7, 8] as const; // TODO: Consider using a slider  // 21 June 2021 increase to 8
 export type measuresPerRowOption = (typeof measuresPerRowOptions)[number];
@@ -52,7 +52,7 @@ export type state = {
     naturalNoteShape: naturalNoteHeadPreferenceOption,
     sharpNoteShape: sharpNoteHeadPreferenceOption;
     flatNoteShape: flatNoteHeadPreferenceOption;
-    clefSymbols: clefPreferenceOptions;
+    clefSymbols: clefPreferenceOption;
     measuresPerRow: measuresPerRowOption;
     accidentalType: accidentalTypeOption;
     lyricsFontSize: lyricsFontSizeOption
@@ -82,7 +82,12 @@ export const PreferencesContext = createContext(undefined! as [
     state,
     React.Dispatch<action>
 ]);
-export const PreferencesStateProvider: React.FC<{}> = ({children}) => {
+
+type Props = {
+    children?: any,
+};
+
+export const PreferencesStateProvider: React.FC<Props> = ({children}) => {
     //we need to use a ref here to ensure that the same reducer is always used
     let reducer = useRef(
         (state: state, action: action): state => {

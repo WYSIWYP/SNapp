@@ -35,12 +35,12 @@ select {
     background-repeat: no-repeat;
     background-image: url("./images/dropDown.svg");
     background-color: rgba(255, 255, 255, 0.6);
-    padding-left: 20px;
+    padding-left: 14px;
     border: none;
     border-radius: 10px;
     position: relative;
     width: 40%;
-    text-align: center;
+    text-align: left;
     -webkit-appearance: none;
 }
 
@@ -94,22 +94,22 @@ input[type=file]::-webkit-file-upload-button {
 }
 
 /* @keyframes slideRight {
-  from {
-    width: 350px; 
-  }
+    from {
+        width: 350px; 
+    }
 
-  to {
-    width: 0px;
-  }
+    to {
+        width: 0px;
+    }
 }
 
 
 @keyframes slideLeft {
-  from {
-    width: 0px; 
-  }
+    from {
+        width: 0px; 
+    }
 
-  to {
-    width: 350px;
-  }
+    to {
+        width: 350px;
+    }
 } */

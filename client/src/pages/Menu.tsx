@@ -1,7 +1,6 @@
 import React, { CSSProperties, useState, useEffect, Fragment } from 'react';
 import { RouteComponentProps, navigate } from "@reach/router";
 import Frame from '../components/Frame';
-import svg from '../images/upload.svg';
 import MusicXML, { ScoreTimewise } from 'musicxml-interfaces';
 import { useCurrentFileState } from '../contexts/CurrentFile';
 import { useDialogState } from '../contexts/Dialog';
