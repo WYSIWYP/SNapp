@@ -8,13 +8,13 @@ These instructions will allow you to get a copy of the project up and running on
 
 ### Prerequisites
 
-To run SNapp locally, [Node.js and npm](https://nodejs.org/en/download/) must be installed. Clone the SNapp project locally and, from a shell of your choice, navigate to the project's root directory. Run `npm install` to install the required dependencies and `npm start` to run the app in development mode. This should automatically open a browser window with the app.
+To run SNapp locally, [Node.js and npm](https://nodejs.org/en/download/) must be installed. Clone the SNapp project locally and, from a shell of your choice, navigate to the project's root directory. Run `npm install --legacy-peer-deps` to install the required dependencies and `npm start` to run the app in development mode. This should automatically open a browser window with the app.
 
 The following commands can be entered in the console to clone, install, and run the app.
 ```
 git clone https://github.com/radiotech/SNapp.git SNapp
 cd SNapp
-npm install
+npm install --legacy-peer-deps
 npm start
 ```
 
