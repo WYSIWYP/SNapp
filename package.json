@@ -34,7 +34,7 @@
     "jspdf": "^2.5.1",
     "jszip": "^3.10.0",
     "mini-css-extract-plugin": "^2.4.5",
-    "musicxml-interfaces": "0.0.20",
+    "musicxml-interfaces": "0.0.21",
     "postcss": "^8.4.4",
     "postcss-flexbugs-fixes": "^5.0.2",
     "postcss-loader": "^6.2.1",
