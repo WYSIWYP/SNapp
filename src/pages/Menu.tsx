@@ -1,7 +1,8 @@
 import React, { CSSProperties, useState, useEffect, Fragment } from 'react';
 import { RouteComponentProps, navigate } from "@reach/router";
 import Frame from '../components/Frame';
-import MusicXML, { ScoreTimewise } from 'musicxml-interfaces';
+import * as MusicXML from 'musicxml-interfaces';
+import { ScoreTimewise } from 'musicxml-interfaces';
 import { useCurrentFileState } from '../contexts/CurrentFile';
 import { useDialogState } from '../contexts/Dialog';
 import * as Dialog from '../util/Dialog';

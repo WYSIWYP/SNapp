@@ -65,7 +65,8 @@ const keySignatureNamesArrayMinor = [
 ]; 
 
 let creditsDisplay = ['', '', '', '', ''];
-const SNView: React.FC<Props> = ({ xml, forcedWidth, editMode = '', editCallback = () => { } }) => {
+const defaultEditCallback = ()=>{};
+const SNView: React.FC<Props> = ({xml, forcedWidth, editMode = '', editCallback = defaultEditCallback}) => {
     console.log(xml);
     const ref = useRef(null! as HTMLDivElement);
     let [width, setWidth] = useState<number | undefined>(undefined);
