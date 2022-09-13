@@ -42,7 +42,7 @@ const Menu: React.FC<Props> = () => {
      };
 
     let deleteAllPrompt = () => {
-        setDialogState(Dialog.showPrompt('Delete Confirmation', 'Are you sure you want to delete all converted files?', 'Cancel', () => {
+        setDialogState(Dialog.showPrompt('Delete Confirmation', 'Are you sure you want to delete all browser cached files?', 'Cancel', () => {
             setDialogState(Dialog.close());
         }, 'Delete', () => {
             recentFiles.forEach(x=>{
@@ -54,7 +54,7 @@ const Menu: React.FC<Props> = () => {
         }));
     };
     let deleteSinglePrompt = (x: recentFile) => {
-        setDialogState(Dialog.showPrompt('Delete Confirmation', 'Are you sure you want to delete this converted file?', 'Cancel', () => {
+        setDialogState(Dialog.showPrompt('Delete Confirmation', 'Are you sure you want to delete this browser cached file?', 'Cancel', () => {
             setDialogState(Dialog.close());
         }, 'Delete', () => {
             let newRecentFiles = recentFiles.filter(y => y.id !== x.id);
@@ -294,7 +294,7 @@ const Menu: React.FC<Props> = () => {
                 <div style={{ ...styles.item, flex: '.37 0 auto' }} />
                 <div style={{ ...styles.item, maxWidth: '1200px' }}>
                     SNapp implements a simple and intuitive music notation known as What You See Is What You Play,
-                    or WYSIWYP. With it, musicians can spend less time learning to read music and more time playing it!
+                    or WYSIWYP.  With it, musicians can spend less time learning to read music and more time playing it!
                 </div>
                 {recentFiles.length === 0 ? <>
                     <div style={{ ...styles.item, flex: '.2 0 auto' }} />
@@ -304,7 +304,7 @@ const Menu: React.FC<Props> = () => {
                     <div style={{ ...styles.item, flex: '.35 0 auto' }} />
                 </> : <>
                         <div style={{ ...styles.item, flex: '.36 0 auto' }} />
-                        <div style={{ ...styles.item, fontSize: '28px', fontWeight: 'bolder' }}>files already converted from MusicXML</div>
+                        <div style={{ ...styles.item, fontSize: '28px', fontWeight: 'bolder' }}>Click list entry to open Sheet Music from browser cache</div>
                         <div style={{ ...styles.item, flex: '.08 0 auto' }} />
                         <div style={{ ...styles.item, ...styles.recentFiles }}>
                             <div style={{ ...styles.recentFilesInner }}>
@@ -329,8 +329,8 @@ const Menu: React.FC<Props> = () => {
                         <div style={{ ...styles.item, flex: '.24 0 auto' }} />
                     </>}
                 <div style={styles.item}>
-                    <span id="button-upload" style={styles.link}>                        Convert another MusicXML File
-                        <input style={styles.fileInput} type="file" title="Convert another MusicXML file" accept=".musicxml,.mxl,.xml,application/octet-stream" onChange={(e) => { uploadFile(e); }}></input>
+                    <span id="button-upload" style={styles.link}>                    Click here to open Sheet Music from MusicXML file
+                        <input style={styles.fileInput} type="file" title="Open Sheet Music from MusicXML file" accept=".musicxml,.mxl,.xml,application/octet-stream" onChange={(e) => { uploadFile(e); }}></input>
                     </span>
                 </div>
                 {installHandle===undefined?null:<>
@@ -377,7 +377,7 @@ const styleMap = {
         flex: '0 0 auto',
     },
     fileInput: {
-        position: 'absolute',
+         position: 'absolute',
         top: '0px',
         left: 'calc(50% - 170px)',
         width: '340px',
@@ -431,7 +431,7 @@ const styleMap = {
         textOverflow: 'ellipsis',
     },
     link: {
-        color: '#31B7D6',
+        color: '#000000',
         cursor: 'pointer',
         fontSize: '28px',
         fontWeight: 'bold',

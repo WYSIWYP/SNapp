@@ -140,7 +140,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                         }
                                         if (notation.technicals) {
                                             notation.technicals.forEach((technical: any) => {
-                                                console.log(technical.fingering);
+                                                // console.log(technical.fingering);
                                                 if (technical.fingering) {
                                                     if (technical.fingering.finger > -1) {
                                                         entryFingering = `${technical.fingering.finger}`;

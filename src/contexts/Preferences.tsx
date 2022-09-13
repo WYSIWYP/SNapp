@@ -21,13 +21,13 @@ export type scalePreferenceOption = (typeof scalePreferenceOptions)[number];
 export const spacingPreferenceOptions = ['narrow', 'moderate', 'wide'] as const;
 export type spacingPreferenceOption = (typeof spacingPreferenceOptions)[number];
 
-export const naturalNoteHeadPreferenceOptions = ["●", "○"] as const; 
+export const naturalNoteHeadPreferenceOptions = ["● filled", "○ hollow"] as const; 
 export type naturalNoteHeadPreferenceOption = (typeof naturalNoteHeadPreferenceOptions)[number];
 
-export const sharpNoteHeadPreferenceOptions = ["▲", "△", "#"] as const;
-export type sharpNoteHeadPreferenceOption = (typeof sharpNoteHeadPreferenceOptions)[number];
+export const sharpNoteHeadPreferenceOptions = ["▲ filled", "△ hollow", "▀ combo", "#"] as const;                 // 24 July 2022 added half box sharp
+export type sharpNoteHeadPreferenceOption = (typeof sharpNoteHeadPreferenceOptions)[number];  
 
-export const flatNoteHeadPreferenceOptions = ["▼", "▽", "b"] as const; 
+export const flatNoteHeadPreferenceOptions = ["▼ filled", "▽ hollow", "▄ combo", "b"] as const;                  // 24 July 2022 added half box flat 
 export type flatNoteHeadPreferenceOption = (typeof flatNoteHeadPreferenceOptions)[number];
 
 export const clefPreferenceOptions = ["WYSIWYP","Traditional"] as const;
@@ -42,6 +42,9 @@ export type accidentalTypeOption = (typeof accidentalTypeOptions)[number];
 export const lyricsFontSizeOptions = ['small', 'medium', 'large'] as const;
 export type lyricsFontSizeOption = (typeof lyricsFontSizeOptions)[number];
 
+export const fingeringsPreferenceOptions = ['hide', 'above', 'behind', 'left'] as const;
+export type fingeringsOption = (typeof fingeringsPreferenceOptions)[number];
+
 export type state = {
     noteDurationColor: colorPreferenceOption;
     noteSymbolColor: colorPreferenceOption;
@@ -55,7 +58,8 @@ export type state = {
     clefSymbols: clefPreferenceOption;
     measuresPerRow: measuresPerRowOption;
     accidentalType: accidentalTypeOption;
-    lyricsFontSize: lyricsFontSizeOption
+    lyricsFontSize: lyricsFontSizeOption;
+    fingeringsDisplay: fingeringsOption
 };
 export type action = {
     type: "set";
@@ -69,13 +73,14 @@ let initialState: state = {
     horizontalSpacing: 'narrow',  // 21 June 2021  changed from medium
     verticalSpacing: 'narrow',    // 21 June 2021  changed from medium
     noteScale: 'medium',
-    naturalNoteShape: '●',
-    sharpNoteShape: '▲',
-    flatNoteShape: '▼',
+    naturalNoteShape: '○ hollow',
+    sharpNoteShape: '▀ combo',
+    flatNoteShape: '▄ combo',
     clefSymbols: 'WYSIWYP',
-    measuresPerRow: 4,
+    measuresPerRow: 5,
     accidentalType: 'auto',
-    lyricsFontSize: 'small'
+    lyricsFontSize: 'small',
+    fingeringsDisplay: 'hide'      // 27 July 2022   added this and others to support new preference
 };
 
 export const PreferencesContext = createContext(undefined! as [
@@ -87,7 +92,7 @@ type Props = {
     children?: any,
 };
 
-export const PreferencesStateProvider: React.FC<Props> = ({children}) => {
+export const PreferencesStateProvider: React.FC<Props> = ({ children }) => {
     //we need to use a ref here to ensure that the same reducer is always used
     let reducer = useRef(
         (state: state, action: action): state => {

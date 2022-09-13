@@ -9,7 +9,7 @@ import MusicXML from 'musicxml-interfaces';
 import {
     usePreferencesState, scalePreferenceOptions,
     spacingPreferenceOptions, naturalNoteHeadPreferenceOptions, sharpNoteHeadPreferenceOptions, flatNoteHeadPreferenceOptions, measuresPerRowOptions,
-    accidentalTypeOptions, clefPreferenceOptions, lyricsFontSizeOptions
+    accidentalTypeOptions, clefPreferenceOptions, lyricsFontSizeOptions, fingeringsPreferenceOptions
 } from '../contexts/Preferences';
 import jsPDF from 'jspdf';
 import Canvg from 'canvg';
@@ -283,7 +283,7 @@ const Convert: React.FC<Props> = () => {
                     <Expandable title="Note Appearance">
 
                         <div style={styles.line}>
-                            <div style={styles.name}>Accidental Display</div>
+                            <div style={styles.name}>Sharp/flat Display</div>
                             <select value={preferences.accidentalType} onChange={
                                 (e) => {setPreferences({type: 'set', val: {accidentalType: e.target.value as any}});}
                             }>{accidentalTypeOptions.map(x => <option key={x}>{x}</option>)}</select>
@@ -319,6 +319,13 @@ const Convert: React.FC<Props> = () => {
                             <select value={preferences.flatNoteShape} onChange={
                                 (e) => {setPreferences({type: 'set', val: {flatNoteShape: e.target.value as any}});}
                             }>{flatNoteHeadPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                        </div>
+
+                        <div style={styles.line}>
+                            <div style={styles.name}>Fingerings</div>
+                            <select value={preferences.fingeringsDisplay} onChange={
+                                (e) => { setPreferences({ type: 'set', val: { fingeringsDisplay: e.target.value as any } }); }
+                            }>{fingeringsPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
                         </div>
 
                     </Expandable>
