@@ -65,8 +65,8 @@ const keySignatureNamesArrayMinor = [
 ]; 
 
 let creditsDisplay = ['', '', '', '', ''];
-const defaultEditCallback = ()=>{};
-const SNView: React.FC<Props> = ({xml, forcedWidth, editMode = '', editCallback = defaultEditCallback}) => {
+const defaultEditCallback = () => { };
+const SNView: React.FC<Props> = ({ xml, forcedWidth, editMode = '', editCallback = defaultEditCallback }) => {
     console.log(xml);
     const ref = useRef(null! as HTMLDivElement);
     let [width, setWidth] = useState<number | undefined>(undefined);
@@ -83,7 +83,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth, editMode = '', editCallback 
     };
     let showErrorRef = useRef(showError);
 
-    console.log('Score:', score);
+    // console.log('Score:', score);
     useEffect(() => {
         if (forcedWidth === undefined) {
             let width: number = undefined!;
@@ -140,7 +140,7 @@ const SNView: React.FC<Props> = ({xml, forcedWidth, editMode = '', editCallback 
             flatNoteShape,
             measuresPerRow,
             accidentalType
-        } = preferences;
+            } = preferences;
 
         // Map preference strings to numeric values     21 June 2021 made all smaller
         let noteScaleMap: Record<scalePreferenceOption, number> = {
@@ -220,40 +220,11 @@ const SNView: React.FC<Props> = ({xml, forcedWidth, editMode = '', editCallback 
         let title = 'no title specified';
         try {
             title = xml.movementTitle;
-            console.log(title);
+            // console.log(title);
             title = xml.work.workTitle;
         } catch (e) { }
         if (title === undefined) title = 'no title specified';
-        console.log(title);
-
-        let findCredits = (): number => {
-            // retrieve all credits but skip any that match the previously found title
-            console.log(creditsDisplay);
-            let creditNum = 0;
-            creditsDisplay = ['', '', '', '', ''];
-            if (xml.credits !== undefined) {
-                let credits = xml.credits.filter(x => x.creditWords !== undefined && x.creditWords.length > 0).map(x => x.creditWords);
-                credits.forEach(credit => {
-                    credit.forEach(words => {
-                        creditsDisplay[creditNum] = words.words;
-                        //}
-                        console.log(creditNum, creditsDisplay, words, title);
-                        if (creditsDisplay[creditNum] === title) {
-                            creditsDisplay[creditNum] = '';
-                        }
-                        else {
-                            creditNum = creditNum + 1;
-                        };
-                        console.log(title, creditNum, creditsDisplay);
-                    });
-                });
-
-            }
-            return creditNum;
-        };
-
-        let numberOfCredits = findCredits();
-        console.log(creditsDisplay, numberOfCredits);
+          // console.log(title);
 
         // get key signature     21 June 2021  modified logic (don't examine title for "minor" anymore; display both Major/minor if mode parm not specified)
         let keyFifths = score.tracks[0].keySignatures[0].fifths;
@@ -735,23 +706,29 @@ const SNView: React.FC<Props> = ({xml, forcedWidth, editMode = '', editCallback 
 
             let notehead: any;
             switch (shape) {
-                case '●':
+                case '● filled':
                     notehead = <circle cx={x} cy={y} r={noteSymbolSize / 2} fill={colorPreferenceStyles[noteSymbolColor]} />;
                     break;
-                case '▲':
+                case '▲ filled':
                     notehead = <polygon points={`${x},${y - triHeight / 2} ${x + noteSymbolSize / 2},${y + triHeight / 2} ${x - noteSymbolSize / 2},${y + triHeight / 2}`} fill={colorPreferenceStyles[noteSymbolColor]} />;
                     break;
-                case '▼':
+                case '▼ filled':
                     notehead = <polygon points={`${x},${y + triHeight / 2} ${x + noteSymbolSize / 2},${y - triHeight / 2} ${x - noteSymbolSize / 2},${y - triHeight / 2}`} fill={colorPreferenceStyles[noteSymbolColor]} />;
                     break;
-                case '○':
+                case '○ hollow':
                     notehead = <circle cx={x} cy={y} r={(noteSymbolSize - strokeWidth) / 2} strokeWidth={strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} fill='none' />;
                     break;
-                case '△':
+                case '△ hollow':
                     notehead = <polygon points={`${x},${y - triHeight / 2 + strokeWidth} ${x + noteSymbolSize / 2 - Math.sqrt(3) * strokeWidth / 2},${y + triHeight / 2 - strokeWidth / 2} ${x - noteSymbolSize / 2 + Math.sqrt(3) * strokeWidth / 2},${y + triHeight / 2 - strokeWidth / 2}`} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />;
                     break;
-                case '▽':
+                case '▽ hollow':
                     notehead = <polygon points={`${x},${y + triHeight / 2 - strokeWidth} ${x + noteSymbolSize / 2 - Math.sqrt(3) * strokeWidth / 2},${y - triHeight / 2 + strokeWidth / 2} ${x - noteSymbolSize / 2 + Math.sqrt(3) * strokeWidth / 2},${y - triHeight / 2 + strokeWidth / 2}`} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />;
+                    break;
+                case '▀ combo':
+                    notehead = <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - 1.5 * strokeWidth} height={noteSymbolSize / 2 - strokeWidth / 2} strokeWidth={strokeWidth} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                    break;
+                case '▄ combo':
+                    notehead = <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y} width={noteSymbolSize - 1.5 * strokeWidth} height={noteSymbolSize / 2 - strokeWidth / 2} strokeWidth={strokeWidth} fill={colorPreferenceStyles[noteSymbolColor]} />;
                     break;
                 case '#':
                     notehead = (<g>
@@ -769,11 +746,37 @@ const SNView: React.FC<Props> = ({xml, forcedWidth, editMode = '', editCallback 
                     break;
             }
 
-            return <g onClick={callback} key={i}>
-                {/* stuart-change 3/13/2020  5pm */}
-                <text x={x} y={y} fontSize={14} textAnchor="middle" dominantBaseline="middle">{note.fingering}</text>
+            // the offsets adjust the position of the fingering number with respect to the notehead
+            let xOffset = 0;
+            let yOffset = 0;
+            //  For left, adjust the horizonatl position so that the fingering is moved to the left of the notehead
+            if (preferences.fingeringsDisplay === 'left')
+                xOffset = 0.8 * noteSymbolSize;
+            // for above, adjust the vertial position so that the finering is moved above the notehead
+            if (preferences.fingeringsDisplay === 'above')
+                yOffset = noteSymbolSize;
+            // In the special cas of behind and combo noteheads, move the fingering as with left.  Otherwise it's obscured by the black filled combo notehead
+            if (preferences.fingeringsDisplay === 'behind' && (shape === '▀ combo' || shape === '▄ combo') )
+                xOffset = 0.8 * noteSymbolSize;
+
+            if (preferences.fingeringsDisplay === 'hide') {
+                return <g onClick={callback} key={i}>
                 {notehead}
-            </g>;
+                </g>;
+            } else {
+                // check to see if there is actually a number in the fingering before showing the finger and its white background
+                 if (note.fingering !== "") {
+                    return <g onClick={callback} key={i}>
+                    rect = <rect x={x - xOffset - noteSymbolSize / 2 + strokeWidth / 2} y={y - yOffset - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - 1.5 * strokeWidth} height={noteSymbolSize - strokeWidth} strokeWidth={strokeWidth} fill={"#FFFFFF"} opacity={.5 } />;
+                    <text x={x - xOffset} y={y - yOffset} fontSize={14} textAnchor="middle" alignmentBaseline="middle">{note.fingering}</text>
+                    {notehead}
+                    </g>;
+                } else {        
+                    return <g onClick={callback} key={i}> 
+                    {notehead}
+                    </g>;
+                }
+            }
         };
 
         let svgRows: JSX.Element[] = range(0, rowNumber).map(i => grandStaff(i));

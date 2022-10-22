@@ -42,7 +42,7 @@ const Menu: React.FC<Props> = () => {
      };
 
     let deleteAllPrompt = () => {
-        setDialogState(Dialog.showPrompt('Delete Confirmation', 'Are you sure you want to delete all converted files?', 'Cancel', () => {
+        setDialogState(Dialog.showPrompt('Delete Confirmation', 'Are you sure you want to delete all browser cached files?', 'Cancel', () => {
             setDialogState(Dialog.close());
         }, 'Delete', () => {
             recentFiles.forEach(x=>{
@@ -54,7 +54,7 @@ const Menu: React.FC<Props> = () => {
         }));
     };
     let deleteSinglePrompt = (x: recentFile) => {
-        setDialogState(Dialog.showPrompt('Delete Confirmation', 'Are you sure you want to delete this converted file?', 'Cancel', () => {
+        setDialogState(Dialog.showPrompt('Delete Confirmation', 'Are you sure you want to delete this browser cached file?', 'Cancel', () => {
             setDialogState(Dialog.close());
         }, 'Delete', () => {
             let newRecentFiles = recentFiles.filter(y => y.id !== x.id);
@@ -294,7 +294,10 @@ const Menu: React.FC<Props> = () => {
                 <div style={{ ...styles.item, flex: '.37 0 auto' }} />
                 <div style={{ ...styles.item, maxWidth: '1200px' }}>
                     SNapp implements a simple and intuitive music notation known as What You See Is What You Play,
-                    or WYSIWYP. With it, musicians can spend less time learning to read music and more time playing it!
+                    or WYSIWYP.  With it, musicians can spend less time learning to read music and more time playing it!
+                    <br/>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    <a href="https://www.wysiwyp.org" target="_blank" rel="noreferrer"> WYSIWYP website Home page</a>
                 </div>
                 {recentFiles.length === 0 ? <>
                     <div style={{ ...styles.item, flex: '.2 0 auto' }} />
@@ -304,7 +307,7 @@ const Menu: React.FC<Props> = () => {
                     <div style={{ ...styles.item, flex: '.35 0 auto' }} />
                 </> : <>
                         <div style={{ ...styles.item, flex: '.36 0 auto' }} />
-                        <div style={{ ...styles.item, fontSize: '28px', fontWeight: 'bolder' }}>files already converted from MusicXML</div>
+                        <div style={{ ...styles.item, fontSize: '28px', fontWeight: 'bolder' }}>Click list entry to open Sheet Music from browser cache</div>
                         <div style={{ ...styles.item, flex: '.08 0 auto' }} />
                         <div style={{ ...styles.item, ...styles.recentFiles }}>
                             <div style={{ ...styles.recentFilesInner }}>
@@ -329,9 +332,14 @@ const Menu: React.FC<Props> = () => {
                         <div style={{ ...styles.item, flex: '.24 0 auto' }} />
                     </>}
                 <div style={styles.item}>
-                    <span id="button-upload" style={styles.link}>                        Convert another MusicXML File
-                        <input style={styles.fileInput} type="file" title="Convert another MusicXML file" accept=".musicxml,.mxl,.xml,application/octet-stream" onChange={(e) => { uploadFile(e); }}></input>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/><path d="M14 3v5h5M16 13H8M16 17H8M10 9H8"/></svg>
+                    <span id="button-upload" style={styles.link}>                    open Sheet Music from a MusicXML file
+                        <input style={styles.fileInput} type="file" title="Open Sheet Music from MusicXML file" accept=".musicxml,.mxl,.xml,application/octet-stream" onChange={(e) => { uploadFile(e); }}></input>
                     </span>
+                </div>
+                <div style={{ ...styles.item, maxWidth: '1200px' }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 15v4c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2v-4M17 9l-5 5-5-5M12 12.8V2.5"/></svg>
+                    <a href="https://downloads.wysiwyp.org" target="_blank" rel="noreferrer"> download sample MusicXML files</a>
                 </div>
                 {installHandle===undefined?null:<>
                     <div style={{ ...styles.item, flex: '.5 0 auto' }} />
@@ -377,7 +385,7 @@ const styleMap = {
         flex: '0 0 auto',
     },
     fileInput: {
-        position: 'absolute',
+         position: 'absolute',
         top: '0px',
         left: 'calc(50% - 170px)',
         width: '340px',
@@ -431,7 +439,7 @@ const styleMap = {
         textOverflow: 'ellipsis',
     },
     link: {
-        color: '#31B7D6',
+        color: '#000000',
         cursor: 'pointer',
         fontSize: '28px',
         fontWeight: 'bold',
