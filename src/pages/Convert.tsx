@@ -54,7 +54,7 @@ const Convert: React.FC<Props> = () => {
 
     useEffect(() => {
         (async () => {
-            // If the current file is not in the context,
+            // If the current file is not in the context     11/1/2022  disabling use of cache for musicxml and recent files list, so currentFile.id should never be undefined
             if (currentFile.id === undefined) {
                 try {
                     // Load the current file data from localStorage
@@ -350,7 +350,7 @@ const Convert: React.FC<Props> = () => {
                     <svg style={styles.svg} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                     Export
                 </div>
-                <div style={styles.left} onClick={() => { navigate('https://sites.google.com/site/wysiwypsimplifiednotation/home/snapp'); }}>
+                <div style={styles.left} onClick={() => { window.open('https://sites.google.com/site/wysiwypsimplifiednotation/home/snapp'); }}>
                     <svg style={styles.svg} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                     SNapp Help
                 </div>
