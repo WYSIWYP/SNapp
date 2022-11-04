@@ -40,7 +40,7 @@ const Menu: React.FC<Props> = () => {
             setDialogState(Dialog.close());
         }));
      };
-
+    /*  Delete all menu operations  10/31/2022  to remove the use of Local Storage for musicxml files and the recent files list
     let deleteAllPrompt = () => {
         setDialogState(Dialog.showPrompt('Delete Confirmation', 'Are you sure you want to delete all browser cached files?', 'Cancel', () => {
             setDialogState(Dialog.close());
@@ -124,7 +124,7 @@ const Menu: React.FC<Props> = () => {
             console.error(e);
         }
     };
-
+    */
     const uploadFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         let fileName = (e.target as any).files[0].name.replace(/\.(?:musicxml|mxl|xml)$/i, '');
         let failedReads = 0;
@@ -199,63 +199,8 @@ const Menu: React.FC<Props> = () => {
             };
             reader2.readAsText((e.target as any).files[0]);
 
+        // 252 Commented lines removed from original 2019 development on 10/30/2022 and moved to file Menu tsx lines removed 2022 10 30
 
-
-
-
-            // let reader = new FileReader();
-            // reader.onload = function () {
-            //     try {
-            //         let data = reader.result;
-            //         let parsed: ScoreTimewise;
-            //         if(data === null){
-            //             throw new Error('Failed to read file - null');
-            //         }
-            //         try {
-            //             //try to interpret this file as uncompressed
-            //             parsed = MusicXML.parseScore(data.toString());
-            //             console.log(data.toString());
-            //             console.log(parsed);
-            //         } catch(e){
-
-            //             throw new Error('...');
-            //         }
-
-            //         let id = `file_${Array.from({length: 16}, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
-
-            //         // Set this song as the current work in the global context
-            //         setCurrentFile({type: 'set', val: {id, file_name: fileName, data: parsed}});
-
-            //         // Fail silently if localStorage is disabled
-            //         try {
-
-            //             // Set this song as the current work in localStorage
-            //             localStorage.setItem(id, JSON.stringify(parsed));
-            //             localStorage.setItem('current_file', id);
-
-            //             // Add this song to the recent songs list
-            //             let newRecentFiles = recentFiles.map(x => x);
-
-            //             for (let i = 0; i < newRecentFiles.length; i++) {
-            //                 if (newRecentFiles[i]['file_name'] === fileName) {
-            //                     newRecentFiles.splice(i, 1);
-            //                 }
-            //             }
-
-            //             newRecentFiles.unshift({file_name: fileName, date: new Date().getTime(), id});
-            //             localStorage.setItem('recent_files', JSON.stringify(newRecentFiles));
-
-            //         } catch (e) {
-            //             console.error(e);
-            //         }
-
-            //         navigate('convert');
-            //     } catch (e) {
-            //         showError('An issue was encountered while reading the selected file.');
-            //         console.error(e);
-            //     }
-            // };
-            // reader.readAsArrayBuffer((e.target as any).files[0]);
         } catch (e) {
             showError('An issue was encountered while reading the selected file.');
             console.error(e);
@@ -263,7 +208,19 @@ const Menu: React.FC<Props> = () => {
     };
 
     const onUpload = (fileName: string, parsed: ScoreTimewise) => {
+        // Clear all entries from Recent files list and re-initialize.    11/1/2022  part of change to quit displaying recent files list on Menu page
+        let currentFile : any  =   localStorage.getItem('current_file');
+        if (currentFile !== null)  {
+            localStorage.removeItem(currentFile);
+        }
+        setRecentFiles([]);
+        localStorage.setItem('recent_files', JSON.stringify([]));
+        
+        
         let id = `file_${Array.from({ length: 16 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
+
+        // The following is just to avoid compile warning that recentFiles is not used.   It may be used later when the real "recent files" list is implemented
+        if (recentFiles !== null) { console.log(recentFiles); }
 
         // Set this song as the current work in the global context
         setCurrentFile({ type: 'set', val: { id, file_name: fileName, data: parsed } });
@@ -271,16 +228,15 @@ const Menu: React.FC<Props> = () => {
         // Fail silently if localStorage is disabled
         try {
 
-            // Set this song as the current work in localStorage
-            localStorage.setItem(id, JSON.stringify(parsed));
+            // Set this song as the current work in localStorage.  This is used by convert to display file
+            // localStorage.setItem(id, JSON.stringify(parsed));  11/1/22 disable storing the musicxml file into cache
             localStorage.setItem('current_file', id);
 
-            // Add this song to the recent songs list
-            localStorage.setItem('recent_files', JSON.stringify([
+            // Add this song to the recent songs list           11/1/22  this entry is used by convert to display score (but will be deleted when next score is opened)
+            /* localStorage.setItem('recent_files', JSON.stringify([
                 { file_name: fileName, date_created: new Date().getTime(), date_opened: new Date().getTime(), id } as recentFile,
-                ...recentFiles.filter(x => x.file_name !== fileName)
-            ]));
-
+                ...recentFiles.filter(x => x.file_name !== fileName) ]));  */
+             
         } catch (e) {
             console.error(e);
         }
@@ -290,7 +246,7 @@ const Menu: React.FC<Props> = () => {
 
     return (
         <Frame header="SNapp -&nbsp;Simplified&nbsp;Notation&nbsp;App&nbsp;for&nbsp;Sheet&nbsp;Music">
-            {recentFiles === undefined ? null : <div style={styles.container}>
+            {<div style={styles.container}>
                 <div style={{ ...styles.item, flex: '.37 0 auto' }} />
                 <div style={{ ...styles.item, maxWidth: '1200px' }}>
                     SNapp implements a simple and intuitive music notation known as What You See Is What You Play,
@@ -298,46 +254,19 @@ const Menu: React.FC<Props> = () => {
                     <br/>
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
                     <a href="https://www.wysiwyp.org" target="_blank" rel="noreferrer"> WYSIWYP website Home page</a>
+                    <br/>
+                    <br/>
+                    <br/>
                 </div>
-                {recentFiles.length === 0 ? <>
-                    <div style={{ ...styles.item, flex: '.2 0 auto' }} />
-                    <div style={styles.item}>
-                        Try uploading a MusicXML file below
-                    </div>
-                    <div style={{ ...styles.item, flex: '.35 0 auto' }} />
-                </> : <>
-                        <div style={{ ...styles.item, flex: '.36 0 auto' }} />
-                        <div style={{ ...styles.item, fontSize: '28px', fontWeight: 'bolder' }}>Click list entry to open Sheet Music from browser cache</div>
-                        <div style={{ ...styles.item, flex: '.08 0 auto' }} />
-                        <div style={{ ...styles.item, ...styles.recentFiles }}>
-                            <div style={{ ...styles.recentFilesInner }}>
-                                {recentFiles.map(x => <Fragment key={x.id}>
-                                    <div className="button-recent-file" style={styles.recentFilesItem}>
-                                        <div onClick={() => { loadFile(x); }} style={{ ...styles.recentFilesItemInner, flex: '0 1 auto', fontWeight: 'bold' }}>
-                                            {x.file_name}
-                                        </div>
-                                        <div onClick={() => { loadFile(x); }} style={{ ...styles.recentFilesItemInner, width: '10px', flex: '1 1 auto' }} />
-                                        <div onClick={() => { loadFile(x); }} style={{ ...styles.recentFilesItemInner, flex: '0 100000 auto', fontSize: '22px' }}>
-                                            {(d => `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`)(new Date(x.date_created || (x as any).date /*migrate from x.date to x.date_created*/))}
-                                        </div>
-                                        <div onClick={() => { deleteFile(x); }} style={{ ...styles.recentFilesItemInner, color: 'gray', width: '35px' }} >
-                                            <svg style={{ paddingTop: '9px' }} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                        </div>
-                                    </div>
-                                    <div style={styles.recentFilesSeparator}></div>
-                                </Fragment>)}
-                                <div onClick={() => { deleteAllFiles(); }} style={styles.deleteAll}>Delete All Files</div>
-                            </div>
-                        </div>
-                        <div style={{ ...styles.item, flex: '.24 0 auto' }} />
-                    </>}
+                
                 <div style={styles.item}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/><path d="M14 3v5h5M16 13H8M16 17H8M10 9H8"/></svg>
                     <span id="button-upload" style={styles.link}>                    open Sheet Music from a MusicXML file
                         <input style={styles.fileInput} type="file" title="Open Sheet Music from MusicXML file" accept=".musicxml,.mxl,.xml,application/octet-stream" onChange={(e) => { uploadFile(e); }}></input>
                     </span>
-                </div>
+                    </div>
                 <div style={{ ...styles.item, maxWidth: '1200px' }}>
+                    <br/>
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 15v4c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2v-4M17 9l-5 5-5-5M12 12.8V2.5"/></svg>
                     <a href="https://downloads.wysiwyp.org" target="_blank" rel="noreferrer"> download sample MusicXML files</a>
                 </div>
