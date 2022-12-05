@@ -252,13 +252,14 @@ const Menu: React.FC<Props> = () => {
                     SNapp implements a simple and intuitive music notation known as What You See Is What You Play,
                     or WYSIWYP.  With it, musicians can spend less time learning to read music and more time playing it!
                     <br/>
+                
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                    <a href="https://www.wysiwyp.org" target="_blank" rel="noreferrer"> WYSIWYP website Home page</a>
+                    <a href="https://www.wysiwyp.org"  target="_blank" rel="noreferrer"> <u>WYSIWYP website Home</u> </a>
                     <br/>
                     <br/>
                     <br/>
                 </div>
-                
+
                 <div style={styles.item}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/><path d="M14 3v5h5M16 13H8M16 17H8M10 9H8"/></svg>
                     <span id="button-upload" style={styles.link}>                    open Sheet Music from a MusicXML file
@@ -268,7 +269,7 @@ const Menu: React.FC<Props> = () => {
                 <div style={{ ...styles.item, maxWidth: '1200px' }}>
                     <br/>
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 15v4c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2v-4M17 9l-5 5-5-5M12 12.8V2.5"/></svg>
-                    <a href="https://downloads.wysiwyp.org" target="_blank" rel="noreferrer"> download sample MusicXML files</a>
+                    <a href="https://downloads.wysiwyp.org" target="_blank" rel="noreferrer"> <u>download sample MusicXML files</u> </a>
                 </div>
                 {installHandle===undefined?null:<>
                     <div style={{ ...styles.item, flex: '.5 0 auto' }} />

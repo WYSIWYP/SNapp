@@ -34,6 +34,7 @@ export type Note = {
     time: number,
     duration: number,
     midi: number,
+    measureNum: number,
     fingering: string,
     setFingering: (x: number) => void,
     staff: StaffType,

@@ -45,6 +45,9 @@ export type lyricsFontSizeOption = (typeof lyricsFontSizeOptions)[number];
 export const fingeringsPreferenceOptions = ['hide', 'above', 'behind', 'left'] as const;
 export type fingeringsOption = (typeof fingeringsPreferenceOptions)[number];
 
+export const cccPreferenceOptions = ['enable', 'disable'] as const;
+export type cccOption = (typeof cccPreferenceOptions)[number];
+
 export type state = {
     noteDurationColor: colorPreferenceOption;
     noteSymbolColor: colorPreferenceOption;
@@ -59,7 +62,8 @@ export type state = {
     measuresPerRow: measuresPerRowOption;
     accidentalType: accidentalTypeOption;
     lyricsFontSize: lyricsFontSizeOption;
-    fingeringsDisplay: fingeringsOption
+    fingeringsDisplay: fingeringsOption;
+    cccDisplay: cccOption
 };
 export type action = {
     type: "set";
@@ -70,8 +74,8 @@ let initialState: state = {
     noteDurationColor: "grey",
     noteSymbolColor: "black",
     staffScale: 'medium',
-    horizontalSpacing: 'narrow',  // 21 June 2021  changed from medium
-    verticalSpacing: 'narrow',    // 21 June 2021  changed from medium
+    horizontalSpacing: 'narrow',  
+    verticalSpacing: 'narrow',    
     noteScale: 'medium',
     naturalNoteShape: '○ hollow',
     sharpNoteShape: '▀ combo',
@@ -80,7 +84,8 @@ let initialState: state = {
     measuresPerRow: 5,
     accidentalType: 'auto',
     lyricsFontSize: 'small',
-    fingeringsDisplay: 'hide'      // 27 July 2022   added this and others to support new preference
+    fingeringsDisplay: 'hide', 
+    cccDisplay: 'disable'
 };
 
 export const PreferencesContext = createContext(undefined! as [

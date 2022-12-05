@@ -9,7 +9,7 @@ import MusicXML from 'musicxml-interfaces';
 import {
     usePreferencesState, scalePreferenceOptions,
     spacingPreferenceOptions, naturalNoteHeadPreferenceOptions, sharpNoteHeadPreferenceOptions, flatNoteHeadPreferenceOptions, measuresPerRowOptions,
-    accidentalTypeOptions, clefPreferenceOptions, lyricsFontSizeOptions, fingeringsPreferenceOptions
+    accidentalTypeOptions, clefPreferenceOptions, lyricsFontSizeOptions, fingeringsPreferenceOptions, cccPreferenceOptions
 } from '../contexts/Preferences';
 import jsPDF from 'jspdf';
 import Canvg from 'canvg';
@@ -326,6 +326,13 @@ const Convert: React.FC<Props> = () => {
                             <select value={preferences.fingeringsDisplay} onChange={
                                 (e) => { setPreferences({ type: 'set', val: { fingeringsDisplay: e.target.value as any } }); }
                             }>{fingeringsPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
+                        </div>
+
+                        <div style={styles.line}>
+                            <div style={styles.name}>color-coded chords</div>
+                            <select value={preferences.cccDisplay} onChange={
+                                (e) => { setPreferences({ type: 'set', val: { cccDisplay: e.target.value as any } }); }
+                            }>{cccPreferenceOptions.map(x => <option key={x}>{x}</option>)}</select>
                         </div>
 
                     </Expandable>

@@ -177,6 +177,7 @@ export const parse = (xml: MusicXML.ScoreTimewise): Score => {
                                 notes.push({
                                     time, duration: divisionsToNoteLength(entry.duration),
                                     midi: pitchToMidi(entry.pitch),
+                                    measureNum: measureNumber,
                                     fingering: entryFingering,
                                     setFingering,
                                     staff: staffNumber === 1 ? 'treble' : 'bass',

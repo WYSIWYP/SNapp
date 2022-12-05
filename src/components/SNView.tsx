@@ -63,6 +63,12 @@ const keySignatureNamesArrayMinor = [
     'd# minor', //  6
     'bb minor'  //  7
 ]; 
+ // 2022 11 29  Color-coded chords
+ // initialize variables to "remember" the previous note's staff, midi, and x position for comparison with the next Note
+    let prevNoteStaff: StaffType = 'bass';
+    let prevNoteX = 0;
+    let prevNoteMidi: number = 0;
+    let prevNoteMeasureNum = 0;
 
 let creditsDisplay = ['', '', '', '', ''];
 const defaultEditCallback = () => { };
@@ -703,47 +709,88 @@ const SNView: React.FC<Props> = ({ xml, forcedWidth, editMode = '', editCallback
                 }
             };
 
+            // 2022 11 29  Color-coded chords
+            // For notes in a chord, set their color according to the interval difference to the previous note
+            let noteheadDisplayColor = noteSymbolColor;  // Initialize the notehead color to the default
+            // let cccOption : boolean = true;    // temporary definition.  Needs to be defined from Preferences menu
+            if (preferences.cccDisplay === 'enable') {
+               // if current note is on the same staff and on the same horizontal position, then it is a chord
+               if (note.staff === prevNoteStaff  &&  x === prevNoteX  &&  note.measureNum === prevNoteMeasureNum) {
+                   switch (note.midi - prevNoteMidi) {
+                       case 1:
+                           noteheadDisplayColor = "grey";
+                           break;
+                       case 2:
+                           noteheadDisplayColor = "orange";
+                           break;
+                       case 3:
+                           noteheadDisplayColor = "yellow";
+                           break;
+                       case 4:
+                           noteheadDisplayColor = "green";
+                           break;
+                       case 5:
+                           noteheadDisplayColor = "red";
+                           break;
+                       case 6:
+                           noteheadDisplayColor = "purple";
+                           break;
+                       case 7:
+                           noteheadDisplayColor = "blue";
+                           break;
+                   }
+               }
+            }
+
+
             let notehead: any;
             switch (shape) {
                 case '● filled':
-                    notehead = <circle cx={x} cy={y} r={noteSymbolSize / 2} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                    notehead = <circle cx={x} cy={y} r={noteSymbolSize / 2} fill={colorPreferenceStyles[noteheadDisplayColor]} />;
                     break;
                 case '▲ filled':
-                    notehead = <polygon points={`${x},${y - triHeight / 2} ${x + noteSymbolSize / 2},${y + triHeight / 2} ${x - noteSymbolSize / 2},${y + triHeight / 2}`} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                    notehead = <polygon points={`${x},${y - triHeight / 2} ${x + noteSymbolSize / 2},${y + triHeight / 2} ${x - noteSymbolSize / 2},${y + triHeight / 2}`} fill={colorPreferenceStyles[noteheadDisplayColor]} />;
                     break;
                 case '▼ filled':
-                    notehead = <polygon points={`${x},${y + triHeight / 2} ${x + noteSymbolSize / 2},${y - triHeight / 2} ${x - noteSymbolSize / 2},${y - triHeight / 2}`} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                    notehead = <polygon points={`${x},${y + triHeight / 2} ${x + noteSymbolSize / 2},${y - triHeight / 2} ${x - noteSymbolSize / 2},${y - triHeight / 2}`} fill={colorPreferenceStyles[noteheadDisplayColor]} />;
                     break;
                 case '○ hollow':
-                    notehead = <circle cx={x} cy={y} r={(noteSymbolSize - strokeWidth) / 2} strokeWidth={strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} fill='none' />;
+                    notehead = <circle cx={x} cy={y} r={(noteSymbolSize - strokeWidth) / 2} strokeWidth={strokeWidth} stroke={colorPreferenceStyles[noteheadDisplayColor]} fill='none' />;
                     break;
                 case '△ hollow':
-                    notehead = <polygon points={`${x},${y - triHeight / 2 + strokeWidth} ${x + noteSymbolSize / 2 - Math.sqrt(3) * strokeWidth / 2},${y + triHeight / 2 - strokeWidth / 2} ${x - noteSymbolSize / 2 + Math.sqrt(3) * strokeWidth / 2},${y + triHeight / 2 - strokeWidth / 2}`} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />;
+                    notehead = <polygon points={`${x},${y - triHeight / 2 + strokeWidth} ${x + noteSymbolSize / 2 - Math.sqrt(3) * strokeWidth / 2},${y + triHeight / 2 - strokeWidth / 2} ${x - noteSymbolSize / 2 + Math.sqrt(3) * strokeWidth / 2},${y + triHeight / 2 - strokeWidth / 2}`} stroke={colorPreferenceStyles[noteheadDisplayColor]} strokeWidth={strokeWidth} fill='none' />;
                     break;
                 case '▽ hollow':
-                    notehead = <polygon points={`${x},${y + triHeight / 2 - strokeWidth} ${x + noteSymbolSize / 2 - Math.sqrt(3) * strokeWidth / 2},${y - triHeight / 2 + strokeWidth / 2} ${x - noteSymbolSize / 2 + Math.sqrt(3) * strokeWidth / 2},${y - triHeight / 2 + strokeWidth / 2}`} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} fill='none' />;
+                    notehead = <polygon points={`${x},${y + triHeight / 2 - strokeWidth} ${x + noteSymbolSize / 2 - Math.sqrt(3) * strokeWidth / 2},${y - triHeight / 2 + strokeWidth / 2} ${x - noteSymbolSize / 2 + Math.sqrt(3) * strokeWidth / 2},${y - triHeight / 2 + strokeWidth / 2}`} stroke={colorPreferenceStyles[noteheadDisplayColor]} strokeWidth={strokeWidth} fill='none' />;
                     break;
                 case '▀ combo':
-                    notehead = <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - 1.5 * strokeWidth} height={noteSymbolSize / 2 - strokeWidth / 2} strokeWidth={strokeWidth} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                    notehead = <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y - noteSymbolSize / 2 + strokeWidth / 2} width={noteSymbolSize - 1.5 * strokeWidth} height={noteSymbolSize / 2 - strokeWidth / 2} strokeWidth={strokeWidth} fill={colorPreferenceStyles[noteheadDisplayColor]} />;
                     break;
                 case '▄ combo':
-                    notehead = <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y} width={noteSymbolSize - 1.5 * strokeWidth} height={noteSymbolSize / 2 - strokeWidth / 2} strokeWidth={strokeWidth} fill={colorPreferenceStyles[noteSymbolColor]} />;
+                    notehead = <rect x={x - noteSymbolSize / 2 + strokeWidth / 2} y={y} width={noteSymbolSize - 1.5 * strokeWidth} height={noteSymbolSize / 2 - strokeWidth / 2} strokeWidth={strokeWidth} fill={colorPreferenceStyles[noteheadDisplayColor]} />;
                     break;
                 case '#':
                     notehead = (<g>
-                        <line x1={x - (noteSymbolSize / 2) + (noteSymbolSize / 3)} y1={y - (noteSymbolSize / 2)} x2={x - (noteSymbolSize / 2) + (noteSymbolSize / 3)} y2={y + (noteSymbolSize / 2)} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} />
-                        <line x1={x - (noteSymbolSize / 2) + 2 * (noteSymbolSize / 3)} y1={y - (noteSymbolSize / 2)} x2={x - (noteSymbolSize / 2) + 2 * (noteSymbolSize / 3)} y2={y + (noteSymbolSize / 2)} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} />
-                        <line x1={x - (noteSymbolSize / 2)} y1={y - (noteSymbolSize / 2) + (noteSymbolSize / 3)} x2={x + (noteSymbolSize / 2)} y2={y - (noteSymbolSize / 2) + (noteSymbolSize / 3)} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} />
-                        <line x1={x - (noteSymbolSize / 2)} y1={y - (noteSymbolSize / 2) + 2 * (noteSymbolSize / 3)} x2={x + (noteSymbolSize / 2)} y2={y - (noteSymbolSize / 2) + 2 * (noteSymbolSize / 3)} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} />;
+                        <line x1={x - (noteSymbolSize / 2) + (noteSymbolSize / 3)} y1={y - (noteSymbolSize / 2)} x2={x - (noteSymbolSize / 2) + (noteSymbolSize / 3)} y2={y + (noteSymbolSize / 2)} stroke={colorPreferenceStyles[noteheadDisplayColor]} strokeWidth={strokeWidth} />
+                        <line x1={x - (noteSymbolSize / 2) + 2 * (noteSymbolSize / 3)} y1={y - (noteSymbolSize / 2)} x2={x - (noteSymbolSize / 2) + 2 * (noteSymbolSize / 3)} y2={y + (noteSymbolSize / 2)} stroke={colorPreferenceStyles[noteheadDisplayColor]} strokeWidth={strokeWidth} />
+                        <line x1={x - (noteSymbolSize / 2)} y1={y - (noteSymbolSize / 2) + (noteSymbolSize / 3)} x2={x + (noteSymbolSize / 2)} y2={y - (noteSymbolSize / 2) + (noteSymbolSize / 3)} stroke={colorPreferenceStyles[noteheadDisplayColor]} strokeWidth={strokeWidth} />
+                        <line x1={x - (noteSymbolSize / 2)} y1={y - (noteSymbolSize / 2) + 2 * (noteSymbolSize / 3)} x2={x + (noteSymbolSize / 2)} y2={y - (noteSymbolSize / 2) + 2 * (noteSymbolSize / 3)} stroke={colorPreferenceStyles[noteheadDisplayColor]} strokeWidth={strokeWidth} />;
                     </g>);
                     break;
                 case 'b':
                     notehead = (<g>
-                        <line x1={x - 0.6 * (noteSymbolSize / 2)} y1={y - (noteSymbolSize / 2)} x2={x - 0.6 * (noteSymbolSize / 2)} y2={y + 0.7 * (noteSymbolSize / 2)} stroke={colorPreferenceStyles[noteSymbolColor]} strokeWidth={strokeWidth} />
-                        <ellipse cx={x - (noteSymbolSize / 2) + 1.2 * (noteSymbolSize / 3)} cy={y - (noteSymbolSize / 2) + 2 * (noteSymbolSize / 3)} rx={(noteSymbolSize - strokeWidth) / 4} ry={(noteSymbolSize - strokeWidth) / 3} strokeWidth={strokeWidth} stroke={colorPreferenceStyles[noteSymbolColor]} fill='none' />
+                        <line x1={x - 0.6 * (noteSymbolSize / 2)} y1={y - (noteSymbolSize / 2)} x2={x - 0.6 * (noteSymbolSize / 2)} y2={y + 0.7 * (noteSymbolSize / 2)} stroke={colorPreferenceStyles[noteheadDisplayColor]} strokeWidth={strokeWidth} />
+                        <ellipse cx={x - (noteSymbolSize / 2) + 1.2 * (noteSymbolSize / 3)} cy={y - (noteSymbolSize / 2) + 2 * (noteSymbolSize / 3)} rx={(noteSymbolSize - strokeWidth) / 4} ry={(noteSymbolSize - strokeWidth) / 3} strokeWidth={strokeWidth} stroke={colorPreferenceStyles[noteheadDisplayColor]} fill='none' />
                     </g>);
                     break;
             }
+
+            // 2022 11 29  Color-coded chords
+            // save current note's staff, midi, and x position for comparison with the next Note
+            prevNoteStaff = note.staff;
+            prevNoteX = x;
+            prevNoteMidi = note.midi;
+            prevNoteMeasureNum = note.measureNum;
 
             // the offsets adjust the position of the fingering number with respect to the notehead
             let xOffset = 0;
